@@ -39,7 +39,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         import EletricaPanel
         
         # Comandos proprios da bancada
-        eletrica_cmds = ["Eletrica_OpenLibrary", "Eletrica_InsertSocket", "Eletrica_InsertLight"]
+        eletrica_cmds = ["Eletrica_OpenLibrary", "Eletrica_CreateConduit", "Eletrica_InsertSocket", "Eletrica_InsertLight"]
         
         # Comandos essenciais do BIM/Arch e Draft que vamos 'emprestar'
         bim_cmds = ["Arch_BuildingPart", "Arch_Project", "Arch_SectionPlane", "BIM_Library"]

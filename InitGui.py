@@ -43,6 +43,8 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_OpenLibrary", 
             "Eletrica_OpenSettings",
             "Eletrica_CreateConduit", 
+            "Eletrica_AssignCircuitToConduit",
+            "Eletrica_ClearConduitCircuits",
             "Eletrica_AutoConnectSequence",
             "Eletrica_AutoConnectCeiling",
             "Eletrica_GenerateLoadSchedule",

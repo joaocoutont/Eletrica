@@ -284,6 +284,56 @@ class SolarEstimate:
         
         QtWidgets.QMessageBox.information(None, "Solar PV", msg)
 
+class AssignCircuitToConduit:
+    """Ferramenta para atribuir circuitos aos eletrodutos selecionados"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Atribuir Circuito a Eletroduto',
+            'ToolTip': 'Adiciona um circuito (ex: C1) aos eletrodutos selecionados no 3D'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        import FreeCADGui
+        
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione um ou mais eletrodutos primeiro.")
+            return
+            
+        circuit, ok = QtWidgets.QInputDialog.getText(None, "Atribuir Circuito", "Digite o nome/número do circuito (ex: C1):")
+        
+        if ok and circuit:
+            count = 0
+            for obj in selection:
+                if hasattr(obj, "CircuitosPassantes"):
+                    current_list = list(obj.CircuitosPassantes)
+                    if circuit not in current_list:
+                        current_list.append(circuit)
+                        obj.CircuitosPassantes = current_list
+                        count += 1
+            
+            FreeCAD.ActiveDocument.recompute()
+            QtWidgets.QMessageBox.information(None, "Sucesso", f"Circuito {circuit} atribuído a {count} eletroduto(s).")
+
+class ClearConduitCircuits:
+    """Limpa a lista de circuitos de um eletroduto"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Limpar Circuitos do Tubo',
+            'ToolTip': 'Remove todos os circuitos dos eletrodutos selecionados'
+        }
+
+    def Activated(self):
+        import FreeCADGui
+        selection = FreeCADGui.Selection.getSelection()
+        for obj in selection:
+            if hasattr(obj, "CircuitosPassantes"):
+                obj.CircuitosPassantes = []
+        FreeCAD.ActiveDocument.recompute()
+
 class GeneratePanelLabels:
     """Gera etiquetas para a porta do quadro"""
     def GetResources(self):
@@ -546,6 +596,8 @@ FreeCADGui.addCommand('Eletrica_InsertServiceEntrance', InsertServiceEntrance())
 FreeCADGui.addCommand('Eletrica_AutoConnectSequence', AutoConnectSequence())
 FreeCADGui.addCommand('Eletrica_AutoConnectCeiling', AutoConnectCeiling())
 FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())
+FreeCADGui.addCommand('Eletrica_AssignCircuitToConduit', AssignCircuitToConduit())
+FreeCADGui.addCommand('Eletrica_ClearConduitCircuits', ClearConduitCircuits())
 FreeCADGui.addCommand('Eletrica_GenerateReport', GenerateReport())
 FreeCADGui.addCommand('Eletrica_SolarEstimate', SolarEstimate())
 FreeCADGui.addCommand('Eletrica_GeneratePanelLabels', GeneratePanelLabels())

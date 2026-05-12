@@ -37,8 +37,21 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         "This function is executed when FreeCAD starts"
         import EletricaGui
         import EletricaPanel
-        self.appendToolbar("Predial", ["Eletrica_OpenLibrary", "Eletrica_InsertSocket", "Eletrica_InsertLight"])
-        self.appendMenu("Eletrica", ["Eletrica_OpenLibrary", "Eletrica_InsertSocket", "Eletrica_InsertLight"])
+        
+        # Comandos proprios da bancada
+        eletrica_cmds = ["Eletrica_OpenLibrary", "Eletrica_InsertSocket", "Eletrica_InsertLight"]
+        
+        # Comandos essenciais do BIM/Arch e Draft que vamos 'emprestar'
+        bim_cmds = ["Arch_BuildingPart", "Arch_Project", "Arch_SectionPlane", "BIM_Library"]
+        draft_cmds = ["Draft_Line", "Draft_Wire", "Draft_Move", "Draft_Rotate", "Draft_SelectPlane"]
+        
+        # Criando as Toolbars
+        self.appendToolbar("Eletrica Predial", eletrica_cmds)
+        self.appendToolbar("BIM Essentials", bim_cmds)
+        self.appendToolbar("Draft Tools", draft_cmds)
+        
+        # Criando o Menu
+        self.appendMenu("Eletrica", eletrica_cmds + ["---"] + bim_cmds + ["---"] + draft_cmds)
 
     def Activated(self):
         "This function is executed when the workbench is activated"

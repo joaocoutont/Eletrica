@@ -34,3 +34,27 @@ class UnifilarGenerator:
         
         doc.recompute()
         return True
+
+    @staticmethod
+    def sync_title_block(page_obj):
+        """Preenche o carimbo da folha com os metadados do projeto"""
+        from EletricaLogic.Settings import ProjectSettings
+        settings = ProjectSettings.get_settings_obj()
+        
+        # Mapeamento de campos comuns em templates SVG do TechDraw
+        # (Depende dos IDs definidos no SVG do template)
+        fields = {
+            "FreeCAD_Title": settings.Cliente,
+            "FreeCAD_Author": settings.ResponsavelTecnico,
+            "FreeCAD_Date": "12/05/2026",
+            "FreeCAD_Project": "Projeto Elétrico BIM"
+        }
+        
+        for field, value in fields.items():
+            try:
+                page_obj.setAnnotation(field, value)
+            except:
+                pass
+            
+        FreeCAD.ActiveDocument.recompute()
+        return True

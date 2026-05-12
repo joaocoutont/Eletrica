@@ -383,6 +383,23 @@ class CreatePanel:
             PanelManager.create_panel(name, panel_type=choice)
             FreeCAD.Console.PrintMessage(f"Painel {name} tipo {choice} criado com sucesso.\n")
 
+class GenerateCableSchedule:
+    """Gera a lista de cabos industrial (De/Para)"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Lista de Cabos (Cable Schedule)',
+            'ToolTip': 'Cria uma planilha com Origem, Destino e Comprimento de todos os cabos'
+        }
+
+    def Activated(self):
+        from EletricaLogic.CableSchedule import CableScheduleManager
+        from PySide2 import QtWidgets
+        import FreeCAD
+        
+        sheet_name = CableScheduleManager.export_to_spreadsheet()
+        QtWidgets.QMessageBox.information(None, "Lista de Cabos", f"Lista de Cabos gerada com sucesso na planilha: {sheet_name}")
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -392,6 +409,7 @@ cmds = {
     'Eletrica_CreateConduit': CreateConduit(),
     'Eletrica_CreateCableTray': CreateCableTray(),
     'Eletrica_GenerateLoadSchedule': GenerateLoadSchedule(),
+    'Eletrica_GenerateCableSchedule': GenerateCableSchedule(),
     'Eletrica_RunProjectAudit': RunProjectAudit(),
     'Eletrica_GenerateUnifilar': GenerateUnifilar(),
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),

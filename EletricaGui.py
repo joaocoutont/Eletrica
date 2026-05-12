@@ -400,6 +400,40 @@ class GenerateCableSchedule:
         sheet_name = CableScheduleManager.export_to_spreadsheet()
         QtWidgets.QMessageBox.information(None, "Lista de Cabos", f"Lista de Cabos gerada com sucesso na planilha: {sheet_name}")
 
+class ServiceEntranceWizard:
+    """Assistente para definir o padrao de entrada conforme concessionaria"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Assistente de Padrão de Entrada (Concessionária)',
+            'ToolTip': 'Define poste, caixa e disjuntor conforme normas brasileiras'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.ServiceEntrance import ServiceEntranceWizard
+        import FreeCAD
+        
+        # 1. Escolher Concessionaria
+        data = ServiceEntranceWizard.get_utilities_data()
+        utilities = list(data.keys())
+        choice, ok1 = QtWidgets.QInputDialog.getItem(None, "Padrão de Entrada", "Selecione a Concessionária:", utilities, 0, False)
+        
+        if not ok1: return
+        
+        # 2. Definir Carga (Tentar obter do projeto ou perguntar)
+        kw, ok2 = QtWidgets.QInputDialog.getDouble(None, "Carga", "Carga Instalada Total (kW):", 15.0, 1.0, 500.0, 1)
+        
+        if ok2:
+            obj = ServiceEntranceWizard.create_entrance_point(choice, kw)
+            res = ServiceEntranceWizard.recommend_entrance(choice, kw)
+            msg = f"Recomendação para {choice}:\n\n"
+            msg += f"- Categoria: {res['fase']}\n"
+            msg += f"- Disjuntor: {res['disjuntor']}\n"
+            msg += f"- Cabo: {res['cabo']}\n"
+            msg += f"- Caixa: {res['caixa']}\n"
+            QtWidgets.QMessageBox.information(None, "Padrão Definido", msg)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -416,6 +450,7 @@ cmds = {
     'Eletrica_GenerateBudget': GenerateBudget(),
     'Eletrica_BIMifyEquipment': BIMifyEquipment(),
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
+    'Eletrica_ServiceEntranceWizard': ServiceEntranceWizard(),
     'Eletrica_InsertSmartDevice': InsertSmartDevice(),
     'Eletrica_CheckSelectivity': CheckSelectivity(),
     'Eletrica_CreatePanel': CreatePanel(),
@@ -438,7 +473,7 @@ extra_cmds = [
     'Eletrica_CalculateWiring', 'Eletrica_PrepareIFC', 'Eletrica_GenerateTags',
     'Eletrica_CheckConduitFill', 'Eletrica_GenerateBOM', 'Eletrica_GenerateWireSymbols',
     'Eletrica_GroundingCalculator', 'Eletrica_SPDAGui', 'Eletrica_SPDARiskWizard',
-    'Eletrica_InsertTUE', 'Eletrica_InsertServiceEntrance', 'Eletrica_AutoConnectSequence',
+    'Eletrica_InsertTUE', 'Eletrica_ServiceEntranceWizard', 'Eletrica_CreatePanel', 'Eletrica_InsertServiceEntrance', 'Eletrica_AutoConnectSequence',
     'Eletrica_AutoConnectCeiling', 'Eletrica_ApplyHeatmap', 'Eletrica_AssignCircuitToConduit',
     'Eletrica_ClearConduitCircuits', 'Eletrica_GenerateReport', 'Eletrica_SolarEstimate',
     'Eletrica_GeneratePanelLabels', 'Eletrica_CreateExposedConduit', 'Eletrica_GenerateRiseFallSymbols',

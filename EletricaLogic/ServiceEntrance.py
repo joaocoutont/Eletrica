@@ -1,49 +1,66 @@
-# Logica de Entrada de Energia e Alimentadores
+# Assistente de Padrao de Entrada - Concessionarias Brasil
 import FreeCAD
-from EletricaLogic.Calculator import ElectricalCalculator
-from EletricaLogic.Settings import ProjectSettings
 
-class ServiceEntranceManager:
+class ServiceEntranceWizard:
     @staticmethod
-    def get_entrance_presets():
+    def get_utilities_data():
+        """Dados simplificados baseados nas normas tecnicas"""
         return {
-            "Caixa de Medicao Tipo N": {"desc": "Medicao Monofasica", "max_amp": 40},
-            "Caixa de Medicao Tipo T": {"desc": "Medicao Trifasica", "max_amp": 100},
-            "Caixa de Passagem 30x30": {"desc": "Caixa de Passagem de Solo", "type": "Box"},
-            "Caixa de Passagem 40x40": {"desc": "Caixa de Passagem de Solo", "type": "Box"}
+            "CEMIG (ND-5.1)": {
+                "Categorias": [
+                    {"max_kw": 15, "fase": "Monofasico", "disjuntor": "40A", "cabo": "10mm2", "caixa": "CM-1"},
+                    {"max_kw": 25, "fase": "Bifasico", "disjuntor": "50A", "cabo": "16mm2", "caixa": "CM-2"},
+                    {"max_kw": 75, "fase": "Trifasico", "disjuntor": "100A", "cabo": "35mm2", "caixa": "CM-3"}
+                ]
+            },
+            "ENERGISA (NDU-001)": {
+                "Categorias": [
+                    {"max_kw": 12, "fase": "Monofasico", "disjuntor": "50A", "cabo": "10mm2", "caixa": "Tipo E"},
+                    {"max_kw": 24, "fase": "Bifasico", "disjuntor": "63A", "cabo": "16mm2", "caixa": "Tipo H"},
+                    {"max_kw": 75, "fase": "Trifasico", "disjuntor": "100A", "cabo": "50mm2", "caixa": "Tipo N"}
+                ]
+            },
+            "ENEL / CPFL": {
+                "Categorias": [
+                    {"max_kw": 10, "fase": "Monofasico", "disjuntor": "40A", "cabo": "10mm2", "caixa": "Individual"},
+                    {"max_kw": 20, "fase": "Bifasico", "disjuntor": "50A", "cabo": "16mm2", "caixa": "Individual"},
+                    {"max_kw": 75, "fase": "Trifasico", "disjuntor": "100A", "cabo": "35mm2", "caixa": "Individual"}
+                ]
+            }
         }
 
     @staticmethod
-    def calculate_feeder(total_power_va, length_m):
-        """
-        Calcula o cabo alimentador da entrada.
-        Total_power_va: Soma de todas as cargas do projeto.
-        """
-        voltage = ProjectSettings.get_voltage()
-        # Assume-se trifasico para entrada de energia em projetos BIM
-        current = ElectricalCalculator.calculate_current(total_power_va, voltage, phases=3)
+    def recommend_entrance(utility_name, total_kw):
+        """Recomenda o padrao de entrada ideal"""
+        data = ServiceEntranceWizard.get_utilities_data()
+        if utility_name not in data: return None
         
-        # Secao baseada em corrente
-        section_base = ElectricalCalculator.get_standard_wire_gauge(current)
+        categories = data[utility_name]["Categorias"]
+        recommendation = categories[-1] # Default para o maior se ultrapassar
         
-        # Verificacao de queda de tensao (Limite rigido de 1% para alimentadores)
-        drop, ok = 0.0, False
-        section = section_base
-        while not ok and section <= 120:
-            drop = ElectricalCalculator.calculate_voltage_drop(current, length_m, section, voltage)
-            if drop <= 1.0:
-                ok = True
-            else:
-                # Aumentar para a proxima secao comercial
-                standard_sections = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120]
-                idx = standard_sections.index(section)
-                if idx < len(standard_sections) - 1:
-                    section = standard_sections[idx + 1]
-                else:
-                    break
-                    
-        return {
-            "Current": round(current, 2),
-            "Section": section,
-            "VoltageDrop": round(drop, 2)
-        }
+        for cat in categories:
+            if total_kw <= cat["max_kw"]:
+                recommendation = cat
+                break
+                
+        return recommendation
+
+    @staticmethod
+    def create_entrance_point(utility, kw):
+        """Cria o ponto de entrada no projeto com os dados da norma"""
+        rec = ServiceEntranceWizard.recommend_entrance(utility, kw)
+        if not rec: return
+        
+        doc = FreeCAD.ActiveDocument
+        obj = doc.addObject("App::FeaturePython", "Padrao_Entrada")
+        obj.Label = f"Entrada_{utility.split(' ')[0]}"
+        
+        # Injetar Propriedades da Norma
+        obj.addProperty("App::PropertyString", "Concessionaria", "Norma").Concessionaria = utility
+        obj.addProperty("App::PropertyString", "Categoria", "Norma").Categoria = rec["fase"]
+        obj.addProperty("App::PropertyString", "DisjuntorEntrada", "Componentes").DisjuntorEntrada = rec["disjuntor"]
+        obj.addProperty("App::PropertyString", "CaboEntrada", "Componentes").CaboEntrada = rec["cabo"]
+        obj.addProperty("App::PropertyString", "CaixaMedicao", "Componentes").CaixaMedicao = rec["caixa"]
+        
+        FreeCAD.ActiveDocument.recompute()
+        return obj

@@ -5,11 +5,22 @@ import math
 
 class AnnotationManager:
     @staticmethod
-    def create_tick_marks(conduit_obj, symbol_height=2700.0):
+    def create_tick_marks(conduit_obj, default_h=2700.0):
         """
-        Gera os simbolos de fiação (F, N, T, R) sobre o eletroduto.
+        Gera os simbolos de fiação sempre no plano de visualização (teto).
         """
         doc = FreeCAD.ActiveDocument
+        
+        # Detectar altura do andar para somar ao offset
+        base_z = 0.0
+        # Tenta achar o BuildingPart que contem o objeto
+        if hasattr(conduit_obj, "InList"):
+            for parent in conduit_obj.InList:
+                if parent.isDerivedFrom("App::Part"):
+                    base_z = parent.Placement.Base.z
+                    break
+        
+        symbol_height = base_z + default_h
         if not hasattr(conduit_obj, "CircuitosPassantes") or not hasattr(conduit_obj, "Shape"):
             return
             

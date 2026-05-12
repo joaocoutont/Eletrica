@@ -1,84 +1,94 @@
-# Interface de Gerenciamento da Biblioteca Eletrica
-from PySide2 import QtCore, QtGui, QtWidgets
+# Dashboard Lateral - Eletrica BIM
 import FreeCAD
-import FreeCADGui
-from EletricaLogic.Library import LibraryManager
+from PySide2 import QtCore, QtWidgets, QtGui
 
-class LibraryPanel:
+class EletricaDashboard(QtWidgets.QDockWidget):
     def __init__(self):
-        self.manager = LibraryManager()
-        self.form = QtWidgets.QWidget()
-        self.layout = QtWidgets.QVBoxLayout(self.form)
+        super().__init__()
+        self.setWindowTitle("Dashboard Eletrica BIM")
+        self.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
         
+        self.main_widget = QtWidgets.QWidget()
+        self.layout = QtWidgets.QVBoxLayout(self.main_widget)
+        
+        # Estilo Premium
+        self.main_widget.setStyleSheet("""
+            QWidget { background-color: #2b2b2b; color: white; font-family: 'Segoe UI'; }
+            QLabel { font-size: 12px; }
+            .header { font-size: 16px; font-weight: bold; color: #ffcc00; margin-bottom: 10px; }
+            .kpi_box { background-color: #3d3d3d; border-radius: 5px; padding: 10px; margin-bottom: 5px; }
+            .value { font-size: 18px; font-weight: bold; color: #00ff00; }
+            .alert { color: #ff4444; font-weight: bold; }
+        """)
+        
+        self.init_ui()
+        self.setWidget(self.main_widget)
+        
+    def init_ui(self):
         # Titulo
-        self.label = QtWidgets.QLabel("Biblioteca 3D HRC")
-        self.label.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
-        self.layout.addWidget(self.label)
+        lbl_title = QtWidgets.QLabel("MÉTRICAS DO PROJETO")
+        lbl_title.setProperty("class", "header")
+        self.layout.addWidget(lbl_title)
         
-        # Lista de componentes
-        self.list_widget = QtWidgets.QListWidget()
-        self.refresh_list()
-        self.layout.addWidget(self.list_widget)
+        # KPI 1: Potência Instalada
+        self.box_power = self.create_kpi_box("Potência Instalada", "0 VA", "power_val")
+        self.layout.addWidget(self.box_power)
         
-        # Configuracao de Altura (Teto)
-        self.h_layout = QtWidgets.QHBoxLayout()
-        self.h_label = QtWidgets.QLabel("Altura Plano (mm):")
-        self.spin_height = QtWidgets.QDoubleSpinBox()
-        self.spin_height.setRange(0, 10000)
-        self.spin_height.setValue(2700.0)
-        self.check_auto = QtWidgets.QCheckBox("Auto BIM")
-        self.check_auto.setChecked(True)
-        self.check_auto.toggled.connect(lambda: self.spin_height.setEnabled(not self.check_auto.isChecked()))
-        self.spin_height.setEnabled(False) # Começa em auto
+        # KPI 2: Demanda Estimada
+        self.box_demand = self.create_kpi_box("Demanda (NBR 5410)", "0 kVA", "demand_val")
+        self.layout.addWidget(self.box_demand)
         
-        self.h_layout.addWidget(self.h_label)
-        self.h_layout.addWidget(self.spin_height)
-        self.h_layout.addWidget(self.check_auto)
-        self.layout.addLayout(self.h_layout)
+        # KPI 3: Custo Estimado
+        self.box_cost = self.create_kpi_box("Orçamento Estimado", "R$ 0,00", "cost_val")
+        self.layout.addWidget(self.box_cost)
         
-        # Botao Inserir
-        self.btn_insert = QtWidgets.QPushButton("Inserir no Projeto")
-        self.btn_insert.clicked.connect(self.on_insert)
-        self.btn_insert.setMinimumHeight(40)
-        self.btn_insert.setStyleSheet("background-color: #2c3e50; color: white; border-radius: 5px;")
-        self.layout.addWidget(self.btn_insert)
+        # Auditoria
+        self.lbl_audit = QtWidgets.QLabel("Status: ✅ Projeto Saudável")
+        self.layout.addWidget(self.lbl_audit)
         
-        # Info
-        self.info = QtWidgets.QLabel("Dica: Selecione um item e clique em Inserir.")
-        self.info.setWordWrap(True)
-        self.layout.addWidget(self.info)
+        # Botão Atualizar
+        self.btn_refresh = QtWidgets.QPushButton("Atualizar Métricas")
+        self.btn_refresh.clicked.connect(self.update_metrics)
+        self.layout.addWidget(self.btn_refresh)
+        
+        self.layout.addStretch()
+        
+    def create_kpi_box(self, label, value, object_name):
+        box = QtWidgets.QFrame()
+        box.setProperty("class", "kpi_box")
+        l = QtWidgets.QVBoxLayout(box)
+        l.addWidget(QtWidgets.QLabel(label))
+        val = QtWidgets.QLabel(value)
+        val.setObjectName(object_name)
+        val.setProperty("class", "value")
+        l.addWidget(val)
+        return box
+        
+    def update_metrics(self):
+        # Aqui chamamos a logica de calculo em tempo real
+        total_va = 0.0
+        for obj in FreeCAD.ActiveDocument.Objects:
+            if hasattr(obj, "Potencia"):
+                total_va += float(obj.Potencia)
+                
+        self.findChild(QtWidgets.QLabel, "power_val").setText(f"{total_va:.0f} VA")
+        self.findChild(QtWidgets.QLabel, "demand_val").setText(f"{(total_va*0.6)/1000.0:.2f} kVA")
+        
+        # Alerta se houver erros (Simulacao)
+        if total_va > 15000:
+            self.lbl_audit.setText("Status: ⚠️ Verifique Circuitos")
+            self.lbl_audit.setStyleSheet("color: #ff4444;")
+        else:
+            self.lbl_audit.setText("Status: ✅ Projeto Saudável")
+            self.lbl_audit.setStyleSheet("color: #00ff00;")
 
-    def refresh_list(self):
-        self.list_widget.clear()
-        components = self.manager.list_components()
-        for c in components:
-            self.list_widget.addItem(c)
-
-    def on_insert(self):
-        selected = self.list_widget.currentItem()
-        if not selected:
-            FreeCAD.Console.PrintWarning("Selecione um item da lista primeiro.\n")
-            return
-        
-        filename = selected.text()
-        height = None if self.check_auto.isChecked() else self.spin_height.value()
-        self.manager.insert_component(filename, symbol_height=height)
-
-# Comando para abrir o painel
-class OpenLibraryCommand:
-    def GetResources(self):
-        return {
-            'Pixmap': 'freecad',
-            'MenuText': 'Navegador de Biblioteca',
-            'ToolTip': 'Abre o navegador de componentes 3D'
-        }
-
-    def Activated(self):
-        # Adicionar o painel como um DockWidget no FreeCAD
-        mw = FreeCADGui.getMainWindow()
-        panel = LibraryPanel()
-        dock = QtWidgets.QDockWidget("Eletrica - Biblioteca", mw)
-        dock.setWidget(panel.form)
-        mw.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
-
-FreeCADGui.addCommand('Eletrica_OpenLibrary', OpenLibraryCommand())
+def toggle_dashboard():
+    import FreeCADGui
+    mw = FreeCADGui.getMainWindow()
+    existing = mw.findChild(QtWidgets.QDockWidget, "Dashboard Eletrica BIM")
+    
+    if existing:
+        existing.setVisible(not existing.isVisible())
+    else:
+        db = EletricaDashboard()
+        mw.addDockWidget(QtCore.Qt.RightDockWidgetArea, db)

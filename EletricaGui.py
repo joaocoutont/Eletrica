@@ -147,6 +147,56 @@ class GenerateUnifilar:
         panel = next((obj for obj in selection if hasattr(obj, "TipoBIM")), None)
         if panel: UnifilarGenerator.create_graphic_diagram(panel)
 
+class ToggleDashboard:
+    """Liga/Desliga o painel lateral de métricas"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Abrir/Fechar Dashboard',
+            'ToolTip': 'Alterna a visualização das métricas em tempo real'
+        }
+
+    def Activated(self):
+        from EletricaPanel import toggle_dashboard
+        toggle_dashboard()
+
+class CloneFloor:
+    """Clona a rede eletrica de um andar para outro"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Replicar Redes (Andar Tipo)',
+            'ToolTip': 'Copia toda a rede eletrica do andar selecionado para outro andar'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Automation import MultiStoreyManager
+        from PySide2 import QtWidgets
+        import FreeCADGui
+        
+        selection = FreeCADGui.Selection.getSelection()
+        if len(selection) < 2:
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione o ANDAR ORIGEM e depois o ANDAR DESTINO (BuildingParts).")
+            return
+            
+        MultiStoreyManager.clone_electrical_to_floor(selection[0], selection[1])
+
+class Generate3DWiring:
+    """Gera os cabos fisicos 3D dentro da infraestrutura"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Fiação 3D (LOD 500)',
+            'ToolTip': 'Desenha os cabos reais dentro dos eletrodutos'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Wiring import WiringManager
+        import FreeCADGui
+        selection = FreeCADGui.Selection.getSelection()
+        for obj in selection:
+            WiringManager.generate_3d_cables(obj)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -157,7 +207,10 @@ cmds = {
     'Eletrica_RunProjectAudit': RunProjectAudit(),
     'Eletrica_GenerateUnifilar': GenerateUnifilar(),
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
-    'Eletrica_GenerateBudget': GenerateBudget()
+    'Eletrica_GenerateBudget': GenerateBudget(),
+    'Eletrica_ToggleDashboard': ToggleDashboard(),
+    'Eletrica_CloneFloor': CloneFloor(),
+    'Eletrica_Generate3DWiring': Generate3DWiring()
 }
 
 for name, obj in cmds.items():

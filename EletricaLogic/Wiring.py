@@ -35,3 +35,32 @@ class WiringManager:
         
         is_ok = drop_percent <= 3.0 # Limite de 3% para circuitos terminais
         return drop_percent, is_ok
+
+    @staticmethod
+    def generate_3d_cables(conduit_obj):
+        """Cria os fios fisicos em 3D dentro do eletroduto"""
+        if not hasattr(conduit_obj, "CircuitosPassantes") or not conduit_obj.CircuitosPassantes:
+            return
+            
+        import Arch
+        import Draft
+        doc = FreeCAD.ActiveDocument
+        
+        # Cores padrao (NBR 5410)
+        colors = {"Fase": (0.0, 0.0, 0.0), "Neutro": (0.0, 0.0, 1.0), "Terra": (0.0, 1.0, 0.0)}
+        
+        points = [v.Point for v in conduit_obj.Shape.Vertexes]
+        
+        for idx, circuit in enumerate(conduit_obj.CircuitosPassantes):
+            for f_idx, (func, color) in enumerate(colors.items()):
+                # Criar o cabo (fio fino)
+                wire = Draft.make_wire(points, closed=False)
+                # Offset leve para nao ficarem um dentro do outro
+                wire.Placement.Base += FreeCAD.Vector(idx*1.5, f_idx*1.5, 0)
+                
+                cable = Arch.makePipe(wire, diameter=2.5) 
+                cable.Label = f"Fio_{func}_{circuit}"
+                cable.ViewObject.ShapeColor = color
+                
+        doc.recompute()
+        return True

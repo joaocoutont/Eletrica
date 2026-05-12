@@ -39,17 +39,6 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         import EletricaGui
         import EletricaPanel
         
-        # Garante que os comandos do Draft e BIM estejam registrados na memória
-        try:
-            import DraftGui
-            if hasattr(DraftGui, "init"):
-                DraftGui.init()
-            import BIMGui
-            if hasattr(BIMGui, "init"):
-                BIMGui.init()
-        except Exception as e:
-            FreeCAD.Console.PrintWarning("Aviso: Falha ao despertar comandos Draft/BIM: " + str(e) + "\n")
-        
         # 1. GRUPO: INÍCIO E CONFIGURAÇÃO
         toolbar_start = ["Eletrica_StartNewProject", "Eletrica_ToggleDashboard"]
         
@@ -113,7 +102,24 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         self.appendMenu("Eletrica Elite", all_cmds)
 
     def Activated(self):
-        return
+        # Opção Nuclear: Ativa rapidamente as bancadas dependentes para registrar os comandos
+        import FreeCADGui
+        try:
+            # Salva o nome da bancada atual (Eletrica)
+            current_wb = FreeCADGui.activeWorkbench().name()
+            # "Acorda" o Draft e o BIM/Arch
+            FreeCADGui.activateWorkbench("DraftWorkbench")
+            try:
+                FreeCADGui.activateWorkbench("BIMWorkbench")
+            except:
+                try:
+                    FreeCADGui.activateWorkbench("ArchWorkbench")
+                except:
+                    pass
+            # Volta para a Eletrica instantaneamente
+            FreeCADGui.activateWorkbench(current_wb)
+        except:
+            pass
 
     def Deactivated(self):
         return

@@ -38,6 +38,48 @@ class ConduitManager:
         return pipe
 
     @staticmethod
+    def check_all_conduits_fill():
+        """
+        Verifica a taxa de ocupacao de todos os eletrodutos do projeto.
+        """
+        doc = FreeCAD.ActiveDocument
+        from EletricaLogic.Calculator import ElectricalCalculator
+        from EletricaLogic.Circuits import CircuitManager
+        
+        # Obter secoes de cabos por circuito (usando a logica do quadro de cargas)
+        # Simplificacao: Vamos assumir que cada circuito tem 3 cabos (F, N, T)
+        results = []
+        
+        for obj in doc.Objects:
+            if hasattr(obj, "CircuitosPassantes") and hasattr(obj, "Diameter"):
+                num_circuits = len(obj.CircuitosPassantes)
+                if num_circuits == 0: continue
+                
+                # Calcular area ocupada (simplificado: cada circuito = 3 fios de 2.5mm2 padrao)
+                # Em um projeto real, buscaríamos a secao exata calculada para aquele circuito
+                wire_area = ElectricalCalculator.get_wire_external_area(2.5) * 3 * num_circuits
+                
+                conduit_area = ElectricalCalculator.get_conduit_internal_area(float(obj.Diameter))
+                occupancy = (wire_area / conduit_area) * 100
+                
+                # NBR 5410: Max 40% para 3 ou mais cabos
+                limit = 40.0
+                is_ok = occupancy <= limit
+                
+                obj.TaxaOcupacao = occupancy
+                
+                if not is_ok:
+                    results.append(f"ALERTA: {obj.Label} esta com {occupancy:.1f}% de ocupacao (Limite 40%)")
+                    # Mudar cor para vermelho se estiver cheio
+                    if hasattr(obj, "ViewObject"):
+                        obj.ViewObject.ShapeColor = (1.0, 0.0, 0.0)
+                else:
+                    if hasattr(obj, "ViewObject"):
+                        obj.ViewObject.ShapeColor = (0.7, 0.7, 0.7) # Cor padrao
+                        
+        return results
+
+    @staticmethod
     def calculate_diameter(n_wires, wire_section):
         """
         Calculo simplificado de diametro baseado na NBR 5410 (40% de taxa de ocupacao)

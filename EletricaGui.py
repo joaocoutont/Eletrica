@@ -219,6 +219,40 @@ class GenerateTags:
         TagManager.generate_circuit_tags()
         return
 
+class CheckConduitFill:
+    """Comando para verificar a ocupacao dos eletrodutos"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Verificar Ocupacao de Tubos',
+            'ToolTip': 'Calcula se os fios cabem nos eletrodutos (Max 40%)'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Conduit import ConduitManager
+        from PySide2 import QtWidgets
+        alerts = ConduitManager.check_all_conduits_fill()
+        
+        if alerts:
+            msg = "\n".join(alerts)
+            QtWidgets.QMessageBox.warning(None, "Alerta de Ocupacao", msg)
+        else:
+            QtWidgets.QMessageBox.information(None, "Ocupacao OK", "Todos os eletrodutos estao dentro dos limites da NBR 5410.")
+
+class GenerateBOM:
+    """Comando para gerar a lista de materiais completa"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Lista de Materiais',
+            'ToolTip': 'Cria uma planilha com o quantitativo de componentes, tubos e cabos'
+        }
+
+    def Activated(self):
+        from EletricaLogic.BOM import BOMManager
+        BOMManager.generate_global_bom()
+        return
+
 FreeCADGui.addCommand('Eletrica_InsertSocket', InsertSocket())
 FreeCADGui.addCommand('Eletrica_InsertLight', InsertLight())
 FreeCADGui.addCommand('Eletrica_CreateConduit', CreateConduit())
@@ -231,3 +265,5 @@ FreeCADGui.addCommand('Eletrica_CalculateWiring', CalculateWiring())
 FreeCADGui.addCommand('Eletrica_PrepareIFC', PrepareIFC())
 FreeCADGui.addCommand('Eletrica_CreateTechnicalSheet', CreateTechnicalSheet())
 FreeCADGui.addCommand('Eletrica_GenerateTags', GenerateTags())
+FreeCADGui.addCommand('Eletrica_CheckConduitFill', CheckConduitFill())
+FreeCADGui.addCommand('Eletrica_GenerateBOM', GenerateBOM())

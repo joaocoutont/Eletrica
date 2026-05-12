@@ -49,3 +49,32 @@ class ElectricalCalculator:
         remaining_area = area - 6.0
         extra_units = math.floor(remaining_area / 4.0)
         return 100.0 + (extra_units * 60.0)
+
+    @staticmethod
+    def get_wire_external_area(section):
+        """Retorna a area externa aproximada (mm2) do cabo com isolacao (PVC 750V)"""
+        # Secao -> Diametro Externo Aprox (mm)
+        diameters = {
+            1.5: 3.0,
+            2.5: 3.7,
+            4.0: 4.3,
+            6.0: 5.0,
+            10.0: 6.2,
+            16.0: 7.5
+        }
+        d = diameters.get(section, 3.7)
+        return (math.pi * (d**2)) / 4.0
+
+    @staticmethod
+    def get_conduit_internal_area(nominal_diameter):
+        """Retorna a area interna util (mm2) de um eletroduto comercial (PVC)"""
+        # Nominal -> Interno Aprox (mm)
+        internal_diameters = {
+            20: 16.0,
+            25: 20.5,
+            32: 27.0,
+            40: 34.0,
+            50: 43.0
+        }
+        d = internal_diameters.get(nominal_diameter, 16.0)
+        return (math.pi * (d**2)) / 4.0

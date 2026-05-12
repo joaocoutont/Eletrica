@@ -3,24 +3,33 @@
 import FreeCAD
 import FreeCADGui
 import os
+import sys
+
+def get_eletrica_path():
+    # Tenta descobrir o caminho real da bancada
+    # 1. Tenta por __file__
+    try:
+        return os.path.dirname(__file__)
+    except:
+        pass
+    
+    # 2. Busca nos caminhos do sistema (sys.path)
+    for p in sys.path:
+        if "Mod" in p and "Eletrica" in p:
+            return p
+            
+    # 3. Fallback específico para FreeCAD 1.1 no Windows
+    return os.path.join(FreeCAD.getUserAppDataDir(), "v1-1", "Mod", "Eletrica")
+
+# Define o diretório de ícones
+ICON_DIR = os.path.join(get_eletrica_path(), "Icons")
 
 class EletricaWorkbench (Workbench):
     """Bancada de Engenharia Elétrica Elite BIM para FreeCAD 1.1"""
     
-    def __init__(self):
-        # Detecção dinâmica de ícones dentro da classe para evitar NameError
-        try:
-            # Tenta pelo caminho relativo do arquivo
-            self._base = os.path.dirname(__file__)
-        except:
-            # Fallback para o diretório de Mods do usuário
-            self._base = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica")
-            
-        self._icon_dir = os.path.join(self.base_path if hasattr(self, "base_path") else self._base, "Icons")
-        
-        self.MenuText = "Eletrica Elite"
-        self.ToolTip = "Suite Profissional de Engenharia Elétrica BIM (NBR 5410)"
-        self.Icon = os.path.join(self._icon_dir, "StartProject.png")
+    MenuText = "Eletrica Elite"
+    ToolTip = "Suite Profissional de Engenharia Elétrica BIM (NBR 5410)"
+    Icon = os.path.join(ICON_DIR, "StartProject.png")
 
     def GetClassName(self):
         return "Gui::PythonWorkbench"

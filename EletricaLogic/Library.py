@@ -59,6 +59,12 @@ class LibraryManager:
                 link.addProperty("App::PropertyPower", "Potencia", "Eletrica", "Potencia instalada em VA")
                 link.Potencia = 100.0 # Valor default
                 
+            if not hasattr(link, "Tensao"):
+                from EletricaLogic.Settings import ProjectSettings
+                link.addProperty("App::PropertyEnumeration", "Tensao", "Eletrica", "Tensao de operacao")
+                link.Tensao = ["127V", "220V", "380V"]
+                link.Tensao = ProjectSettings.get_voltage() # Pega o padrao do projeto
+                
             if not hasattr(link, "QuadroVinculado"):
                 link.addProperty("App::PropertyLink", "QuadroVinculado", "Eletrica", "Quadro de distribuicao que alimenta este item")
                 

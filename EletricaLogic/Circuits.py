@@ -20,12 +20,11 @@ class CircuitManager:
         for obj in doc.Objects:
             if hasattr(obj, "Circuito") and hasattr(obj, "Potencia"):
                 c_name = obj.Circuito
-                power = float(obj.Potencia)
-                
                 if c_name not in circuits_data:
-                    circuits_data[c_name] = {"power_va": 0.0, "objects": []}
-                
-                circuits_data[c_name]["power_va"] += power
+                    circuits_data[c_name] = {"power_va": 0.0, "tensao": "127V", "objects": []}
+                circuits_data[c_name]["power_va"] += float(obj.Potencia)
+                if hasattr(obj, "Tensao"):
+                    circuits_data[c_name]["tensao"] = obj.Tensao
                 circuits_data[c_name]["objects"].append(obj)
         
         # 2. Criar ou buscar a planilha
@@ -35,7 +34,7 @@ class CircuitManager:
             sheet = doc.addObject("Spreadsheet::Sheet", sheet_name)
         
         # 3. Preencher cabecalho
-        headers = ["Circuito", "Carga (VA)", "Corrente (A)", "Secao (mm2)", "Comprimento (m)", "Queda Tensao (%)", "Status"]
+        headers = ["Circuito", "Tensao", "Carga (VA)", "Corrente (A)", "Secao (mm2)", "Comprimento (m)", "Queda (%)", "Status"]
         for col, text in enumerate(headers):
             cell = chr(65 + col) + "1"
             sheet.set(cell, text)
@@ -43,7 +42,6 @@ class CircuitManager:
         
         # 4. Preencher dados calculados
         row = 2
-        voltage = ProjectSettings.get_voltage()
         circuit_lengths = WiringManager.calculate_circuit_lengths()
         
         # Encontrar o pior agrupamento para cada circuito
@@ -56,7 +54,10 @@ class CircuitManager:
         
         for c_name, data in circuits_data.items():
             power_va = data["power_va"]
-            current_nominal = ElectricalCalculator.calculate_current(power_va, voltage)
+            tensao_str = data["tensao"]
+            v_val = float(tensao_str.replace("V", ""))
+            
+            current_nominal = ElectricalCalculator.calculate_current(power_va, v_val)
             
             # Aplicar fator de agrupamento
             num_in_conduit = grouping_per_circuit.get(c_name, 1)
@@ -72,17 +73,18 @@ class CircuitManager:
             # Calculo de Queda de Tensao
             drop_percent = 0.0
             if length_m > 0:
-                drop_percent = ElectricalCalculator.calculate_voltage_drop(current, length_m, wire, voltage)
+                drop_percent = ElectricalCalculator.calculate_voltage_drop(current_nominal, length_m, wire, v_val)
             
-            status = "OK" if drop_percent <= 3.0 else "REVISAR (Queda > 3%)"
+            status = "OK" if drop_percent <= 3.0 else "REVISAR"
             
             sheet.set(f"A{row}", c_name)
-            sheet.set(f"B{row}", str(round(power_va, 2)))
-            sheet.set(f"C{row}", str(round(current, 2)))
-            sheet.set(f"D{row}", str(wire))
-            sheet.set(f"E{row}", str(round(length_m, 2)))
-            sheet.set(f"F{row}", str(round(drop_percent, 2)) + "%")
-            sheet.set(f"G{row}", status)
+            sheet.set(f"B{row}", tensao_str)
+            sheet.set(f"C{row}", str(round(power_va, 2)))
+            sheet.set(f"D{row}", str(round(current_nominal, 2)))
+            sheet.set(f"E{row}", str(wire))
+            sheet.set(f"F{row}", str(round(length_m, 2)))
+            sheet.set(f"G{row}", str(round(drop_percent, 2)) + "%")
+            sheet.set(f"H{row}", status)
             
             row += 1
             

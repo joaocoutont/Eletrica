@@ -28,6 +28,11 @@ class EquipmentManager:
         if obj:
             obj.Potencia = data["power"]
             obj.Circuito = f"TUE_{data['label']}"
+            
+            # Definir tensao do equipamento (ex: chuveiro costuma ser 220V)
+            if "Chuveiro" in preset_name:
+                obj.Tensao = "220V"
+            
             if position:
                 obj.Placement.Base = position
                 

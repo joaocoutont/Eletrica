@@ -136,10 +136,12 @@ class AnalyzeSpaceLighting:
             msg += f"Area: {result['Area']:.2f} m2\n"
             msg += f"Potencia Minima (NBR 5410): {result['PowerVA']} VA\n"
             msg += f"Alvo Luminotecnico: {result['LuxTarget']} lux\n"
-            msg += f"Sugestao: {result['PointsSuggested']} pontos de luz\n"
+            msg += f"Sugestao: {result['PointsSuggested']} pontos de luz\n\n"
+            msg += "Deseja distribuir esses pontos automaticamente em grid agora?"
             
-            QtWidgets.QMessageBox.information(None, "Analise de Iluminacao", msg)
-            FreeCAD.Console.PrintMessage(msg)
+            res = QtWidgets.QMessageBox.question(None, "Analise de Iluminacao", msg, QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+            if res == QtWidgets.QMessageBox.Yes:
+                SpaceLightingManager.distribute_lights(space, result['PointsSuggested'])
 
 class BalancePhases:
     """Comando para equilibrar as fases do projeto"""

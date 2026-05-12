@@ -96,14 +96,18 @@ class InsertSwitch:
         import FreeCADGui
         
         # 1. Escolher Tipo
-        types = ["Simples", "Paralelo", "Intermediário"]
-        stype, ok1 = QtWidgets.QInputDialog.getItem(None, "Interruptor", "Tipo:", types, 0, False)
+        types = ["Simples", "Paralelo", "Intermediário", "Fotocélula", "Sensor de Presença (IR)"]
+        stype, ok1 = QtWidgets.QInputDialog.getItem(None, "Interruptor / Sensor", "Tipo:", types, 0, False)
         
         # 2. Definir Letra de Comando
         cmd, ok2 = QtWidgets.QInputDialog.getText(None, "Comando", "Letra do Comando (ex: a, b, c):", text="a")
         
         if ok1 and ok2:
-            stype_clean = "Intermediario" if "Inter" in stype else stype
+            stype_map = {
+                "Simples": "Simples", "Paralelo": "Paralelo", "Intermediário": "Intermediario",
+                "Fotocélula": "Fotocelula", "Sensor de Presença (IR)": "Sensor_IR"
+            }
+            stype_clean = stype_map.get(stype, "Simples")
             LightingManager.insert_switch(stype_clean, cmd)
             FreeCADGui.runCommand("Draft_Move")
 

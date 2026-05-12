@@ -12,7 +12,9 @@ class LightingManager:
         comp_map = {
             "Simples": "Interrup_Simples.FCStd",
             "Paralelo": "Interrup_Paralelo.FCStd",
-            "Intermediario": "Interrup_FourWay.FCStd"
+            "Intermediario": "Interrup_FourWay.FCStd",
+            "Fotocelula": "Relé_Fotocelula.FCStd",
+            "Sensor_IR": "Sensor_Presenca_PIR.FCStd"
         }
         
         comp = comp_map.get(switch_type, "Interrup_Simples.FCStd")
@@ -23,8 +25,8 @@ class LightingManager:
             if not hasattr(obj, "Comando"):
                 obj.addProperty("App::PropertyString", "Comando", "Iluminação", "Letra de Comando (ex: a)").Comando = cmd_letter
                 obj.addProperty("App::PropertyEnumeration", "TipoInterruptor", "Iluminação", "Tipo")
-                obj.TipoInterruptor = ["Simples", "Paralelo", "Intermediario"]
-                obj.TipoInterruptor = switch_type
+                obj.TipoInterruptor = ["Simples", "Paralelo", "Intermediario", "Fotocelula", "Sensor_IR"]
+                obj.TipoInterruptor = str(switch_type)
                 obj.addProperty("App::PropertyInteger", "QtdTeclas", "Iluminação", "Quantidade de Teclas").QtdTeclas = 1
                 
         FreeCAD.ActiveDocument.recompute()

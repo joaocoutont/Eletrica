@@ -596,6 +596,58 @@ class SPDAGui:
             r = SPDACalculator.calculate_franklin_radius(h)
             QtWidgets.QMessageBox.information(None, "Resultado SPDA", f"Raio de Proteção (Método Franklin): {r} metros")
 
+class SPDARiskWizard:
+    """Assistente de Analise de Risco NBR 5419"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Assistente de Risco SPDA (NBR 5419)',
+            'ToolTip': 'Avalia se o empreendimento precisa de para-raios baseado em perguntas'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.SPDARisk import SPDARiskManager
+        
+        # Sequencia de perguntas
+        length, ok1 = QtWidgets.QInputDialog.getDouble(None, "Dimensoes", "Comprimento do Prédio (m):", 20.0)
+        width, ok2 = QtWidgets.QInputDialog.getDouble(None, "Dimensoes", "Largura do Prédio (m):", 15.0)
+        height, ok3 = QtWidgets.QInputDialog.getDouble(None, "Dimensoes", "Altura do Prédio (m):", 10.0)
+        
+        if not (ok1 and ok2 and ok3): return
+        
+        ng, ok4 = QtWidgets.QInputDialog.getDouble(None, "Localidade", "Densidade de Raios (Ng) - Raios/km2/ano:", 5.0)
+        
+        locs = ["Estrutura Isolada", "Cercada por árvores", "Cercada por prédios altos"]
+        loc, ok5 = QtWidgets.QInputDialog.getItem(None, "Ambiente", "Selecione o Entorno:", locs, 0, False)
+        cd = 1.0 if "Isolada" in loc else 0.5
+        
+        structs = ["Residencial", "Escola/Público", "Hospital", "Risco Explosão/Posto"]
+        struct, ok6 = QtWidgets.QInputDialog.getItem(None, "Tipo", "Tipo de Estrutura:", structs, 0, False)
+        cf = 1.0
+        if "Hospital" in struct: cf = 5.0
+        if "Risco" in struct: cf = 10.0
+        
+        # Processar
+        data = {
+            'length': length, 'width': width, 'height': height,
+            'ng': ng, 'factor_location': cd, 'factor_structure': cf
+        }
+        
+        res = SPDARiskManager.calculate_risk(data)
+        
+        msg = f"--- Resultado da Análise (NBR 5419) ---\n\n"
+        if res['Required']:
+            msg += f"🚨 VEREDITO: SPDA OBRIGATÓRIO\n"
+            msg += f"Nível de Proteção Sugerido: {res['Level']}\n"
+        else:
+            msg += f"✅ VEREDITO: SPDA NÃO OBRIGATÓRIO\n"
+            msg += "O risco calculado está dentro dos limites toleráveis.\n"
+            
+        msg += f"\nFrequência Nd: {round(res['Nd'], 5)} raios/ano"
+        
+        QtWidgets.QMessageBox.information(None, "Veredito SPDA", msg)
+
 class CreatePanel:
     """Comando para criar um quadro de distribuicao (QDC)"""
     def GetResources(self):
@@ -666,6 +718,7 @@ FreeCADGui.addCommand('Eletrica_GenerateWireSymbols', GenerateWireSymbols())
 FreeCADGui.addCommand('Eletrica_GroundingCalculator', GroundingCalculator())
 FreeCADGui.addCommand('Eletrica_GenerateUnifilar', GenerateUnifilar())
 FreeCADGui.addCommand('Eletrica_SPDAGui', SPDAGui())
+FreeCADGui.addCommand('Eletrica_SPDARiskWizard', SPDARiskWizard())
 FreeCADGui.addCommand('Eletrica_CreatePanel', CreatePanel())
 FreeCADGui.addCommand('Eletrica_InsertTUE', InsertTUE())
 FreeCADGui.addCommand('Eletrica_InsertServiceEntrance', InsertServiceEntrance())

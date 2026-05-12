@@ -28,7 +28,8 @@ class ConduitManager:
             pipe.TaxaOcupacao = 0.0
             
         if not hasattr(pipe, "Material"):
-            pipe.addProperty("App::PropertyString", "Material", "Eletrica", "Material do eletroduto")
+            pipe.addProperty("App::PropertyEnumeration", "Material", "Eletrica", "Material do eletroduto")
+            pipe.Material = ["PVC Flexivel", "PVC Rigido Cinza", "Aco Galvanizado Leve", "Aco Galvanizado Pesado"]
             pipe.Material = "PVC Flexivel"
             
         if not hasattr(pipe, "CircuitosPassantes"):

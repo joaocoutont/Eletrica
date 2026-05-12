@@ -399,18 +399,36 @@ class CreateExposedConduit:
         from PySide2 import QtWidgets
         import FreeCADGui
         
-        # 1. Chamar o criador de conduites padrao
+        # 1. Escolha do Material e Diametro
+        materials = ["PVC Rigido Cinza", "Aco Galvanizado Leve", "Aco Galvanizado Pesado"]
+        mat, ok1 = QtWidgets.QInputDialog.getItem(None, "Material", "Selecione o Material:", materials, 0, False)
+        
+        diameters = ["1/2\" (20mm)", "3/4\" (25mm)", "1\" (32mm)", "1 1/4\" (40mm)"]
+        dia_str, ok2 = QtWidgets.QInputDialog.getItem(None, "Diametro", "Selecione o Diametro:", diameters, 1, False)
+        
+        if not (ok1 and ok2): return
+        
+        # Extrair valor numerico do diametro
+        d_val = 25.0
+        if "20mm" in dia_str: d_val = 20.0
+        elif "32mm" in dia_str: d_val = 32.0
+        elif "40mm" in dia_str: d_val = 40.0
+        
+        # 2. Chamar o criador de conduites padrao
         FreeCADGui.runCommand("Eletrica_CreateConduit")
         
-        # 2. Pegar o ultimo objeto criado e customizar
+        # 3. Pegar o ultimo objeto criado e customizar
         doc = FreeCAD.ActiveDocument
         last_obj = doc.Objects[-1]
         if hasattr(last_obj, "TaxaOcupacao"):
-            last_obj.Label = "Eletroduto_Aparente"
-            last_obj.ViewObject.ShapeColor = (0.3, 0.3, 0.3) # Cinza Tigre/Ferro
+            last_obj.Label = f"Eletroduto_{mat.replace(' ', '_')}"
+            last_obj.Material = mat
+            last_obj.Diameter = d_val
+            last_obj.ViewObject.ShapeColor = (0.3, 0.3, 0.3) # Cinza/Aco
             
-            # 3. Adicionar os conduletes
+            # 4. Adicionar Conduletes e Abracadeiras
             FittingManager.add_conduletes_to_conduit(last_obj)
+            FittingManager.add_clamps(last_obj, spacing=1200) # Abracadeira a cada 1.2m
             
         return
 

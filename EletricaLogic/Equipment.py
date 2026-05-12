@@ -78,3 +78,30 @@ class EquipmentManager:
         settings.QtdCaixas30x30 = count_30x30
         
         return count_4x2, count_octo
+
+    @staticmethod
+    def bimify_equipment(obj, equipment_type="Motor"):
+        """Transforma um objeto 3D generico em um componente eletrico inteligente"""
+        if not obj: return
+        
+        # Adicionar Propriedades de Potencia
+        if not hasattr(obj, "Potencia"):
+            obj.addProperty("App::PropertyFloat", "Potencia", "Eletrica", "Potência Ativa (W)")
+            obj.addProperty("App::PropertyFloat", "Potencia_CV", "Eletrica", "Potência em CV").Potencia_CV = 1.0
+            obj.addProperty("App::PropertyFloat", "FatorPotencia", "Eletrica", "Fator de Potencia").FatorPotencia = 0.85
+            obj.addProperty("App::PropertyFloat", "Rendimento", "Eletrica", "Rendimento (%)").Rendimento = 90.0
+            
+        # Adicionar Propriedades de Instalacao
+        if not hasattr(obj, "Tensao"):
+            obj.addProperty("App::PropertyString", "Tensao", "Eletrica", "Tensão de Operação").Tensao = "380V"
+            obj.addProperty("App::PropertyEnumeration", "TipoPartida", "Eletrica", "Método de Partida")
+            obj.TipoPartida = ["Direta", "Estrela-Triangulo", "Soft-Starter", "Inversor de Frequencia"]
+            obj.addProperty("App::PropertyString", "Circuito", "Eletrica", "Circuito de Alimentação").Circuito = "C1"
+            
+        # Adicionar Tag BIM
+        if not hasattr(obj, "TipoBIM"):
+            obj.addProperty("App::PropertyString", "TipoBIM", "BIM", "Categoria").TipoBIM = equipment_type
+            
+        FreeCAD.Console.PrintMessage(f"Objeto {obj.Label} agora é um componente elétrico BIM.\n")
+        FreeCAD.ActiveDocument.recompute()
+        return True

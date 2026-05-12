@@ -97,6 +97,34 @@ class CreateConduit:
         for obj in selection:
             if hasattr(obj, "Points"): ConduitManager.create_conduit(obj.Points)
 
+class BIMifyEquipment:
+    """Converte um objeto 3D qualquer em equipamento eletrico inteligente"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'BIMificar Objeto (Tornar Motor/Máquina)',
+            'ToolTip': 'Injeta propriedades eletricas e de calculo em qualquer objeto 3D selecionado'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Equipment import EquipmentManager
+        from PySide2 import QtWidgets
+        import FreeCADGui
+        
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione o objeto 3D que deseja transformar.")
+            return
+            
+        types = ["Motor Elétrico", "Máquina Industrial", "Ponte Rolante", "Transformador", "Painel Especial"]
+        choice, ok = QtWidgets.QInputDialog.getItem(None, "BIMify", "Tipo de Equipamento:", types, 0, False)
+        
+        if ok:
+            for obj in selection:
+                EquipmentManager.bimify_equipment(obj, equipment_type=choice)
+            
+            QtWidgets.QMessageBox.information(None, "Sucesso", "Propriedades elétricas injetadas! Preencha os dados na aba 'Eletrica' do objeto.")
+
 class CreateCableTray:
     def GetResources(self):
         return {'Pixmap': 'freecad', 'MenuText': 'Lançar Eletrocalha', 'ToolTip': 'Cria infra retangular'}
@@ -297,6 +325,7 @@ cmds = {
     'Eletrica_GenerateUnifilar': GenerateUnifilar(),
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
     'Eletrica_GenerateBudget': GenerateBudget(),
+    'Eletrica_BIMifyEquipment': BIMifyEquipment(),
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_InsertSmartDevice': InsertSmartDevice(),
     'Eletrica_CheckSelectivity': CheckSelectivity(),

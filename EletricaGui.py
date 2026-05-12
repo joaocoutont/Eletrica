@@ -537,6 +537,42 @@ class RunSafetyAudit:
             msg += f"- EPI Sugerido: {res['EPI_Sugerido']}\n"
             QtWidgets.QMessageBox.information(None, "Segurança NR-10", msg)
 
+class InsertBoreholePump:
+    """Insere uma bomba submersa Ebara e dimensiona o cabo para a profundidade"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Bomba de Poço Submersa (Ebara)',
+            'ToolTip': 'Calcula bitola do cabo considerando profundidade do poço'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.BoreholePumps import BoreholePumpManager
+        
+        # 1. Modelo Ebara
+        models = list(BoreholePumpManager.get_ebara_models().keys())
+        model, ok1 = QtWidgets.QInputDialog.getItem(None, "Ebara", "Selecione a Série:", models, 0, False)
+        if not ok1: return
+        
+        # 2. CV
+        cv, ok2 = QtWidgets.QInputDialog.getDouble(None, "Potência", "Potência do Motor (CV):", 5.0, 0.5, 100.0, 1)
+        if not ok2: return
+        
+        # 3. Profundidade
+        depth, ok3 = QtWidgets.QInputDialog.getInt(None, "Poço", "Profundidade de Instalação (m):", 150, 10, 500, 1)
+        
+        if ok3:
+            obj = BoreholePumpManager.insert_ebara_pump(model, cv, depth)
+            gauge = obj.CaboNecessario_mm2
+            drop = obj.QuedaTensaoCalculada
+            
+            msg = f"Bomba Ebara {cv} CV a {depth}m:\n\n"
+            msg += f"⚠️ Bitola Mínima do Cabo: {gauge} mm²\n"
+            msg += f"📊 Queda de Tensão Final: {drop:.2f}%\n"
+            msg += "\nNota: Dimensionamento rigoroso para evitar queima do motor submerso."
+            QtWidgets.QMessageBox.information(None, "Dimensionamento de Poço", msg)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -556,6 +592,7 @@ cmds = {
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_ServiceEntranceWizard': ServiceEntranceWizard(),
     'Eletrica_InsertSubstation': InsertSubstation(),
+    'Eletrica_InsertBoreholePump': InsertBoreholePump(),
     'Eletrica_SetupEmergencyPower': SetupEmergencyPower(),
     'Eletrica_GenerateControlWiring': GenerateControlWiring(),
     'Eletrica_RunSafetyAudit': RunSafetyAudit(),

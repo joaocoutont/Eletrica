@@ -47,6 +47,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_InsertTUE",
             "Eletrica_ServiceEntranceWizard",
             "Eletrica_InsertSubstation",
+            "Eletrica_InsertBoreholePump",
             "Eletrica_SetupEmergencyPower",
             "Eletrica_GenerateControlWiring",
             "Eletrica_RunSafetyAudit",

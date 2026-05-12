@@ -90,6 +90,9 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Draft_Snap_Grid", "Draft_Snap_WorkingPlane"
         ]
         
+        # 8. GRUPO: ESTRUTURA BIM
+        toolbar_bim = ["Arch_Site", "Arch_Building", "Arch_BuildingPart"]
+        
         # Registrando as Toolbars Separadas (Isso cria as divisórias visuais)
         self.appendToolbar("Elite 1: Início", toolbar_start)
         self.appendToolbar("Elite 2: Modelagem", toolbar_model)
@@ -98,9 +101,10 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         self.appendToolbar("Elite 5: Documentação", toolbar_doc)
         self.appendToolbar("Elite 6: Desenho (Draft)", toolbar_draft)
         self.appendToolbar("Elite 7: Snaps (Encaixe)", toolbar_snap)
+        self.appendToolbar("Elite 8: Estrutura BIM", toolbar_bim)
         
         # Menu consolidado
-        all_cmds = toolbar_start + toolbar_model + toolbar_infra + toolbar_eng + toolbar_doc + toolbar_draft
+        all_cmds = toolbar_start + toolbar_model + toolbar_infra + toolbar_eng + toolbar_doc + toolbar_draft + toolbar_bim
         self.appendMenu("Eletrica Elite", all_cmds)
 
     def Activated(self):

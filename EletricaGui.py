@@ -290,6 +290,42 @@ class ManageBoxes:
         c4x2, cocto = EquipmentManager.add_boxes_to_all()
         QtWidgets.QMessageBox.information(None, "Quantitativo de Caixas", f"Projeto Analisado:\n- Caixas 4x2: {c4x2}\n- Caixas Octogonais (Teto): {cocto}")
 
+class GroundingCalculator:
+    """Calculadora de malha de aterramento"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Calculadora de Aterramento',
+            'ToolTip': 'Calcula o numero de hastes de terra baseada na resistividade do solo'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Grounding import GroundingManager
+        
+        rho, ok = QtWidgets.QInputDialog.getDouble(None, "Aterramento", "Resistividade do Solo (Ohm.m):", 100.0, 1, 5000, 1)
+        if ok:
+            res = GroundingManager.calculate_rods(rho)
+            msg = f"--- Resultado Aterramento ---\n"
+            msg += f"Resistencia de 1 haste: {res['SingleRodResistance']} Ohms\n"
+            msg += f"Numero de hastes para {res['TargetResistance']} Ohms: {res['RequiredRods']}\n"
+            QtWidgets.QMessageBox.information(None, "Resultado", msg)
+
+class GenerateUnifilar:
+    """Gera um esquema unifilar grafico"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Diagrama Unifilar',
+            'ToolTip': 'Cria um esquema grafico unifilar no TechDraw'
+        }
+
+    def Activated(self):
+        # Por enquanto, vamos avisar que os dados estao no Quadro de Cargas
+        # e preparar a folha para o desenho manual auxiliado
+        from PySide2 import QtWidgets
+        QtWidgets.QMessageBox.information(None, "Diagrama Unifilar", "Funcionalidade de desenho grafico em desenvolvimento.\nUse os dados do Quadro de Cargas para compor sua prancha.")
+
 class CheckConduitFill:
     """Comando para verificar a ocupacao dos eletrodutos"""
     def GetResources(self):
@@ -339,6 +375,8 @@ FreeCADGui.addCommand('Eletrica_GenerateTags', GenerateTags())
 FreeCADGui.addCommand('Eletrica_CheckConduitFill', CheckConduitFill())
 FreeCADGui.addCommand('Eletrica_GenerateBOM', GenerateBOM())
 FreeCADGui.addCommand('Eletrica_GenerateWireSymbols', GenerateWireSymbols())
+FreeCADGui.addCommand('Eletrica_GroundingCalculator', GroundingCalculator())
+FreeCADGui.addCommand('Eletrica_GenerateUnifilar', GenerateUnifilar())
 FreeCADGui.addCommand('Eletrica_InsertTUE', InsertTUE())
 FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())
 FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

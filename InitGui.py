@@ -56,6 +56,8 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_BalancePhases",
             "Eletrica_CalculateWiring",
             "Eletrica_PrepareIFC",
+            "Eletrica_GenerateUnifilar",
+            "Eletrica_GroundingCalculator",
             "Eletrica_InsertSocket", 
             "Eletrica_InsertLight",
             "Eletrica_InsertTUE"

@@ -78,3 +78,20 @@ class ElectricalCalculator:
         }
         d = internal_diameters.get(nominal_diameter, 16.0)
         return (math.pi * (d**2)) / 4.0
+
+    @staticmethod
+    def get_grouping_factor(num_circuits):
+        """Retorna o fator de agrupamento (fca) segundo a NBR 5410"""
+        factors = {
+            1: 1.0,
+            2: 0.80,
+            3: 0.70,
+            4: 0.65,
+            5: 0.60,
+            6: 0.57,
+            7: 0.54,
+            8: 0.52,
+            9: 0.50
+        }
+        if num_circuits >= 9: return 0.50
+        return factors.get(num_circuits, 1.0)

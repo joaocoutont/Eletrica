@@ -46,10 +46,25 @@ class CircuitManager:
         voltage = ProjectSettings.get_voltage()
         circuit_lengths = WiringManager.calculate_circuit_lengths()
         
+        # Encontrar o pior agrupamento para cada circuito
+        grouping_per_circuit = {}
+        for obj in doc.Objects:
+            if hasattr(obj, "CircuitosPassantes"):
+                count = len(obj.CircuitosPassantes)
+                for c in obj.CircuitosPassantes:
+                    grouping_per_circuit[c] = max(grouping_per_circuit.get(c, 1), count)
+        
         for c_name, data in circuits_data.items():
             power_va = data["power_va"]
-            current = ElectricalCalculator.calculate_current(power_va, voltage)
-            wire = ElectricalCalculator.get_standard_wire_gauge(current)
+            current_nominal = ElectricalCalculator.calculate_current(power_va, voltage)
+            
+            # Aplicar fator de agrupamento
+            num_in_conduit = grouping_per_circuit.get(c_name, 1)
+            fca = ElectricalCalculator.get_grouping_factor(num_in_conduit)
+            current_corrected = current_nominal / fca
+            
+            # Dimensionar com a corrente corrigida
+            wire = ElectricalCalculator.get_standard_wire_gauge(current_corrected)
             
             # Comprimento real do 3D (em metros)
             length_m = circuit_lengths.get(c_name, 0.0) / 1000.0

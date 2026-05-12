@@ -71,6 +71,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_ToggleDashboard",
             "Eletrica_GenerateBudget",
             "Eletrica_BIMifyEquipment",
+            "Eletrica_DimensionMotorStarter",
             "Eletrica_CloneFloor",
             "Eletrica_Generate3DWiring",
             "Eletrica_CreateIndustrialConnection",

@@ -467,6 +467,35 @@ class InsertSubstation:
             msg += f"- Dica: {res['Nota']}\n"
             QtWidgets.QMessageBox.information(None, "Subestação de MT Definida", msg)
 
+class DimensionMotorStarter:
+    """Dimensiona a partida WEG para o motor selecionado"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Dimensionar Partida Motor (WEG)',
+            'ToolTip': 'Sugere Disjuntor-Motor, Contator, Soft-Starter ou Inversor conforme o CV'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Starters import StarterManager
+        import FreeCADGui
+        
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione o Motor (Objeto BIMificado) para dimensionar.")
+            return
+            
+        for obj in selection:
+            res = StarterManager.dimension_starter(obj)
+            if res:
+                msg = f"Dimensionamento WEG para {obj.Label}:\n\n"
+                msg += f"- Método: {res['Metodo']}\n"
+                msg += f"- Proteção: {res['Protecao']}\n"
+                msg += f"- Acionamento: {res['Acionamento']}\n"
+                msg += "\nDados salvos para o Orçamento e BOM."
+                QtWidgets.QMessageBox.information(None, "Engenharia de CCM", msg)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -482,6 +511,7 @@ cmds = {
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
     'Eletrica_GenerateBudget': GenerateBudget(),
     'Eletrica_BIMifyEquipment': BIMifyEquipment(),
+    'Eletrica_DimensionMotorStarter': DimensionMotorStarter(),
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_ServiceEntranceWizard': ServiceEntranceWizard(),
     'Eletrica_InsertSubstation': InsertSubstation(),

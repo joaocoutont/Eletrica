@@ -7,17 +7,34 @@ class LibraryManager:
         self.path_3d = path_3d or r"D:\Objetos 3D\Curso FRECAD ELETRICO\HRC_Nova_Biblioteca_3D"
         self.path_2d = path_2d or r"D:\Objetos 3D\Curso FRECAD ELETRICO\Biblioteca 2D"
 
+    def get_active_level_height(self):
+        """Tenta encontrar a altura do nivel (BuildingPart) ativo no Workbench BIM"""
+        try:
+            import Arch
+            active_obj = Arch.getActiveFloor() # Tenta pegar o andar/nivel ativo
+            if active_obj:
+                # Retorna a altura (Z) do nivel
+                return active_obj.Placement.Base.z
+        except:
+            pass
+        return None
+
     def list_components(self):
         """Lista todos os componentes .FCStd disponiveis na biblioteca 3D"""
         if not os.path.exists(self.path_3d):
             return []
         return [f for f in os.listdir(self.path_3d) if f.endswith('.FCStd')]
 
-    def insert_component(self, filename, label=None, symbol_height=2700.0):
+    def insert_component(self, filename, label=None, symbol_height=None):
         """
         Insere um componente da biblioteca no documento ativo usando App::Link.
-        Isso mantem o arquivo original como referencia (BIM).
         """
+        # Se nao for passada altura, tenta detectar o nivel BIM
+        if symbol_height is None:
+            bim_height = self.get_active_level_height()
+            # Se encontrar o nivel, usamos a altura dele + um offset para o 'teto' (ex: 2.7m)
+            # Ou podemos usar exatamente a altura do nivel se o usuario ja estiver no teto.
+            symbol_height = bim_height + 2700.0 if bim_height is not None else 2700.0
         full_path = os.path.join(self.path_3d, filename)
         if not os.path.exists(full_path):
             FreeCAD.Console.PrintError(f"Arquivo nao encontrado: {full_path}\n")

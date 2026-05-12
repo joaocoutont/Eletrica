@@ -22,12 +22,18 @@ class LibraryPanel:
         
         # Configuracao de Altura (Teto)
         self.h_layout = QtWidgets.QHBoxLayout()
-        self.h_label = QtWidgets.QLabel("Altura do Plano 2D (mm):")
+        self.h_label = QtWidgets.QLabel("Altura Plano (mm):")
         self.spin_height = QtWidgets.QDoubleSpinBox()
         self.spin_height.setRange(0, 10000)
         self.spin_height.setValue(2700.0)
+        self.check_auto = QtWidgets.QCheckBox("Auto BIM")
+        self.check_auto.setChecked(True)
+        self.check_auto.toggled.connect(lambda: self.spin_height.setEnabled(not self.check_auto.isChecked()))
+        self.spin_height.setEnabled(False) # Começa em auto
+        
         self.h_layout.addWidget(self.h_label)
         self.h_layout.addWidget(self.spin_height)
+        self.h_layout.addWidget(self.check_auto)
         self.layout.addLayout(self.h_layout)
         
         # Botao Inserir
@@ -55,7 +61,7 @@ class LibraryPanel:
             return
         
         filename = selected.text()
-        height = self.spin_height.value()
+        height = None if self.check_auto.isChecked() else self.spin_height.value()
         self.manager.insert_component(filename, symbol_height=height)
 
 # Comando para abrir o painel

@@ -3,18 +3,49 @@ import FreeCAD
 import FreeCADGui
 
 class InsertSocket:
-    """Comando para inserir uma tomada (placeholder)"""
+    """Insere tomadas com presets de altura e deteccao de andar"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad', # Usando icone padrao por enquanto
-            'MenuText': 'Inserir Tomada',
-            'ToolTip': 'Insere uma tomada 2P+T no projeto'
+            'Pixmap': 'freecad',
+            'MenuText': 'Inserir Tomada (TUG)',
+            'ToolTip': 'Insere tomadas em alturas padronizadas (Baixa, Media, Alta)'
         }
 
     def Activated(self):
-        FreeCAD.Console.PrintMessage("Comando Inserir Tomada Ativado\n")
-        # Aqui entraria a logica de criacao do objeto 3D BIM
-        return
+        from PySide2 import QtWidgets
+        from EletricaLogic.Library import LibraryManager
+        import FreeCADGui
+        
+        # 1. Escolher Altura (Preset)
+        heights = {"Baixa (0.30m)": 300, "Média (1.10m)": 1100, "Alta (2.10m)": 2100}
+        pos, ok = QtWidgets.QInputDialog.getItem(None, "Altura da Tomada", "Selecione a Posicao:", list(heights.keys()), 0, False)
+        if not ok: return
+        z_offset = heights[pos]
+        
+        # 2. Detectar Andar (BuildingPart) ativo
+        base_z = 0.0
+        active_container = None
+        
+        # Verifica se ha um andar selecionado na árvore
+        selection = FreeCADGui.Selection.getSelection()
+        for s in selection:
+            if hasattr(s, "InList") and s.isDerivedFrom("App::Part"): # BuildingPart / Floor
+                base_z = s.Placement.Base.z
+                active_container = s
+                break
+        
+        # 3. Inserir e posicionar
+        manager = LibraryManager()
+        obj = manager.insert_component("Tomada_TUG.FCStd")
+        if obj:
+            # Coloca na cota correta (Andar + Offset)
+            obj.Placement.Base = FreeCAD.Vector(0, 0, base_z + z_offset)
+            if active_container:
+                active_container.addObject(obj)
+            
+            FreeCAD.Console.PrintMessage(f"Tomada inserida a {z_offset}mm do piso do andar atual.\n")
+            # Inicia o comando de mover para o usuario posicionar na planta
+            FreeCADGui.runCommand("Draft_Move")
 
 class InsertLight:
     """Comando para inserir um ponto de luz (placeholder)"""

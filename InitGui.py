@@ -46,6 +46,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_MergeSwitches",
             "Eletrica_InsertTUE",
             "Eletrica_ServiceEntranceWizard",
+            "Eletrica_InsertSubstation",
             "Eletrica_CreatePanel",
             "Eletrica_CreateConduit",
             "Eletrica_CreateExposedConduit",

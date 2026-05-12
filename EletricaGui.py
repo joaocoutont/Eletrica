@@ -434,6 +434,31 @@ class ServiceEntranceWizard:
             msg += f"- Caixa: {res['caixa']}\n"
             QtWidgets.QMessageBox.information(None, "Padrão Definido", msg)
 
+class InsertSubstation:
+    """Ferramenta para dimensionar e inserir uma subestacao particular"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Dimensionar Subestação Particular (Aérea/Abrigada)',
+            'ToolTip': 'Sugere o tipo de subestacao e protecao com base no kVA'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Substation import SubstationManager
+        
+        kva, ok = QtWidgets.QInputDialog.getInt(None, "Subestação", "Potência do Transformador (kVA):", 112, 15, 5000, 1)
+        
+        if ok:
+            SubstationManager.create_substation_bim(kva)
+            res = SubstationManager.dimension_substation(kva)
+            msg = f"Dimensionamento para {kva} kVA:\n\n"
+            msg += f"- Tipo: {res['Tipo']}\n"
+            msg += f"- Estrutura: {res['Estrutura']}\n"
+            msg += f"- Proteção: {res['Protecao']}\n"
+            msg += f"- Dica: {res['Nota']}\n"
+            QtWidgets.QMessageBox.information(None, "Subestação Definida", msg)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -451,6 +476,7 @@ cmds = {
     'Eletrica_BIMifyEquipment': BIMifyEquipment(),
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_ServiceEntranceWizard': ServiceEntranceWizard(),
+    'Eletrica_InsertSubstation': InsertSubstation(),
     'Eletrica_InsertSmartDevice': InsertSmartDevice(),
     'Eletrica_CheckSelectivity': CheckSelectivity(),
     'Eletrica_CreatePanel': CreatePanel(),

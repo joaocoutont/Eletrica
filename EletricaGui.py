@@ -86,9 +86,25 @@ class InsertSocket:
         from EletricaLogic.Library import LibraryManager
         import FreeCADGui
         
+        # 1. Pergunta a Potencia conforme NBR 5410
+        power, ok1 = QtWidgets.QInputDialog.getInt(None, "NBR 5410 - Potência", "Potência da Tomada (VA/W):", 100, 100, 15000, 100)
+        if not ok1: return
+        
+        # 2. Sugere o Tipo conforme a norma
+        suggestion = "TUG (Uso Geral - 10A)"
+        if power == 600:
+            suggestion = "TUG (Cozinha/Lavanderia - 10A)"
+        elif power >= 1200:
+            suggestion = "TUE (Uso Específico - 20A)"
+            
+        types = ["TUG (Uso Geral - 10A)", "TUG (Cozinha/Lavanderia - 10A)", "TUE (Uso Específico - 20A)"]
+        selected_type, ok2 = QtWidgets.QInputDialog.getItem(None, "Tipo de Tomada", "Classificação Sugerida:", types, types.index(suggestion), False)
+        if not ok2: return
+        
+        # 3. Define a altura
         heights = {"Baixa (0.30m)": 300, "Média (1.10m)": 1100, "Alta (2.10m)": 2100}
-        pos, ok = QtWidgets.QInputDialog.getItem(None, "Altura da Tomada", "Selecione a Posicao:", list(heights.keys()), 0, False)
-        if not ok: return
+        pos, ok3 = QtWidgets.QInputDialog.getItem(None, "Altura", "Selecione a Altura:", list(heights.keys()), 1, False)
+        if not ok3: return
         z_offset = heights[pos]
         
         base_z = 0.0
@@ -101,9 +117,20 @@ class InsertSocket:
                 break
         
         manager = LibraryManager()
-        obj = manager.insert_component("Tomada_TUG.FCStd")
+        file_name = "Tomada_TUE.FCStd" if "TUE" in selected_type else "Tomada_TUG.FCStd"
+        obj = manager.insert_component(file_name)
+        
         if obj:
             obj.Placement.Base = FreeCAD.Vector(0, 0, base_z + z_offset)
+            # Injeta os metadados da norma
+            if not hasattr(obj, "Potencia"):
+                obj.addProperty("App::PropertyInteger", "Potencia", "Eletrica")
+            obj.Potencia = power
+            
+            if not hasattr(obj, "Classificacao"):
+                obj.addProperty("App::PropertyString", "Classificacao", "Eletrica")
+            obj.Classificacao = selected_type
+            
             if active_container:
                 active_container.addObject(obj)
             FreeCADGui.runCommand("Draft_Move")

@@ -1,3 +1,6 @@
+# ⚡ SUITE ELITE BIM - Engenharia Elétrica
+# Autor: João Couto
+# Contato: joaocoutont@hotmail.com
 # GUI Commands for Eletrica Workbench
 import FreeCAD
 import FreeCADGui

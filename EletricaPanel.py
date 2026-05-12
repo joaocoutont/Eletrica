@@ -1,3 +1,7 @@
+# ⚡ SUITE ELITE BIM - Engenharia Elétrica
+# Autor: João Couto
+# Contato: joaocoutont@hotmail.com
+# Sidebar Dashboard for Eletrica Workbench
 # Dashboard Lateral - Eletrica BIM
 import FreeCAD
 try:

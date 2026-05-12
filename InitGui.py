@@ -1,6 +1,7 @@
-# FreeCAD Eletrica Workbench
-# This file is part of the Eletrica Workbench for FreeCAD
-
+# ⚡ SUITE ELITE BIM - Engenharia Elétrica
+# Autor: João Couto
+# Contato: joaocoutont@hotmail.com
+# Main Entry Point for Eletrica Workbench
 import FreeCADGui
 
 class EletricaWorkbench (FreeCADGui.Workbench):

@@ -242,6 +242,54 @@ class GenerateWireSymbols:
                 AnnotationManager.create_tick_marks(obj)
         return
 
+class InsertTUE:
+    """Comando para inserir equipamentos de uso especifico (Chuveiro, AC, etc)"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Inserir Equipamento Especial (TUE)',
+            'ToolTip': 'Insere chuveiros, ar condicionado e outros com carga definida'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Equipment import EquipmentManager
+        
+        presets = EquipmentManager.get_tue_presets()
+        choice, ok = QtWidgets.QInputDialog.getItem(None, "Inserir TUE", "Selecione o equipamento:", list(presets.keys()), 0, False)
+        
+        if ok:
+            EquipmentManager.insert_tue(choice)
+            FreeCAD.Console.PrintMessage(f"Equipamento {choice} inserido.\n")
+
+class ApplyHeatmap:
+    """Comando para aplicar mapa de calor nos eletrodutos"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Mapa de Calor (Inspeção)',
+            'ToolTip': 'Colore eletrodutos baseado na ocupação (Verde/Vermelho)'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Visuals import VisualManager
+        VisualManager.apply_voltage_drop_heatmap()
+
+class ManageBoxes:
+    """Comando para calcular caixas de passagem"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Calcular Caixas de Passagem',
+            'ToolTip': 'Conta as caixas 4x2 e Octogonais baseadas nos componentes'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Equipment import EquipmentManager
+        from PySide2 import QtWidgets
+        c4x2, cocto = EquipmentManager.add_boxes_to_all()
+        QtWidgets.QMessageBox.information(None, "Quantitativo de Caixas", f"Projeto Analisado:\n- Caixas 4x2: {c4x2}\n- Caixas Octogonais (Teto): {cocto}")
+
 class CheckConduitFill:
     """Comando para verificar a ocupacao dos eletrodutos"""
     def GetResources(self):
@@ -291,3 +339,6 @@ FreeCADGui.addCommand('Eletrica_GenerateTags', GenerateTags())
 FreeCADGui.addCommand('Eletrica_CheckConduitFill', CheckConduitFill())
 FreeCADGui.addCommand('Eletrica_GenerateBOM', GenerateBOM())
 FreeCADGui.addCommand('Eletrica_GenerateWireSymbols', GenerateWireSymbols())
+FreeCADGui.addCommand('Eletrica_InsertTUE', InsertTUE())
+FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())
+FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

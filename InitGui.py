@@ -48,14 +48,17 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_GenerateLegend",
             "Eletrica_GenerateTags",
             "Eletrica_GenerateWireSymbols",
+            "Eletrica_ApplyHeatmap",
             "Eletrica_CheckConduitFill",
+            "Eletrica_ManageBoxes",
             "Eletrica_CreateTechnicalSheet",
             "Eletrica_AnalyzeSpaceLighting",
             "Eletrica_BalancePhases",
             "Eletrica_CalculateWiring",
             "Eletrica_PrepareIFC",
             "Eletrica_InsertSocket", 
-            "Eletrica_InsertLight"
+            "Eletrica_InsertLight",
+            "Eletrica_InsertTUE"
         ]
         
         # Comandos essenciais do BIM/Arch e Draft que vamos 'emprestar'

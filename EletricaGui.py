@@ -541,17 +541,39 @@ class CreateCableTray:
         from PySide2 import QtWidgets
         import FreeCADGui
         
-        w, ok1 = QtWidgets.QInputDialog.getInt(None, "Eletrocalha", "Largura (mm):", 200, 50, 1000, 50)
-        h, ok2 = QtWidgets.QInputDialog.getInt(None, "Eletrocalha", "Altura (mm):", 100, 50, 1000, 50)
+        # 1. Configurar Calha
+        materials = ["Aço Galvanizado", "Alumínio", "Aço Inox"]
+        mat, ok1 = QtWidgets.QInputDialog.getItem(None, "Material", "Selecione o Material:", materials, 0, False)
         
-        if ok1 and ok2:
-            # Implementacao: Pedir pontos via Draft
-            FreeCADGui.runCommand("Draft_Wire")
-            doc = FreeCAD.ActiveDocument
-            last_wire = doc.Objects[-1]
-            if hasattr(last_wire, "Points"):
-                ConduitManager.create_cable_tray(last_wire.Points, w, h)
-                doc.removeObject(last_wire.Name)
+        types = ["Lisa (Fechada)", "Perfurada", "Aramada (Leito)"]
+        ctype, ok2 = QtWidgets.QInputDialog.getItem(None, "Tipo", "Tipo de Calha:", types, 1, False)
+        
+        w, ok3 = QtWidgets.QInputDialog.getInt(None, "Dimensoes", "Largura (mm):", 200, 50, 1000, 50)
+        h, ok4 = QtWidgets.QInputDialog.getInt(None, "Dimensoes", "Altura (mm):", 100, 50, 1000, 50)
+        
+        if not (ok1 and ok2 and ok3 and ok4): return
+        
+        # 2. Desenhar Caminho
+        FreeCADGui.runCommand("Draft_Wire")
+        doc = FreeCAD.ActiveDocument
+        last_wire = doc.Objects[-1]
+        
+        if hasattr(last_wire, "Points"):
+            tray = ConduitManager.create_cable_tray(last_wire.Points, w, h)
+            tray.Label = f"Eletrocalha_{mat}_{ctype}".replace(" ", "_")
+            
+            # Adicionar Metadados BIM
+            if not hasattr(tray, "Material"):
+                tray.addProperty("App::PropertyString", "Material", "Eletrica", "Material").Material = mat
+                tray.addProperty("App::PropertyString", "TipoCalha", "Eletrica", "Tipo").TipoCalha = ctype
+            
+            # Ajustar Cor Visual
+            if "Alumínio" in mat: tray.ViewObject.ShapeColor = (0.8, 0.8, 0.8)
+            elif "Inox" in mat: tray.ViewObject.ShapeColor = (0.9, 0.9, 1.0)
+            else: tray.ViewObject.ShapeColor = (0.5, 0.5, 0.5)
+            
+            doc.removeObject(last_wire.Name)
+            doc.recompute()
 
 class InsertTUE:
     """Comando para inserir equipamentos de uso especifico (Chuveiro, AC, etc)"""

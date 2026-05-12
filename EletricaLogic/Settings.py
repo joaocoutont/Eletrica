@@ -9,13 +9,16 @@ class ProjectSettings:
         if not doc: return None
         
         obj = doc.getObject("Configuracoes_Eletrica")
-        if not obj:
-            obj = doc.addObject("App::FeaturePython", "Configuracoes_Eletrica")
-            obj.addProperty("App::PropertyEnumeration", "Tensao", "Geral", "Tensao nominal do projeto")
+            obj.addProperty("App::PropertyString", "Autor", "Geral", "Autor do projeto")
+            obj.addProperty("App::PropertyString", "NomeProjeto", "Geral", "Nome do projeto")
+            obj.addProperty("App::PropertyEnumeration", "TipoEdificacao", "Geral", "Tipo de edificacao para calculos")
+            obj.TipoEdificacao = ["Residencial", "Comercial (Escritorio)", "Industrial", "Hospitalar"]
+            
+            obj.addProperty("App::PropertyEnumeration", "Tensao", "Eletrica", "Tensao nominal")
             obj.Tensao = ["127V", "220V", "380V"]
             obj.Tensao = "220V"
             
-            obj.addProperty("App::PropertyFloat", "FatorPotencia", "Geral", "Fator de potencia global")
+            obj.addProperty("App::PropertyFloat", "FatorPotencia", "Eletrica", "Fator de potencia global")
             obj.FatorPotencia = 0.95
             
             obj.ViewObject.Proxy = None # Objeto sem representacao visual

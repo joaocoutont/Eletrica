@@ -38,3 +38,14 @@ class ElectricalCalculator:
         rho = 0.0172 if material == "Cu" else 0.0282
         drop_v = (2 * rho * length * current) / section
         return (drop_v / voltage) * 100
+
+    @staticmethod
+    def calculate_min_lighting_power(area):
+        """Calcula a potencia minima de iluminacao (VA) segundo a NBR 5410"""
+        if area <= 6.0:
+            return 100.0
+        
+        # 100VA para os primeiros 6m2 + 60VA para cada 4m2 inteiros restantes
+        remaining_area = area - 6.0
+        extra_units = math.floor(remaining_area / 4.0)
+        return 100.0 + (extra_units * 60.0)

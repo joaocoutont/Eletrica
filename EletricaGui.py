@@ -109,9 +109,42 @@ class OpenSettings:
             obj.Tensao = tensao
             FreeCAD.Console.PrintMessage(f"Tensao definida para {tensao}\n")
 
+class AnalyzeSpaceLighting:
+    """Comando para sugerir iluminacao baseada no Arch Space selecionado"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Analisar Iluminacao do Espaco',
+            'ToolTip': 'Calcula potencia e pontos de luz para o espaco selecionado'
+        }
+
+    def Activated(self):
+        import FreeCADGui
+        from EletricaLogic.Spaces import SpaceLightingManager
+        from PySide2 import QtWidgets
+        
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            FreeCAD.Console.PrintWarning("Selecione um objeto 'Space' do Workbench BIM.\n")
+            return
+            
+        space = selection[0]
+        result = SpaceLightingManager.analyze_space(space)
+        
+        if result:
+            msg = f"--- Analise do Espaco: {space.Label} ---\n"
+            msg += f"Area: {result['Area']:.2f} m2\n"
+            msg += f"Potencia Minima (NBR 5410): {result['PowerVA']} VA\n"
+            msg += f"Alvo Luminotecnico: {result['LuxTarget']} lux\n"
+            msg += f"Sugestao: {result['PointsSuggested']} pontos de luz\n"
+            
+            QtWidgets.QMessageBox.information(None, "Analise de Iluminacao", msg)
+            FreeCAD.Console.PrintMessage(msg)
+
 FreeCADGui.addCommand('Eletrica_InsertSocket', InsertSocket())
 FreeCADGui.addCommand('Eletrica_InsertLight', InsertLight())
 FreeCADGui.addCommand('Eletrica_CreateConduit', CreateConduit())
 FreeCADGui.addCommand('Eletrica_GenerateLoadSchedule', GenerateLoadSchedule())
 FreeCADGui.addCommand('Eletrica_GenerateLegend', GenerateLegend())
 FreeCADGui.addCommand('Eletrica_OpenSettings', OpenSettings())
+FreeCADGui.addCommand('Eletrica_AnalyzeSpaceLighting', AnalyzeSpaceLighting())

@@ -143,6 +143,20 @@ class AnalyzeSpaceLighting:
             if res == QtWidgets.QMessageBox.Yes:
                 SpaceLightingManager.distribute_lights(space, result['PointsSuggested'])
 
+class CreateTechnicalSheet:
+    """Comando para gerar a prancha final do projeto no TechDraw"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Prancha do Projeto',
+            'ToolTip': 'Cria uma folha de desenho com quadro de cargas e legenda'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Documentation import DocumentationManager
+        DocumentationManager.create_technical_sheet()
+        return
+
 class BalancePhases:
     """Comando para equilibrar as fases do projeto"""
     def GetResources(self):
@@ -201,3 +215,4 @@ FreeCADGui.addCommand('Eletrica_AnalyzeSpaceLighting', AnalyzeSpaceLighting())
 FreeCADGui.addCommand('Eletrica_BalancePhases', BalancePhases())
 FreeCADGui.addCommand('Eletrica_CalculateWiring', CalculateWiring())
 FreeCADGui.addCommand('Eletrica_PrepareIFC', PrepareIFC())
+FreeCADGui.addCommand('Eletrica_CreateTechnicalSheet', CreateTechnicalSheet())

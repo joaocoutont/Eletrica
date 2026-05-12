@@ -45,6 +45,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_CreateConduit", 
             "Eletrica_GenerateLoadSchedule",
             "Eletrica_GenerateLegend",
+            "Eletrica_CreateTechnicalSheet",
             "Eletrica_AnalyzeSpaceLighting",
             "Eletrica_BalancePhases",
             "Eletrica_CalculateWiring",

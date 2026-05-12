@@ -2,6 +2,8 @@
 import FreeCAD
 import Spreadsheet
 from EletricaLogic.Calculator import ElectricalCalculator
+from EletricaLogic.Settings import ProjectSettings
+from EletricaLogic.Wiring import WiringManager
 
 class CircuitManager:
     @staticmethod
@@ -33,26 +35,39 @@ class CircuitManager:
             sheet = doc.addObject("Spreadsheet::Sheet", sheet_name)
         
         # 3. Preencher cabecalho
-        headers = ["Circuito", "Carga (VA)", "Corrente (A)", "Secao (mm2)", "Disjuntor (A)"]
+        headers = ["Circuito", "Carga (VA)", "Corrente (A)", "Secao (mm2)", "Comprimento (m)", "Queda Tensao (%)", "Status"]
         for col, text in enumerate(headers):
-            cell = chr(65 + col) + "1" # A1, B1...
+            cell = chr(65 + col) + "1"
             sheet.set(cell, text)
             sheet.setStyle(cell, "bold", "add")
         
         # 4. Preencher dados calculados
         row = 2
-        voltage = 220.0 # Poderia ser uma configuracao do projeto
+        voltage = ProjectSettings.get_voltage()
+        circuit_lengths = WiringManager.calculate_circuit_lengths()
         
         for c_name, data in circuits_data.items():
             power_va = data["power_va"]
             current = ElectricalCalculator.calculate_current(power_va, voltage)
             wire = ElectricalCalculator.get_standard_wire_gauge(current)
             
+            # Comprimento real do 3D (em metros)
+            length_m = circuit_lengths.get(c_name, 0.0) / 1000.0
+            
+            # Calculo de Queda de Tensao
+            drop_percent = 0.0
+            if length_m > 0:
+                drop_percent = ElectricalCalculator.calculate_voltage_drop(current, length_m, wire, voltage)
+            
+            status = "OK" if drop_percent <= 3.0 else "REVISAR (Queda > 3%)"
+            
             sheet.set(f"A{row}", c_name)
             sheet.set(f"B{row}", str(round(power_va, 2)))
             sheet.set(f"C{row}", str(round(current, 2)))
             sheet.set(f"D{row}", str(wire))
-            sheet.set(f"E{row}", str(math.ceil(current/10)*10 if current > 0 else 0)) # Placeholder p/ disjuntor
+            sheet.set(f"E{row}", str(round(length_m, 2)))
+            sheet.set(f"F{row}", str(round(drop_percent, 2)) + "%")
+            sheet.set(f"G{row}", status)
             
             row += 1
             

@@ -33,6 +33,9 @@ class ConduitManager:
             
         if not hasattr(pipe, "CircuitosPassantes"):
             pipe.addProperty("App::PropertyStringList", "CircuitosPassantes", "Eletrica", "Lista de circuitos que passam por este eletroduto")
+            pipe.addProperty("App::PropertyEnumeration", "MetodoInstalacao", "Eletrica", "Metodo de instalacao segundo NBR 5410")
+            pipe.MetodoInstalacao = ["B1", "D", "A1"]
+            pipe.MetodoInstalacao = "B1"
 
         doc.recompute()
         return pipe

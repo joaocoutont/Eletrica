@@ -22,23 +22,46 @@ class ElectricalCalculator:
 
     @staticmethod
     def get_standard_wire_gauge(current, method="B1"):
-        """Retorna a secao minima do condutor (mm2) baseado na capacidade de conducao simples"""
-        # Tabela simplificada NBR 5410 (Metodo B1, PVC, 2 condutores carregados)
-        standard_sections = [
-            (14, 1.5),
-            (17.5, 2.5),
-            (24, 4),
-            (32, 6),
-            (41, 10),
-            (57, 16),
-            (76, 25),
-            (101, 35)
-        ]
+        """
+        Retorna a secao do cabo (mm2) baseada na corrente e metodo de instalacao.
+        Metodo B1: Embutido em alvenaria.
+        Metodo D: Enterrado no solo.
+        """
+        # Tabelas simplificadas NBR 5410 (3 condutores carregados)
+        table_b1 = {
+            1.5: 15.5,
+            2.5: 21,
+            4: 28,
+            6: 36,
+            10: 50,
+            16: 68,
+            25: 89,
+            35: 110,
+            50: 134,
+            70: 171,
+            95: 207
+        }
         
-        for cap, section in standard_sections:
-            if current <= cap:
-                return section
-        return 35 # Placeholder para secoes maiores
+        table_d = {
+            1.5: 18,
+            2.5: 24,
+            4: 32,
+            6: 41,
+            10: 57,
+            16: 76,
+            25: 101,
+            35: 125,
+            50: 151,
+            70: 192,
+            95: 232
+        }
+        
+        active_table = table_d if method == "D" else table_b1
+        
+        for gauge, capacity in active_table.items():
+            if current <= capacity:
+                return gauge
+        return 120 # Valor maximo se exceder
 
     @staticmethod
     def calculate_voltage_drop(current, length, section, voltage, material="Cu"):

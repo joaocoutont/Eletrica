@@ -242,6 +242,42 @@ class GenerateWireSymbols:
                 AnnotationManager.create_tick_marks(obj)
         return
 
+class AutoConnectSequence:
+    """Conecta objetos selecionados em sequencia"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Conectar em Sequência',
+            'ToolTip': 'Cria eletrodutos ligando as tomadas na ordem selecionada'
+        }
+
+    def Activated(self):
+        import FreeCADGui
+        from EletricaLogic.Routing import AutoRouter
+        selection = FreeCADGui.Selection.getSelection()
+        if len(selection) < 2:
+            FreeCAD.Console.PrintWarning("Selecione pelo menos dois objetos.\n")
+            return
+        AutoRouter.connect_in_sequence(selection)
+
+class AutoConnectCeiling:
+    """Conecta objetos ao teto"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Conectar ao Teto',
+            'ToolTip': 'Cria eletrodutos subindo a parede ate o ponto de luz mais proximo'
+        }
+
+    def Activated(self):
+        import FreeCADGui
+        from EletricaLogic.Routing import AutoRouter
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            FreeCAD.Console.PrintWarning("Selecione os dispositivos que devem subir ao teto.\n")
+            return
+        AutoRouter.connect_to_nearest_ceiling(selection)
+
 class InsertTUE:
     """Comando para inserir equipamentos de uso especifico (Chuveiro, AC, etc)"""
     def GetResources(self):
@@ -421,5 +457,7 @@ FreeCADGui.addCommand('Eletrica_GenerateUnifilar', GenerateUnifilar())
 FreeCADGui.addCommand('Eletrica_CreatePanel', CreatePanel())
 FreeCADGui.addCommand('Eletrica_InsertTUE', InsertTUE())
 FreeCADGui.addCommand('Eletrica_InsertServiceEntrance', InsertServiceEntrance())
+FreeCADGui.addCommand('Eletrica_AutoConnectSequence', AutoConnectSequence())
+FreeCADGui.addCommand('Eletrica_AutoConnectCeiling', AutoConnectCeiling())
 FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())
 FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

@@ -224,7 +224,7 @@ class CreateCableTray:
 
 # --- CLASSES DE CÁLCULO E DOCUMENTAÇÃO ---
 class GenerateLoadSchedule:
-    def GetResources(self): return {'Pixmap': os.path.join(ICON_DIR, 'Report.png'), 'MenuText': 'Quadro de Cargas'}
+    def GetResources(self): return {'Pixmap': os.path.join(ICON_DIR, 'Unifilar.png'), 'MenuText': 'Quadro de Cargas'}
     def Activated(self): 
         from EletricaLogic.Circuits import CircuitManager
         CircuitManager.generate_load_schedule()
@@ -322,7 +322,7 @@ class GenerateProjectQR:
     """Gera QR Code para Realidade Aumentada na prancha"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Report.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'StartProject.png'),
             'MenuText': 'Gerar Link de Realidade Aumentada (QR)',
             'ToolTip': 'Cria um QR Code que leva ao modelo 3D no celular'
         }
@@ -585,7 +585,7 @@ class ExportDisciplineBIM:
     """Exporta o projeto separado por disciplinas (Eletrica, SPDA, Solar)"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Report.png'),
             'MenuText': 'Exportar BIM por Disciplina (Separado)',
             'ToolTip': 'Gera arquivos IFC/STEP individuais para Elétrica, SPDA ou Solar'
         }

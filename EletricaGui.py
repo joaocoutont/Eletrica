@@ -70,7 +70,48 @@ class GenerateLoadSchedule:
         CircuitManager.generate_load_schedule()
         return
 
+class GenerateLegend:
+    """Comando para gerar a legenda de simbolos"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Legenda',
+            'ToolTip': 'Cria uma tabela com todos os simbolos usados no projeto'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Legend import LegendManager
+        LegendManager.generate_legend()
+        return
+
+class OpenSettings:
+    """Comando para abrir as configuracoes do projeto"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Configuracoes do Projeto',
+            'ToolTip': 'Define tensao, fator de potencia e outros dados globais'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Settings import ProjectSettings
+        
+        obj = ProjectSettings.get_settings_obj()
+        if not obj: return
+        
+        # Dialogo Simples
+        tensao, ok = QtWidgets.QInputDialog.getItem(
+            None, "Configuracoes Eletrica", "Selecione a Tensao do Projeto:", 
+            ["127V", "220V", "380V"], 0, False
+        )
+        if ok:
+            obj.Tensao = tensao
+            FreeCAD.Console.PrintMessage(f"Tensao definida para {tensao}\n")
+
 FreeCADGui.addCommand('Eletrica_InsertSocket', InsertSocket())
 FreeCADGui.addCommand('Eletrica_InsertLight', InsertLight())
 FreeCADGui.addCommand('Eletrica_CreateConduit', CreateConduit())
 FreeCADGui.addCommand('Eletrica_GenerateLoadSchedule', GenerateLoadSchedule())
+FreeCADGui.addCommand('Eletrica_GenerateLegend', GenerateLegend())
+FreeCADGui.addCommand('Eletrica_OpenSettings', OpenSettings())

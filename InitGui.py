@@ -41,8 +41,10 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         # Comandos proprios da bancada
         eletrica_cmds = [
             "Eletrica_OpenLibrary", 
+            "Eletrica_OpenSettings",
             "Eletrica_CreateConduit", 
             "Eletrica_GenerateLoadSchedule",
+            "Eletrica_GenerateLegend",
             "Eletrica_InsertSocket", 
             "Eletrica_InsertLight"
         ]

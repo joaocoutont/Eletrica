@@ -1,6 +1,9 @@
 # Dashboard Lateral - Eletrica BIM
 import FreeCAD
-from PySide2 import QtCore, QtWidgets, QtGui
+try:
+    from PySide2 import QtWidgets, QtCore, QtGui
+except ImportError:
+    from PySide6 import QtWidgets, QtCore, QtGui
 
 class EletricaDashboard(QtWidgets.QDockWidget):
     def __init__(self):

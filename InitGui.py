@@ -11,24 +11,25 @@ class EletricaWorkbench (FreeCADGui.Workbench):
     ToolTip = "Ferramentas para Projetos Elétricos BIM"
     Icon = """
         /* XPM */
-        static char * xpm_body[] = {
-        "16 16 2 1",
+        static char * lightning_xpm[] = {
+        "16 16 3 1",
         " 	c None",
         ".	c #FFCC00",
+        "+	c #FFAA00",
         "                ",
-        "       ..       ",
-        "      ....      ",
-        "     ......     ",
-        "    ........    ",
-        "       ..       ",
-        "       ..       ",
-        "   ..........   ",
-        "       ..       ",
-        "       ..       ",
-        "    ........    ",
-        "     ......     ",
-        "      ....      ",
-        "       ..       ",
+        "      ...       ",
+        "     ...        ",
+        "    ...         ",
+        "   ...          ",
+        "  .......       ",
+        " .......        ",
+        "    ...         ",
+        "   ...          ",
+        "  ...           ",
+        " ...            ",
+        " ..             ",
+        " .              ",
+        "                ",
         "                ",
         "                "};
         """
@@ -37,6 +38,13 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         "This function is executed when FreeCAD starts"
         import EletricaGui
         import EletricaPanel
+        
+        # Garante que os comandos do Draft e BIM estejam carregados
+        try:
+            import DraftGui
+            import BIMGui
+        except ImportError:
+            pass
         
         # Comandos proprios da bancada
         eletrica_cmds = [
@@ -70,47 +78,32 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_ManageBoxes",
             "Eletrica_CreateTechnicalSheet",
             "Eletrica_AnalyzeSpaceLighting",
-            "Eletrica_BalancePhases",
-            "Eletrica_CalculateWiring",
-            "Eletrica_PrepareIFC",
+            "Eletrica_RunProjectAudit",
+            "Eletrica_GenerateUnifilar",
             "Eletrica_ToggleDashboard",
-            "Eletrica_GenerateBudget",
-            "Eletrica_BIMifyEquipment",
-            "Eletrica_DimensionMotorStarter",
             "Eletrica_CloneFloor",
             "Eletrica_Generate3DWiring",
             "Eletrica_CreateIndustrialConnection",
             "Eletrica_GenerateProjectQR",
             "Eletrica_InsertSmartDevice",
             "Eletrica_CheckSelectivity",
-            "Eletrica_GenerateReport",
-            "Eletrica_GenerateRiseFallSymbols",
-            "Eletrica_AnnotateCircuits",
-            "Eletrica_CreateCableTray",
-            "Eletrica_RunProjectAudit",
-            "Eletrica_GeneratePanelLabels",
-            "Eletrica_SolarEstimate",
-            "Eletrica_GenerateUnifilar",
-            "Eletrica_SPDAGui",
-            "Eletrica_SPDARiskWizard",
-            "Eletrica_GroundingCalculator",
-            "Eletrica_InsertSocket", 
-            "Eletrica_InsertLight",
-            "Eletrica_InsertTUE",
-            "Eletrica_InsertServiceEntrance"
+            "Eletrica_CreatePanel",
+            "Eletrica_GenerateCableSchedule",
+            "Eletrica_ServiceEntranceWizard",
+            "Eletrica_InsertSubstation",
+            "Eletrica_DimensionMotorStarter",
+            "Eletrica_SetupEmergencyPower",
+            "Eletrica_GenerateControlWiring",
+            "Eletrica_RunSafetyAudit",
+            "Eletrica_InsertBoreholePump",
+            "Eletrica_ExportDisciplineBIM"
         ]
         
-        # Comandos essenciais do BIM/Arch e Draft que vamos 'emprestar'
-        bim_cmds = ["Arch_BuildingPart", "Arch_Project", "Arch_SectionPlane", "BIM_Library"]
-        draft_cmds = ["Draft_Line", "Draft_Wire", "Draft_Move", "Draft_Rotate", "Draft_SelectPlane"]
-        
         # Criando as Toolbars
-        self.appendToolbar("Eletrica Predial", eletrica_cmds)
-        self.appendToolbar("BIM Essentials", bim_cmds)
-        self.appendToolbar("Draft Tools", draft_cmds)
+        self.appendToolbar("Eletrica Elite (Principal)", eletrica_cmds)
         
         # Criando o Menu
-        self.appendMenu("Eletrica", eletrica_cmds + ["---"] + bim_cmds + ["---"] + draft_cmds)
+        self.appendMenu("Eletrica", eletrica_cmds)
 
     def Activated(self):
         "This function is executed when the workbench is activated"

@@ -2,7 +2,30 @@
 import FreeCAD
 import FreeCADGui
 
+# --- COMPATIBILIDADE PYSIDE2 / PYSIDE6 (FreeCAD 1.1+) ---
+try:
+    from PySide2 import QtWidgets, QtCore, QtGui
+except ImportError:
+    from PySide6 import QtWidgets, QtCore, QtGui
+
 # --- CLASSES DE NEGÓCIO E ORÇAMENTO ---
+class StartNewProject:
+    """Cria um novo documento e prepara o ambiente de desenho"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Iniciar Novo Projeto Elétrico',
+            'ToolTip': 'Cria um novo documento e prepara o ambiente BIM'
+        }
+
+    def Activated(self):
+        import FreeCADGui
+        FreeCAD.newDocument("Novo_Projeto_Eletrica")
+        # Força abertura da vista 3D e ativa a grade
+        FreeCADGui.activeDocument().activeView().viewAxometric()
+        FreeCADGui.runCommand("Draft_SelectPlane")
+        QtWidgets.QMessageBox.information(None, "Suite Elite", "Novo projeto iniciado! A tela de desenho está pronta.")
+
 class SyncTitleBlock:
     """Sincroniza o carimbo da folha TechDraw"""
     def GetResources(self):
@@ -19,7 +42,6 @@ class SyncTitleBlock:
         page = next((obj for obj in selection if obj.isDerivedFrom("TechDraw::DrawPage")), None)
         
         if not page:
-            from PySide2 import QtWidgets
             QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione uma Folha TechDraw na árvore.")
             return
             
@@ -37,7 +59,6 @@ class GenerateBudget:
     def Activated(self):
         from EletricaLogic.BOM import BOMManager
         from EletricaLogic.Budget import BudgetManager
-        from PySide2 import QtWidgets
         
         bom_data = BOMManager.get_bom_data() 
         budget_text = BudgetManager.generate_budget_report(bom_data)
@@ -55,7 +76,6 @@ class InsertSocket:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Library import LibraryManager
         import FreeCADGui
         
@@ -91,7 +111,6 @@ class InsertSwitch:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Lighting import LightingManager
         import FreeCADGui
         
@@ -154,7 +173,6 @@ class BIMifyEquipment:
 
     def Activated(self):
         from EletricaLogic.Equipment import EquipmentManager
-        from PySide2 import QtWidgets
         import FreeCADGui
         
         selection = FreeCADGui.Selection.getSelection()
@@ -177,7 +195,6 @@ class CreateCableTray:
     def Activated(self):
         from EletricaLogic.Conduit import ConduitManager
         from EletricaLogic.Fittings import FittingManager
-        from PySide2 import QtWidgets
         
         materials = ["Aço Galvanizado", "Alumínio", "Aço Inox"]
         mat, ok1 = QtWidgets.QInputDialog.getItem(None, "Material", "Material:", materials, 0, False)
@@ -209,7 +226,6 @@ class RunProjectAudit:
     def GetResources(self): return {'Pixmap': 'freecad', 'MenuText': 'Auditoria'}
     def Activated(self):
         from EletricaLogic.Auditor import ProjectAuditor
-        from PySide2 import QtWidgets
         report = ProjectAuditor.run_full_audit()
         QtWidgets.QMessageBox.information(None, "Auditoria", str(report))
 
@@ -245,7 +261,6 @@ class CloneFloor:
 
     def Activated(self):
         from EletricaLogic.Automation import MultiStoreyManager
-        from PySide2 import QtWidgets
         import FreeCADGui
         
         selection = FreeCADGui.Selection.getSelection()
@@ -282,7 +297,6 @@ class CreateIndustrialConnection:
 
     def Activated(self):
         from EletricaLogic.Fittings import FittingManager
-        from PySide2 import QtWidgets
         import FreeCADGui
         
         selection = FreeCADGui.Selection.getSelection()
@@ -313,12 +327,10 @@ class GenerateProjectQR:
         page = next((obj for obj in selection if obj.isDerivedFrom("TechDraw::DrawPage")), None)
         
         if not page:
-            from PySide2 import QtWidgets
             QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione a Folha TechDraw para inserir o QR Code.")
             return
             
         link = ARManager.generate_project_qr_code(page)
-        from PySide2 import QtWidgets
         QtWidgets.QMessageBox.information(None, "AR Ready", f"QR Code vinculado à folha!\nLink: {link}")
 
 class InsertSmartDevice:
@@ -331,7 +343,6 @@ class InsertSmartDevice:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.SmartHome import SmartHomeManager
         
         presets = SmartHomeManager.get_automation_presets()
@@ -350,7 +361,6 @@ class CheckSelectivity:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Calculator import ElectricalCalculator
         
         up, ok1 = QtWidgets.QInputDialog.getInt(None, "Seletividade", "Corrente Disjuntor Geral (A):", 50, 10, 1000, 1)
@@ -370,7 +380,6 @@ class CreatePanel:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Panels import PanelManager
         
         name, ok1 = QtWidgets.QInputDialog.getText(None, "Novo Painel", "Nome do Painel (ex: CCM-01):")
@@ -394,7 +403,6 @@ class GenerateCableSchedule:
 
     def Activated(self):
         from EletricaLogic.CableSchedule import CableScheduleManager
-        from PySide2 import QtWidgets
         import FreeCAD
         
         sheet_name = CableScheduleManager.export_to_spreadsheet()
@@ -410,7 +418,6 @@ class ServiceEntranceWizard:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.ServiceEntrance import ServiceEntranceWizard
         import FreeCAD
         
@@ -444,7 +451,6 @@ class InsertSubstation:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Substation import SubstationManager
         
         # 1. Escolher Potencia
@@ -477,7 +483,6 @@ class DimensionMotorStarter:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Starters import StarterManager
         import FreeCADGui
         
@@ -501,7 +506,6 @@ class SetupEmergencyPower:
     def GetResources(self):
         return {'Pixmap': 'freecad', 'MenuText': 'Gerador e QTA (Emergência)', 'ToolTip': 'Dimensiona energia reserva'}
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Generators import GeneratorManager
         kva, ok = QtWidgets.QInputDialog.getInt(None, "Emergência", "Carga Crítica Total (kVA):", 50, 5, 2000, 1)
         if ok:
@@ -513,7 +517,6 @@ class GenerateControlWiring:
     def GetResources(self):
         return {'Pixmap': 'freecad', 'MenuText': 'Esquema de Comando (Fiação)', 'ToolTip': 'Gera a lógica de ligação do painel'}
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.ControlDiagrams import ControlDiagramManager
         import FreeCADGui
         selection = FreeCADGui.Selection.getSelection()
@@ -526,7 +529,6 @@ class RunSafetyAudit:
     def GetResources(self):
         return {'Pixmap': 'freecad', 'MenuText': 'Risco de Arco Elétrico (NR-10)', 'ToolTip': 'Define EPI necessário para o painel'}
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Safety import SafetyManager
         import FreeCADGui
         selection = FreeCADGui.Selection.getSelection()
@@ -547,7 +549,6 @@ class InsertBoreholePump:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.BoreholePumps import BoreholePumpManager
         
         # 1. Modelo Ebara
@@ -583,7 +584,6 @@ class ExportDisciplineBIM:
         }
 
     def Activated(self):
-        from PySide2 import QtWidgets
         from EletricaLogic.Exporter import DisciplineExporter
         import os
         
@@ -605,6 +605,7 @@ class ExportDisciplineBIM:
 
 # --- REGISTRO DE COMANDOS ---
 cmds = {
+    'Eletrica_StartNewProject': StartNewProject(),
     'Eletrica_InsertSocket': InsertSocket(),
     'Eletrica_InsertLight': InsertLight(),
     'Eletrica_InsertSwitch': InsertSwitch(),
@@ -653,7 +654,7 @@ extra_cmds = [
     'Eletrica_AutoConnectCeiling', 'Eletrica_ApplyHeatmap', 'Eletrica_AssignCircuitToConduit',
     'Eletrica_ClearConduitCircuits', 'Eletrica_GenerateReport', 'Eletrica_SolarEstimate',
     'Eletrica_GeneratePanelLabels', 'Eletrica_CreateExposedConduit', 'Eletrica_GenerateRiseFallSymbols',
-    'Eletrica_AnnotateCircuits', 'Eletrica_ManageBoxes'
+    'Eletrica_AnnotateCircuits', 'Eletrica_ManageBoxes', 'Eletrica_GenerateLegend', 'Eletrica_CreateTechnicalSheet'
 ]
 
 for name in extra_cmds:

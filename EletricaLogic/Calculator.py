@@ -151,3 +151,20 @@ class ElectricalCalculator:
         """Calcula a demanda simplificada (kVA)"""
         # Ex: Fator de demanda residencial tipico ~ 0.6
         return (total_power_va * 0.6) / 1000.0
+
+    @staticmethod
+    def check_breaker_selectivity(upstream_breaker, downstream_breaker):
+        """
+        Verifica a seletividade amperimetrica entre dois disjuntores.
+        Idealmente, Upstream >= 1.6 * Downstream
+        """
+        ratio = float(upstream_breaker) / float(downstream_breaker)
+        is_selective = ratio >= 1.6
+        
+        msg = f"Relação de Corrente: {ratio:.2f}\n"
+        if is_selective:
+            msg += "✅ SELETIVO: O disjuntor de jusante deve desarmar primeiro."
+        else:
+            msg += "⚠️ NÃO SELETIVO: Risco de queda simultânea (Blackout)."
+            
+        return is_selective, msg

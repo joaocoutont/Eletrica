@@ -223,6 +223,69 @@ class CreateIndustrialConnection:
             for obj in selection:
                 FittingManager.add_industrial_termination(obj, gland_type=gland)
 
+class GenerateProjectQR:
+    """Gera QR Code para Realidade Aumentada na prancha"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Link de Realidade Aumentada (QR)',
+            'ToolTip': 'Cria um QR Code que leva ao modelo 3D no celular'
+        }
+
+    def Activated(self):
+        import FreeCADGui
+        from EletricaLogic.AR import ARManager
+        selection = FreeCADGui.Selection.getSelection()
+        page = next((obj for obj in selection if obj.isDerivedFrom("TechDraw::DrawPage")), None)
+        
+        if not page:
+            from PySide2 import QtWidgets
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione a Folha TechDraw para inserir o QR Code.")
+            return
+            
+        link = ARManager.generate_project_qr_code(page)
+        from PySide2 import QtWidgets
+        QtWidgets.QMessageBox.information(None, "AR Ready", f"QR Code vinculado à folha!\nLink: {link}")
+
+class InsertSmartDevice:
+    """Insere dispositivos de casa inteligente"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Inserir Dispositivo Smart / IoT',
+            'ToolTip': 'Insere sensores, cameras e hubs de automação'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.SmartHome import SmartHomeManager
+        
+        presets = SmartHomeManager.get_automation_presets()
+        choice, ok = QtWidgets.QInputDialog.getItem(None, "Automação", "Selecione o dispositivo:", list(presets.keys()), 0, False)
+        
+        if ok:
+            SmartHomeManager.insert_smart_device(choice)
+
+class CheckSelectivity:
+    """Verifica a coordenacao entre disjuntores"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Verificar Seletividade (Geral x Circuito)',
+            'ToolTip': 'Avalia se o disjuntor geral nao vai cair junto com o do circuito'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Calculator import ElectricalCalculator
+        
+        up, ok1 = QtWidgets.QInputDialog.getInt(None, "Seletividade", "Corrente Disjuntor Geral (A):", 50, 10, 1000, 1)
+        down, ok2 = QtWidgets.QInputDialog.getInt(None, "Seletividade", "Corrente Disjuntor Circuito (A):", 20, 10, 1000, 1)
+        
+        if ok1 and ok2:
+            is_ok, msg = ElectricalCalculator.check_breaker_selectivity(up, down)
+            QtWidgets.QMessageBox.information(None, "Análise de Seletividade", msg)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -234,6 +297,9 @@ cmds = {
     'Eletrica_GenerateUnifilar': GenerateUnifilar(),
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
     'Eletrica_GenerateBudget': GenerateBudget(),
+    'Eletrica_GenerateProjectQR': GenerateProjectQR(),
+    'Eletrica_InsertSmartDevice': InsertSmartDevice(),
+    'Eletrica_CheckSelectivity': CheckSelectivity(),
     'Eletrica_CreateIndustrialConnection': CreateIndustrialConnection(),
     'Eletrica_ToggleDashboard': ToggleDashboard(),
     'Eletrica_CloneFloor': CloneFloor(),

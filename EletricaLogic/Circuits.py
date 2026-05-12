@@ -34,7 +34,7 @@ class CircuitManager:
             sheet = doc.addObject("Spreadsheet::Sheet", sheet_name)
         
         # 3. Preencher cabecalho
-        headers = ["Circuito", "Tensao", "Carga (VA)", "Corrente (A)", "Secao (mm2)", "Comprimento (m)", "Queda (%)", "Status"]
+        headers = ["Circuito", "Tensao", "Carga (VA)", "Corrente (A)", "Disjuntor (A)", "Secao (mm2)", "Comprimento (m)", "Queda (%)", "Status"]
         for col, text in enumerate(headers):
             cell = chr(65 + col) + "1"
             sheet.set(cell, text)
@@ -67,6 +67,9 @@ class CircuitManager:
             # Dimensionar com a corrente corrigida
             wire = ElectricalCalculator.get_standard_wire_gauge(current_corrected)
             
+            # Sugestao de Disjuntor
+            breaker = ElectricalCalculator.get_standard_breaker(current_nominal)
+            
             # Comprimento real do 3D (em metros)
             length_m = circuit_lengths.get(c_name, 0.0) / 1000.0
             
@@ -81,10 +84,11 @@ class CircuitManager:
             sheet.set(f"B{row}", tensao_str)
             sheet.set(f"C{row}", str(round(power_va, 2)))
             sheet.set(f"D{row}", str(round(current_nominal, 2)))
-            sheet.set(f"E{row}", str(wire))
-            sheet.set(f"F{row}", str(round(length_m, 2)))
-            sheet.set(f"G{row}", str(round(drop_percent, 2)) + "%")
-            sheet.set(f"H{row}", status)
+            sheet.set(f"E{row}", str(breaker) + "A")
+            sheet.set(f"F{row}", str(wire))
+            sheet.set(f"G{row}", str(round(length_m, 2)))
+            sheet.set(f"H{row}", str(round(drop_percent, 2)) + "%")
+            sheet.set(f"I{row}", status)
             
             row += 1
             

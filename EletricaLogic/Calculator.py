@@ -104,3 +104,12 @@ class ElectricalCalculator:
         }
         if num_circuits >= 9: return 0.50
         return factors.get(num_circuits, 1.0)
+
+    @staticmethod
+    def get_standard_breaker(current):
+        """Retorna o disjuntor comercial (DIN) imediatamente superior a corrente"""
+        standard_breakers = [10, 16, 20, 25, 32, 40, 50, 63, 70, 80, 100, 125]
+        for b in standard_breakers:
+            if current <= b:
+                return b
+        return 125 # Valor maximo para circuitos terminais comuns

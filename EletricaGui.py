@@ -290,6 +290,29 @@ class ManageBoxes:
         c4x2, cocto = EquipmentManager.add_boxes_to_all()
         QtWidgets.QMessageBox.information(None, "Quantitativo de Caixas", f"Projeto Analisado:\n- Caixas 4x2: {c4x2}\n- Caixas Octogonais (Teto): {cocto}")
 
+class InsertServiceEntrance:
+    """Comando para inserir itens da entrada de energia"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Inserir Entrada de Energia',
+            'ToolTip': 'Insere caixa de medicao ou caixas de passagem de solo'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.ServiceEntrance import ServiceEntranceManager
+        
+        presets = ServiceEntranceManager.get_entrance_presets()
+        choice, ok = QtWidgets.QInputDialog.getItem(None, "Entrada de Energia", "Selecione o item:", list(presets.keys()), 0, False)
+        
+        if ok:
+            # Criar um objeto placeholder para a entrada
+            doc = FreeCAD.ActiveDocument
+            obj = doc.addObject("App::FeaturePython", choice.replace(" ", "_"))
+            obj.Label = choice
+            FreeCAD.Console.PrintMessage(f"Item de entrada {choice} inserido.\n")
+
 class GroundingCalculator:
     """Calculadora de malha de aterramento"""
     def GetResources(self):
@@ -378,5 +401,6 @@ FreeCADGui.addCommand('Eletrica_GenerateWireSymbols', GenerateWireSymbols())
 FreeCADGui.addCommand('Eletrica_GroundingCalculator', GroundingCalculator())
 FreeCADGui.addCommand('Eletrica_GenerateUnifilar', GenerateUnifilar())
 FreeCADGui.addCommand('Eletrica_InsertTUE', InsertTUE())
+FreeCADGui.addCommand('Eletrica_InsertServiceEntrance', InsertServiceEntrance())
 FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())
 FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

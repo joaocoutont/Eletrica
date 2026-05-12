@@ -61,4 +61,15 @@ class EquipmentManager:
         
         settings.QtdCaixas4x2 = count_4x2
         settings.QtdCaixasOcto = count_octo
+        
+        # Adicionar caixas de entrada
+        count_30x30 = 0
+        for obj in doc.Objects:
+            if "Caixa_Passagem_30x30" in obj.Label:
+                count_30x30 += 1
+        
+        if not hasattr(settings, "QtdCaixas30x30"):
+            settings.addProperty("App::PropertyInteger", "QtdCaixas30x30", "Quantitativos", "Quantidade de caixas 30x30")
+        settings.QtdCaixas30x30 = count_30x30
+        
         return count_4x2, count_octo

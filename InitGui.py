@@ -60,7 +60,8 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_GroundingCalculator",
             "Eletrica_InsertSocket", 
             "Eletrica_InsertLight",
-            "Eletrica_InsertTUE"
+            "Eletrica_InsertTUE",
+            "Eletrica_InsertServiceEntrance"
         ]
         
         # Comandos essenciais do BIM/Arch e Draft que vamos 'emprestar'

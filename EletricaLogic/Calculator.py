@@ -3,8 +3,17 @@ import math
 
 class ElectricalCalculator:
     @staticmethod
-    def calculate_current(power_va, voltage, phases=1, cos_phi=1.0):
-        """Calcula a corrente nominal (A)"""
+    def calculate_current(power_va, voltage, phases=None, cos_phi=1.0):
+        """Calcula a corrente nominal (A) considerando o sistema do projeto"""
+        if phases is None:
+            from EletricaLogic.Settings import ProjectSettings
+            settings = ProjectSettings.get_settings_obj()
+            sistema = settings.Sistema
+            if "Trifasico" in sistema:
+                phases = 3
+            else:
+                phases = 1
+                
         if phases == 1:
             return power_va / voltage
         elif phases == 3:

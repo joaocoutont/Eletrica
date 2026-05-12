@@ -349,6 +349,24 @@ class GenerateUnifilar:
         from PySide2 import QtWidgets
         QtWidgets.QMessageBox.information(None, "Diagrama Unifilar", "Funcionalidade de desenho grafico em desenvolvimento.\nUse os dados do Quadro de Cargas para compor sua prancha.")
 
+class CreatePanel:
+    """Comando para criar um quadro de distribuicao (QDC)"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Criar Quadro de Distribuição (QDC)',
+            'ToolTip': 'Cria um quadro que gerencia circuitos e hierarquia'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Panels import PanelManager
+        
+        name, ok = QtWidgets.QInputDialog.getText(None, "Novo Quadro", "Nome do Quadro (ex: QDC-Terreo):")
+        if ok and name:
+            PanelManager.create_panel(name)
+            FreeCAD.Console.PrintMessage(f"Quadro {name} criado.\n")
+
 class CheckConduitFill:
     """Comando para verificar a ocupacao dos eletrodutos"""
     def GetResources(self):
@@ -400,6 +418,7 @@ FreeCADGui.addCommand('Eletrica_GenerateBOM', GenerateBOM())
 FreeCADGui.addCommand('Eletrica_GenerateWireSymbols', GenerateWireSymbols())
 FreeCADGui.addCommand('Eletrica_GroundingCalculator', GroundingCalculator())
 FreeCADGui.addCommand('Eletrica_GenerateUnifilar', GenerateUnifilar())
+FreeCADGui.addCommand('Eletrica_CreatePanel', CreatePanel())
 FreeCADGui.addCommand('Eletrica_InsertTUE', InsertTUE())
 FreeCADGui.addCommand('Eletrica_InsertServiceEntrance', InsertServiceEntrance())
 FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())

@@ -59,6 +59,9 @@ class LibraryManager:
                 link.addProperty("App::PropertyPower", "Potencia", "Eletrica", "Potencia instalada em VA")
                 link.Potencia = 100.0 # Valor default
                 
+            if not hasattr(link, "QuadroVinculado"):
+                link.addProperty("App::PropertyLink", "QuadroVinculado", "Eletrica", "Quadro de distribuicao que alimenta este item")
+                
             if not hasattr(link, "Circuito"):
                 link.addProperty("App::PropertyString", "Circuito", "Eletrica", "Identificacao do Circuito")
                 link.Circuito = "Geral"

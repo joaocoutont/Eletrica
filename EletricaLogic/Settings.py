@@ -11,8 +11,9 @@ class ProjectSettings:
         obj = doc.getObject("Configuracoes_Eletrica")
             obj.addProperty("App::PropertyString", "Autor", "Geral", "Autor do projeto")
             obj.addProperty("App::PropertyString", "NomeProjeto", "Geral", "Nome do projeto")
-            obj.addProperty("App::PropertyEnumeration", "TipoEdificacao", "Geral", "Tipo de edificacao para calculos")
-            obj.TipoEdificacao = ["Residencial", "Comercial (Escritorio)", "Industrial", "Hospitalar"]
+            obj.addProperty("App::PropertyEnumeration", "Sistema", "Eletrica", "Sistema de fornecimento")
+            obj.Sistema = ["Monofasico (F+N)", "Bifasico (2F+N)", "Trifasico (3F+N)"]
+            obj.Sistema = "Trifasico (3F+N)"
             
             obj.addProperty("App::PropertyEnumeration", "Tensao", "Eletrica", "Tensao nominal")
             obj.Tensao = ["127V", "220V", "380V"]

@@ -149,3 +149,9 @@ class ElectricalCalculator:
         z_source = 0.02 # Impedancia da rede/trafo estimada
         isc = voltage / (z_source + r_cable)
         return isc / 1000.0 # Em kA
+
+    @staticmethod
+    def calculate_demand(total_power_va):
+        """Calcula a demanda simplificada (kVA)"""
+        # Ex: Fator de demanda residencial tipico ~ 0.6
+        return (total_power_va * 0.6) / 1000.0

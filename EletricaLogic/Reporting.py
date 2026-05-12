@@ -40,6 +40,14 @@ class ReportManager:
         report.append("====================================================")
         report.append("Relatório gerado automaticamente pela Bancada Eletrica BIM.")
         
+        # 2. Simulador de Conta de Luz
+        kwh_month = (total_va * 24 * 30 * 0.15) / 1000.0 # Fator de uso 15%
+        cost = kwh_month * 0.95 # Tarifa media R$ 0.95
+        
+        report.append("\nESTIMATIVA DE CONSUMO MENSAL:")
+        report.append(f"- Consumo: {round(kwh_month, 2)} kWh/mês")
+        report.append(f"- Custo Estimado: R$ {round(cost, 2)} / mês")
+        
         full_text = "\n".join(report)
         FreeCAD.Console.PrintMessage(full_text + "\n")
         

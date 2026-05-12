@@ -219,6 +219,29 @@ class GenerateTags:
         TagManager.generate_circuit_tags()
         return
 
+class GenerateWireSymbols:
+    """Comando para gerar simbolos de fios (Tick Marks) nos eletrodutos"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Símbolos de Fiação',
+            'ToolTip': 'Desenha símbolos de Fase, Neutro e Terra sobre os eletrodutos'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Annotations import AnnotationManager
+        selection = FreeCADGui.Selection.getSelection()
+        
+        if not selection:
+            # Se nada selecionado, processar todos os eletrodutos
+            for obj in FreeCAD.ActiveDocument.Objects:
+                if hasattr(obj, "CircuitosPassantes"):
+                    AnnotationManager.create_tick_marks(obj)
+        else:
+            for obj in selection:
+                AnnotationManager.create_tick_marks(obj)
+        return
+
 class CheckConduitFill:
     """Comando para verificar a ocupacao dos eletrodutos"""
     def GetResources(self):
@@ -267,3 +290,4 @@ FreeCADGui.addCommand('Eletrica_CreateTechnicalSheet', CreateTechnicalSheet())
 FreeCADGui.addCommand('Eletrica_GenerateTags', GenerateTags())
 FreeCADGui.addCommand('Eletrica_CheckConduitFill', CheckConduitFill())
 FreeCADGui.addCommand('Eletrica_GenerateBOM', GenerateBOM())
+FreeCADGui.addCommand('Eletrica_GenerateWireSymbols', GenerateWireSymbols())

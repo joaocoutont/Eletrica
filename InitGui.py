@@ -47,6 +47,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_GenerateBOM",
             "Eletrica_GenerateLegend",
             "Eletrica_GenerateTags",
+            "Eletrica_GenerateWireSymbols",
             "Eletrica_CheckConduitFill",
             "Eletrica_CreateTechnicalSheet",
             "Eletrica_AnalyzeSpaceLighting",

@@ -17,6 +17,16 @@ class PanelManager:
         obj.addProperty("App::PropertyFloat", "PotenciaAcumulada", "Eletrica", "Soma das cargas deste quadro e sub-quadros")
         obj.PotenciaAcumulada = 0.0
         
+        # Protecoes Adicionais (NBR 5410)
+        obj.addProperty("App::PropertyBool", "PossuiDR", "Proteção", "Se o quadro possui IDR Geral")
+        obj.PossuiDR = True
+        obj.addProperty("App::PropertyBool", "PossuiDPS", "Proteção", "Se o quadro possui DPS")
+        obj.PossuiDPS = True
+        
+        obj.addProperty("App::PropertyEnumeration", "DPS_Classe", "Proteção", "Classe do DPS")
+        obj.DPS_Classe = ["Classe I", "Classe II", "Classe I+II"]
+        obj.DPS_Classe = "Classe II"
+        
         # Identificador para o sistema saber que e um Quadro
         if not hasattr(obj, "TipoBIM"):
             obj.addProperty("App::PropertyString", "TipoBIM", "Eletrica", "Tipo de componente")

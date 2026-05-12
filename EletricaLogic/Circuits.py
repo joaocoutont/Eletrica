@@ -34,7 +34,7 @@ class CircuitManager:
             sheet = doc.addObject("Spreadsheet::Sheet", sheet_name)
         
         # 3. Preencher cabecalho
-        headers = ["Circuito", "Tensao", "Carga (VA)", "Corrente (A)", "Disjuntor (A)", "Secao (mm2)", "Comprimento (m)", "Queda (%)", "Status"]
+        headers = ["Circuito", "Tensao", "Carga (VA)", "Corrente (A)", "Disjuntor (A)", "Proteção", "Secao (mm2)", "Comprimento (m)", "Queda (%)", "Status"]
         for col, text in enumerate(headers):
             cell = chr(65 + col) + "1"
             sheet.set(cell, text)
@@ -70,6 +70,12 @@ class CircuitManager:
             # Sugestao de Disjuntor
             breaker = ElectricalCalculator.get_standard_breaker(current_nominal)
             
+            # Detecção de DR (NBR 5410)
+            protecao = "DJ" # Apenas Disjuntor por padrão
+            wet_keywords = ["Cozinha", "Banheiro", "Lavanderia", "Area", "Externo", "Chuveiro"]
+            if any(kw.lower() in c_name.lower() for kw in wet_keywords):
+                protecao = "DJ + DR"
+            
             # Comprimento real do 3D (em metros)
             length_m = circuit_lengths.get(c_name, 0.0) / 1000.0
             
@@ -85,10 +91,11 @@ class CircuitManager:
             sheet.set(f"C{row}", str(round(power_va, 2)))
             sheet.set(f"D{row}", str(round(current_nominal, 2)))
             sheet.set(f"E{row}", str(breaker) + "A")
-            sheet.set(f"F{row}", str(wire))
-            sheet.set(f"G{row}", str(round(length_m, 2)))
-            sheet.set(f"H{row}", str(round(drop_percent, 2)) + "%")
-            sheet.set(f"I{row}", status)
+            sheet.set(f"F{row}", protecao)
+            sheet.set(f"G{row}", str(wire))
+            sheet.set(f"H{row}", str(round(length_m, 2)))
+            sheet.set(f"I{row}", str(round(drop_percent, 2)) + "%")
+            sheet.set(f"J{row}", status)
             
             row += 1
             

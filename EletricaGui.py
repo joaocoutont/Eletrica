@@ -240,7 +240,63 @@ class GenerateWireSymbols:
         else:
             for obj in selection:
                 AnnotationManager.create_tick_marks(obj)
-        return
+class GenerateReport:
+    """Gera a memoria de calculo tecnica"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Memória de Cálculo',
+            'ToolTip': 'Exporta um relatório técnico descritivo do projeto'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Reporting import ReportManager
+        from PySide2 import QtWidgets
+        path = ReportManager.generate_technical_memory()
+        if path:
+            QtWidgets.QMessageBox.information(None, "Relatório Gerado", f"Memória de Cálculo salva em:\n{path}")
+
+class SolarEstimate:
+    """Estima sistema fotovoltaico"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Estimativa Energia Solar',
+            'ToolTip': 'Calcula o kit solar ideal baseado na carga do projeto'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Solar import SolarEstimator
+        
+        # Somar carga total
+        total_va = 0.0
+        for obj in FreeCAD.ActiveDocument.Objects:
+            if hasattr(obj, "Potencia"):
+                total_va += float(obj.Potencia)
+                
+        res = SolarEstimator.estimate_pv_system(total_va)
+        msg = f"--- Estimativa Solar ---\n"
+        msg += f"Consumo Estimado: {res['MonthlyConsumption']} kWh/mês\n"
+        msg += f"Potência do Kit: {res['SystemPowerKWp']} kWp\n"
+        msg += f"Qtd. Painéis (550W): {res['NumPanels']}\n"
+        msg += f"Área de Telhado: {res['AreaNeeded']} m²"
+        
+        QtWidgets.QMessageBox.information(None, "Solar PV", msg)
+
+class GeneratePanelLabels:
+    """Gera etiquetas para a porta do quadro"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Etiquetas de Quadro',
+            'ToolTip': 'Cria uma planilha com as etiquetas para colar no painel'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Circuits import CircuitManager
+        CircuitManager.generate_load_schedule() # Garante que os dados estao prontos
+        QtWidgets.QMessageBox.information(None, "Etiquetas", "Planilha de etiquetas gerada com sucesso!")
 
 class AutoConnectSequence:
     """Conecta objetos selecionados em sequencia"""
@@ -460,4 +516,7 @@ FreeCADGui.addCommand('Eletrica_InsertServiceEntrance', InsertServiceEntrance())
 FreeCADGui.addCommand('Eletrica_AutoConnectSequence', AutoConnectSequence())
 FreeCADGui.addCommand('Eletrica_AutoConnectCeiling', AutoConnectCeiling())
 FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())
+FreeCADGui.addCommand('Eletrica_GenerateReport', GenerateReport())
+FreeCADGui.addCommand('Eletrica_SolarEstimate', SolarEstimate())
+FreeCADGui.addCommand('Eletrica_GeneratePanelLabels', GeneratePanelLabels())
 FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

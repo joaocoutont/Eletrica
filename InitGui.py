@@ -75,15 +75,33 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_BIMifyEquipment", "Eletrica_ExportDisciplineBIM", "Eletrica_CloneFloor"
         ]
         
+        # 6. GRUPO: FERRAMENTAS DE DESENHO (DRAFT)
+        toolbar_draft = [
+            "Draft_Line", "Draft_Wire", "Draft_Circle", "Draft_Arc", 
+            "Draft_Move", "Draft_Rotate", "Draft_Mirror", "Draft_Offset", 
+            "Draft_Trimex", "Draft_Stretch", "Draft_Upgrade", "Draft_Downgrade"
+        ]
+        
+        # 7. GRUPO: SNAPS (ENCAIXE)
+        toolbar_snap = [
+            "Draft_Snap_Lock", "Draft_Snap_Endpoint", "Draft_Snap_Midpoint", 
+            "Draft_Snap_Center", "Draft_Snap_Angle", "Draft_Snap_Intersection", 
+            "Draft_Snap_Perpendicular", "Draft_Snap_Extension", "Draft_Snap_Parallel", 
+            "Draft_Snap_Grid", "Draft_Snap_WorkingPlane"
+        ]
+        
         # Registrando as Toolbars Separadas (Isso cria as divisórias visuais)
         self.appendToolbar("Elite 1: Início", toolbar_start)
         self.appendToolbar("Elite 2: Modelagem", toolbar_model)
         self.appendToolbar("Elite 3: Infraestrutura", toolbar_infra)
         self.appendToolbar("Elite 4: Engenharia", toolbar_eng)
         self.appendToolbar("Elite 5: Documentação", toolbar_doc)
+        self.appendToolbar("Elite 6: Desenho (Draft)", toolbar_draft)
+        self.appendToolbar("Elite 7: Snaps (Encaixe)", toolbar_snap)
         
         # Menu consolidado
-        self.appendMenu("Eletrica Elite", toolbar_start + toolbar_model + toolbar_infra + toolbar_eng + toolbar_doc)
+        all_cmds = toolbar_start + toolbar_model + toolbar_infra + toolbar_eng + toolbar_doc + toolbar_draft
+        self.appendMenu("Eletrica Elite", all_cmds)
 
     def Activated(self):
         return

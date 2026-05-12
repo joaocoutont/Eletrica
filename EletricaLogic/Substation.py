@@ -3,44 +3,48 @@ import FreeCAD
 
 class SubstationManager:
     @staticmethod
-    def dimension_substation(kva):
-        """Define o tipo de subestacao baseado na potencia (kVA)"""
+    def dimension_substation(kva, voltage_kv=13.8):
+        """Define o tipo de subestacao baseado na potencia (kVA) e tensao de MT"""
+        is_34 = voltage_kv > 20
+        classe = "36.2 kV" if is_34 else "15 kV"
+        
         if kva <= 75:
             return {
                 "Tipo": "Aérea (Poste Único)",
-                "Estrutura": "Poste de 11m/600daN",
-                "Protecao": "Chave Fusível 15kV",
-                "Nota": "Padrão simplificado para pequenas cargas."
+                "Estrutura": f"Poste de 11m/600daN - Classe {classe}",
+                "Protecao": f"Chave Fusível {classe}",
+                "Nota": f"Subestação de Média Tensão ({voltage_kv}kV) em poste único."
             }
         elif kva <= 300:
             return {
                 "Tipo": "Aérea (Estrutura H)",
-                "Estrutura": "Dois Postes 11m/600daN",
-                "Protecao": "Chave Fusível + Para-raios",
-                "Nota": "Necessário projeto de estrutura reforçada."
+                "Estrutura": f"Dois Postes 11m/600daN - Classe {classe}",
+                "Protecao": f"Chave Fusível + Para-raios {classe}",
+                "Nota": f"Subestação de Média Tensão ({voltage_kv}kV) em estrutura H."
             }
         else:
             return {
                 "Tipo": "Abrigada (Cabine de Alvenaria)",
-                "Estrutura": "Cubículos de Alvenaria ou Blindada",
-                "Protecao": "Disjuntor de MT com Relé Secundário",
-                "Nota": "Exige projeto de alvenaria e malha de aterramento robusta."
+                "Estrutura": f"Cubículos de MT - Classe {classe}",
+                "Protecao": f"Disjuntor de MT com Relé Secundário (50/51)",
+                "Nota": f"Subestação Abrigada de Média Tensão ({voltage_kv}kV)."
             }
 
     @staticmethod
-    def create_substation_bim(kva, utility="Geral"):
-        """Insere a subestacao no projeto com metadados"""
-        data = SubstationManager.dimension_substation(kva)
+    def create_substation_bim(kva, voltage_kv=13.8):
+        """Insere a subestacao no projeto com metadados de MT"""
+        data = SubstationManager.dimension_substation(kva, voltage_kv)
         
         doc = FreeCAD.ActiveDocument
-        obj = doc.addObject("App::FeaturePython", f"Subestacao_{kva}kVA")
-        obj.Label = f"SE_{kva}kVA_{data['Tipo'].split(' ')[0]}"
+        obj = doc.addObject("App::FeaturePython", f"Subestacao_MT_{kva}kVA")
+        obj.Label = f"SE_MT_{kva}kVA"
         
-        # Propriedades BIM de Subestacao
-        obj.addProperty("App::PropertyFloat", "PotenciaKVA", "Elétrica").PotenciaKVA = kva
+        # Propriedades BIM de Subestacao MT
+        obj.addProperty("App::PropertyFloat", "PotenciaKVA", "Média Tensão").PotenciaKVA = kva
+        obj.addProperty("App::PropertyString", "TensaoPrimaria", "Média Tensão").TensaoPrimaria = f"{voltage_kv} kV"
         obj.addProperty("App::PropertyString", "TipoSubestacao", "Engenharia").TipoSubestacao = data["Tipo"]
-        obj.addProperty("App::PropertyString", "ProtecaoPrimaria", "Engenharia").ProtecaoPrimaria = data["Protecao"]
-        obj.addProperty("App::PropertyString", "EstruturaNecessaria", "Civil").EstruturaNecessaria = data["Estrutura"]
+        obj.addProperty("App::PropertyString", "ProtecaoMT", "Engenharia").ProtecaoMT = data["Protecao"]
         
         FreeCAD.ActiveDocument.recompute()
         return obj
+ Broadway

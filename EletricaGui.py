@@ -447,17 +447,25 @@ class InsertSubstation:
         from PySide2 import QtWidgets
         from EletricaLogic.Substation import SubstationManager
         
-        kva, ok = QtWidgets.QInputDialog.getInt(None, "Subestação", "Potência do Transformador (kVA):", 112, 15, 5000, 1)
+        # 1. Escolher Potencia
+        kva, ok1 = QtWidgets.QInputDialog.getInt(None, "Subestação MT", "Potência do Transformador (kVA):", 112, 15, 5000, 1)
+        if not ok1: return
         
-        if ok:
-            SubstationManager.create_substation_bim(kva)
-            res = SubstationManager.dimension_substation(kva)
-            msg = f"Dimensionamento para {kva} kVA:\n\n"
+        # 2. Escolher Tensão
+        voltages = ["13.8 kV", "34.5 kV"]
+        v_choice, ok2 = QtWidgets.QInputDialog.getItem(None, "Tensão Primária", "Média Tensão (MT):", voltages, 0, False)
+        
+        if ok1 and ok2:
+            v_val = 34.5 if "34" in v_choice else 13.8
+            SubstationManager.create_substation_bim(kva, voltage_kv=v_val)
+            res = SubstationManager.dimension_substation(kva, voltage_kv=v_val)
+            
+            msg = f"Dimensionamento de Média Tensão ({v_val}kV):\n\n"
             msg += f"- Tipo: {res['Tipo']}\n"
             msg += f"- Estrutura: {res['Estrutura']}\n"
             msg += f"- Proteção: {res['Protecao']}\n"
             msg += f"- Dica: {res['Nota']}\n"
-            QtWidgets.QMessageBox.information(None, "Subestação Definida", msg)
+            QtWidgets.QMessageBox.information(None, "Subestação de MT Definida", msg)
 
 # --- REGISTRO DE COMANDOS ---
 cmds = {

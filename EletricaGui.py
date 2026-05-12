@@ -28,16 +28,24 @@ class StartNewProject:
 
     def Activated(self):
         import FreeCADGui
+        import Draft
         doc = FreeCAD.newDocument("Novo_Projeto_Eletrica")
         
         view = FreeCADGui.activeDocument().activeView()
         if view:
             view.viewAxometric()
             
+        # Ativação resiliente da grade (FreeCAD 1.1)
         try:
             FreeCADGui.runCommand("Draft_Grid")
         except Exception:
-            FreeCAD.Console.PrintWarning("Aviso: Nao foi possivel ativar a grade automaticamente.\n")
+            try:
+                FreeCADGui.runCommand("Draft_ToggleGrid")
+            except Exception:
+                try:
+                    Draft.get_grid().show()
+                except:
+                    FreeCAD.Console.PrintWarning("Dica: Ative a grade manualmente no menu Draft se necessario.\n")
             
         QtWidgets.QMessageBox.information(None, "Suite Elite", "Novo projeto iniciado! A tela de desenho está pronta.")
 
@@ -82,11 +90,9 @@ class InsertSocket:
         from EletricaLogic.Library import LibraryManager
         import FreeCADGui
         
-        # 1. Pergunta a Potencia
         power, ok1 = QtWidgets.QInputDialog.getInt(None, "NBR 5410", "Potência (VA/W):", 100, 100, 15000, 100)
         if not ok1: return
         
-        # 2. Sugere o Tipo
         suggestion = "TUG (Uso Geral - 10A)"
         if power == 600: suggestion = "TUG (Cozinha - 10A)"
         elif power >= 1200: suggestion = "TUE (Específico - 20A)"
@@ -95,7 +101,6 @@ class InsertSocket:
         sel_type, ok2 = QtWidgets.QInputDialog.getItem(None, "Tipo", "Classificação:", types, types.index(suggestion), False)
         if not ok2: return
         
-        # 3. Altura
         heights = {"Baixa (0.30m)": 300, "Média (1.10m)": 1100, "Alta (2.10m)": 2100}
         pos, ok3 = QtWidgets.QInputDialog.getItem(None, "Altura", "Selecione a Altura:", list(heights.keys()), 1, False)
         if not ok3: return

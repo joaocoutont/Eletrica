@@ -98,6 +98,16 @@ class ElectricalCalculator:
         return (math.pi * (d**2)) / 4.0
 
     @staticmethod
+    def get_grouping_factor(num_circuits, is_leito=False):
+        """Retorna o FCA. Se for Leito, o fator e mais favoravel (Tabela 40 NBR 5410)."""
+        if is_leito:
+            factors = {1: 1.0, 2: 0.88, 3: 0.82, 4: 0.77, 5: 0.75}
+            return factors.get(num_circuits, 0.73)
+            
+        factors = {1: 1.0, 2: 0.80, 3: 0.70, 4: 0.65, 5: 0.60, 6: 0.57}
+        return factors.get(num_circuits, 0.50)
+
+    @staticmethod
     def get_conduit_internal_area(nominal_diameter):
         """Retorna a area interna util (mm2) de um eletroduto comercial (PVC)"""
         # Nominal -> Interno Aprox (mm)
@@ -112,20 +122,6 @@ class ElectricalCalculator:
         return (math.pi * (d**2)) / 4.0
 
     @staticmethod
-    def get_grouping_factor(num_circuits):
-        """Retorna o fator de agrupamento (fca) segundo a NBR 5410"""
-        factors = {
-            1: 1.0,
-            2: 0.80,
-            3: 0.70,
-            4: 0.65,
-            5: 0.60,
-            6: 0.57,
-            7: 0.54,
-            8: 0.52,
-            9: 0.50
-        }
-        if num_circuits >= 9: return 0.50
         return factors.get(num_circuits, 1.0)
 
     @staticmethod

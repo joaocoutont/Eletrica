@@ -42,16 +42,13 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         # Garante que os comandos do Draft e BIM estejam registrados na memória
         try:
             import DraftGui
-            DraftGui.setup_commands()
+            if hasattr(DraftGui, "init"):
+                DraftGui.init()
             import BIMGui
-            # No FreeCAD 1.1, BIM e Arch estão consolidados
-            try:
-                import ArchGui
-                ArchGui.setup_commands()
-            except:
-                pass
+            if hasattr(BIMGui, "init"):
+                BIMGui.init()
         except Exception as e:
-            FreeCAD.Console.PrintWarning("Aviso: Falha ao pré-carregar comandos Draft/BIM: " + str(e) + "\n")
+            FreeCAD.Console.PrintWarning("Aviso: Falha ao despertar comandos Draft/BIM: " + str(e) + "\n")
         
         # 1. GRUPO: INÍCIO E CONFIGURAÇÃO
         toolbar_start = ["Eletrica_StartNewProject", "Eletrica_ToggleDashboard"]

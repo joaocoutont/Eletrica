@@ -81,6 +81,48 @@ class InsertSocket:
                 active_container.addObject(obj)
             FreeCADGui.runCommand("Draft_Move")
 
+class InsertSwitch:
+    """Insere interruptores com definicao de tipo e comando"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Inserir Interruptor (Comando)',
+            'ToolTip': 'Insere interruptores Simples, Paralelo ou Intermediário'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Lighting import LightingManager
+        import FreeCADGui
+        
+        # 1. Escolher Tipo
+        types = ["Simples", "Paralelo", "Intermediário"]
+        stype, ok1 = QtWidgets.QInputDialog.getItem(None, "Interruptor", "Tipo:", types, 0, False)
+        
+        # 2. Definir Letra de Comando
+        cmd, ok2 = QtWidgets.QInputDialog.getText(None, "Comando", "Letra do Comando (ex: a, b, c):", text="a")
+        
+        if ok1 and ok2:
+            stype_clean = "Intermediario" if "Inter" in stype else stype
+            LightingManager.insert_switch(stype_clean, cmd)
+            FreeCADGui.runCommand("Draft_Move")
+
+class MergeSwitches:
+    """Mescla interruptores selecionados em uma placa multitecla"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Mesclar p/ 2 ou 3 Teclas',
+            'ToolTip': 'Transforma interruptores proximos em uma placa conjunta'
+        }
+
+    def Activated(self):
+        import FreeCADGui
+        from EletricaLogic.Lighting import LightingManager
+        selection = FreeCADGui.Selection.getSelection()
+        if len(selection) < 2: return
+        LightingManager.merge_switches(selection)
+
 class InsertLight:
     def GetResources(self):
         return {'Pixmap': 'freecad', 'MenuText': 'Inserir Iluminação', 'ToolTip': 'Insere um ponto de luz'}
@@ -318,6 +360,8 @@ class CheckSelectivity:
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
     'Eletrica_InsertLight': InsertLight(),
+    'Eletrica_InsertSwitch': InsertSwitch(),
+    'Eletrica_MergeSwitches': MergeSwitches(),
     'Eletrica_CreateConduit': CreateConduit(),
     'Eletrica_CreateCableTray': CreateCableTray(),
     'Eletrica_GenerateLoadSchedule': GenerateLoadSchedule(),

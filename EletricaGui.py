@@ -6,8 +6,11 @@ import FreeCAD
 import FreeCADGui
 import os
 
-# Caminho para os novos ícones desenhados
-ICON_DIR = os.path.join(os.path.dirname(__file__), "Icons")
+# Caminho para os ícones de forma robusta
+try:
+    ICON_DIR = os.path.join(os.path.dirname(__file__), "Icons")
+except NameError:
+    ICON_DIR = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica", "Icons")
 
 # --- COMPATIBILIDADE PYSIDE2 / PYSIDE6 (FreeCAD 1.1+) ---
 try:

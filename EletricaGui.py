@@ -281,9 +281,9 @@ class Generate3DWiring:
     """Gera os cabos fisicos 3D dentro da infraestrutura"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'),
-            'MenuText': 'Criar Eletroduto',
-            'ToolTip': 'Desenha eletrodutos rígidos ou flexíveis'
+            'Pixmap': os.path.join(ICON_DIR, 'Unifilar.png'),
+            'MenuText': 'Gerar Fiação 3D (Cabos)',
+            'ToolTip': 'Desenha os cabos reais dentro dos eletrodutos'
         }
 
     def Activated(self):

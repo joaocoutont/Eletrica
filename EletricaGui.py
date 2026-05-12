@@ -37,7 +37,7 @@ class SyncTitleBlock:
     """Sincroniza o carimbo da folha TechDraw"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'StartProject.png'),
             'MenuText': 'Sincronizar Carimbo (Selo)',
             'ToolTip': 'Preenche automaticamente os dados do cliente e RT na folha'
         }
@@ -173,7 +173,7 @@ class BIMifyEquipment:
     """Converte um objeto 3D qualquer em equipamento eletrico inteligente"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Panel.png'),
             'MenuText': 'BIMificar Objeto (Tornar Motor/Máquina)',
             'ToolTip': 'Injeta propriedades eletricas e de calculo em qualquer objeto 3D selecionado'
         }
@@ -224,7 +224,7 @@ class CreateCableTray:
 
 # --- CLASSES DE CÁLCULO E DOCUMENTAÇÃO ---
 class GenerateLoadSchedule:
-    def GetResources(self): return {'Pixmap': 'freecad', 'MenuText': 'Quadro de Cargas'}
+    def GetResources(self): return {'Pixmap': os.path.join(ICON_DIR, 'Report.png'), 'MenuText': 'Quadro de Cargas'}
     def Activated(self): 
         from EletricaLogic.Circuits import CircuitManager
         CircuitManager.generate_load_schedule()
@@ -261,7 +261,7 @@ class CloneFloor:
     """Clona a rede eletrica de um andar para outro"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Panel.png'),
             'MenuText': 'Replicar Redes (Andar Tipo)',
             'ToolTip': 'Copia toda a rede eletrica do andar selecionado para outro andar'
         }
@@ -297,7 +297,7 @@ class CreateIndustrialConnection:
     """Insere Sealtub e Prensa-Cabo no final da linha"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'),
             'MenuText': 'Finalizar p/ Motor (Sealtub/Prensa-Cabo)',
             'ToolTip': 'Converte o final da linha em flexível estanque e insere prensa-cabo'
         }
@@ -322,7 +322,7 @@ class GenerateProjectQR:
     """Gera QR Code para Realidade Aumentada na prancha"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Report.png'),
             'MenuText': 'Gerar Link de Realidade Aumentada (QR)',
             'ToolTip': 'Cria um QR Code que leva ao modelo 3D no celular'
         }
@@ -344,7 +344,7 @@ class InsertSmartDevice:
     """Insere dispositivos de casa inteligente"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Light.png'),
             'MenuText': 'Inserir Dispositivo Smart / IoT',
             'ToolTip': 'Insere sensores, cameras e hubs de automação'
         }
@@ -362,7 +362,7 @@ class CheckSelectivity:
     """Verifica a coordenacao entre disjuntores"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Audit.png'),
             'MenuText': 'Verificar Seletividade (Geral x Circuito)',
             'ToolTip': 'Avalia se o disjuntor geral nao vai cair junto com o do circuito'
         }
@@ -381,7 +381,7 @@ class CreatePanel:
     """Comando para criar um quadro de distribuicao ou comando industrial"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Panel.png'),
             'MenuText': 'Criar Painel (QDC / CCM / CCA)',
             'ToolTip': 'Cria um painel inteligente com fluxo de Força e Comando'
         }
@@ -403,7 +403,7 @@ class GenerateCableSchedule:
     """Gera a lista de cabos industrial (De/Para)"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Report.png'),
             'MenuText': 'Gerar Lista de Cabos (Cable Schedule)',
             'ToolTip': 'Cria uma planilha com Origem, Destino e Comprimento de todos os cabos'
         }
@@ -419,7 +419,7 @@ class ServiceEntranceWizard:
     """Assistente para definir o padrao de entrada conforme concessionaria"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Switch.png'),
             'MenuText': 'Assistente de Padrão de Entrada (Concessionária)',
             'ToolTip': 'Define poste, caixa e disjuntor conforme normas brasileiras'
         }
@@ -452,7 +452,7 @@ class InsertSubstation:
     """Ferramenta para dimensionar e inserir uma subestacao particular"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Panel.png'),
             'MenuText': 'Dimensionar Subestação Particular (Aérea/Abrigada)',
             'ToolTip': 'Sugere o tipo de subestacao e protecao com base no kVA'
         }
@@ -484,7 +484,7 @@ class DimensionMotorStarter:
     """Dimensiona a partida WEG para o motor selecionado"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Switch.png'),
             'MenuText': 'Dimensionar Partida Motor (WEG)',
             'ToolTip': 'Sugere Disjuntor-Motor, Contator, Soft-Starter ou Inversor conforme o CV'
         }
@@ -511,7 +511,7 @@ class DimensionMotorStarter:
 class SetupEmergencyPower:
     """Configura o Gerador e QTA"""
     def GetResources(self):
-        return {'Pixmap': 'freecad', 'MenuText': 'Gerador e QTA (Emergência)', 'ToolTip': 'Dimensiona energia reserva'}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Panel.png'), 'MenuText': 'Gerador e QTA (Emergência)', 'ToolTip': 'Dimensiona energia reserva'}
     def Activated(self):
         from EletricaLogic.Generators import GeneratorManager
         kva, ok = QtWidgets.QInputDialog.getInt(None, "Emergência", "Carga Crítica Total (kVA):", 50, 5, 2000, 1)
@@ -522,7 +522,7 @@ class SetupEmergencyPower:
 class GenerateControlWiring:
     """Gera o esquema de ligação do comando"""
     def GetResources(self):
-        return {'Pixmap': 'freecad', 'MenuText': 'Esquema de Comando (Fiação)', 'ToolTip': 'Gera a lógica de ligação do painel'}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Unifilar.png'), 'MenuText': 'Esquema de Comando (Fiação)', 'ToolTip': 'Gera a lógica de ligação do painel'}
     def Activated(self):
         from EletricaLogic.ControlDiagrams import ControlDiagramManager
         import FreeCADGui
@@ -534,7 +534,7 @@ class GenerateControlWiring:
 class RunSafetyAudit:
     """Calcula Risco de Arco Elétrico"""
     def GetResources(self):
-        return {'Pixmap': 'freecad', 'MenuText': 'Risco de Arco Elétrico (NR-10)', 'ToolTip': 'Define EPI necessário para o painel'}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Audit.png'), 'MenuText': 'Risco de Arco Elétrico (NR-10)', 'ToolTip': 'Define EPI necessário para o painel'}
     def Activated(self):
         from EletricaLogic.Safety import SafetyManager
         import FreeCADGui
@@ -550,7 +550,7 @@ class InsertBoreholePump:
     """Insere uma bomba submersa Ebara e dimensiona o cabo para a profundidade"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Audit.png'),
             'MenuText': 'Bomba de Poço Submersa (Ebara)',
             'ToolTip': 'Calcula bitola do cabo considerando profundidade do poço'
         }

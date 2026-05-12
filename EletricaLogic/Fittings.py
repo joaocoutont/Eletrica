@@ -101,9 +101,9 @@ class FittingManager:
         FreeCAD.ActiveDocument.recompute()
 
     @staticmethod
-    def add_tray_supports(tray_obj, support_type="Teto", spacing=1500):
+    def add_tray_supports(tray_obj, support_type="Teto_Trapezio", spacing=1500):
         """
-        Adiciona suportes (Mão Francesa ou Trapeze) ao longo da calha.
+        Adiciona suportes (Mão Francesa, Trapezio ou Tirante Central) ao longo da calha.
         """
         from EletricaLogic.Library import LibraryManager
         if not hasattr(tray_obj, "Shape"): return
@@ -113,7 +113,13 @@ class FittingManager:
         num_supports = int(length / spacing)
         lib = LibraryManager()
         
-        comp = "Suporte_Trapezio_Tirante.FCStd" if support_type == "Teto" else "Suporte_Mao_Francesa.FCStd"
+        # Mapeamento de componentes
+        comps = {
+            "Teto_Trapezio": "Suporte_Trapezio_Duplo.FCStd",
+            "Teto_Central": "Suporte_Tirante_Central.FCStd",
+            "Parede": "Suporte_Mao_Francesa.FCStd"
+        }
+        comp = comps.get(support_type, "Suporte_Trapezio_Duplo.FCStd")
         
         for i in range(1, num_supports + 1):
             dist = i * spacing

@@ -548,7 +548,7 @@ class CreateCableTray:
         types = ["Lisa (Fechada)", "Perfurada", "Aramada (Leito)"]
         ctype, ok2 = QtWidgets.QInputDialog.getItem(None, "Tipo", "Tipo de Calha:", types, 1, False)
         
-        supports = ["Teto (Tirantes)", "Parede (Mão Francesa)", "Nenhum"]
+        supports = ["Teto (Trapézio)", "Teto (Tirante Central)", "Parede (Mão Francesa)", "Nenhum"]
         sup, ok5 = QtWidgets.QInputDialog.getItem(None, "Suporte", "Sistema de Fixação:", supports, 0, False)
         
         w, ok3 = QtWidgets.QInputDialog.getInt(None, "Dimensoes", "Largura (mm):", 200, 50, 1000, 50)
@@ -576,7 +576,7 @@ class CreateCableTray:
             
             # 4. Adicionar Suportes
             if sup != "Nenhum":
-                s_type = "Teto" if "Teto" in sup else "Parede"
+                s_type = "Teto_Central" if "Central" in sup else ("Teto_Trapezio" if "Trapézio" in sup else "Parede")
                 FittingManager.add_tray_supports(tray, support_type=s_type)
             
             # Ajustar Cor Visual

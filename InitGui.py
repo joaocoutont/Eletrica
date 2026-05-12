@@ -4,10 +4,17 @@ import FreeCAD
 import FreeCADGui
 import os
 
+# Detecção segura do caminho da bancada
+try:
+    BASE_PATH = os.path.dirname(__file__)
+except NameError:
+    # Caso __file__ não exista, busca no diretório de Mods do usuário
+    BASE_PATH = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica")
+
 class EletricaWorkbench (Workbench):
     """Bancada de Engenharia Elétrica Elite BIM para FreeCAD 1.1"""
     
-    ICON_DIR = os.path.join(os.path.dirname(__file__), "Icons")
+    ICON_DIR = os.path.join(BASE_PATH, "Icons")
     
     MenuText = "Eletrica Elite"
     ToolTip = "Suite Profissional de Engenharia Elétrica BIM (NBR 5410)"
@@ -84,12 +91,6 @@ class EletricaWorkbench (Workbench):
         self.appendMenu("Eletrica Elite", all_cmds)
 
     def Activated(self):
-        # Despertar os comandos de forma passiva (evita loops e travamentos)
-        try:
-            import DraftGui
-            import BIMGui
-        except:
-            pass
         return
 
     def Deactivated(self):

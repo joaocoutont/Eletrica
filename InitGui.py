@@ -36,8 +36,9 @@ class EletricaWorkbench (FreeCADGui.Workbench):
     def Initialize(self):
         "This function is executed when FreeCAD starts"
         import EletricaGui
-        self.appendToolbar("Predial", ["Eletrica_InsertSocket", "Eletrica_InsertLight"])
-        self.appendMenu("Eletrica", ["Eletrica_InsertSocket", "Eletrica_InsertLight"])
+        import EletricaPanel
+        self.appendToolbar("Predial", ["Eletrica_OpenLibrary", "Eletrica_InsertSocket", "Eletrica_InsertLight"])
+        self.appendMenu("Eletrica", ["Eletrica_OpenLibrary", "Eletrica_InsertSocket", "Eletrica_InsertLight"])
 
     def Activated(self):
         "This function is executed when the workbench is activated"

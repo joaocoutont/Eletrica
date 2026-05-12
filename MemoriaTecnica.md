@@ -22,4 +22,8 @@ A bancada **Eletrica** é uma extensão para o FreeCAD focada em projetos de eng
 ## 5. Considerações Futuras
 - Integração com sistemas fotovoltaicos.
 - Cálculos de curto-circuito e seletividade.
-- Modelagem de sistemas industriais (leitos, eletrocalhas de grande porte).
+- **Modelagem de sistemas industriais (leitos, eletrocalhas de grande porte).
+
+## 6. Integração de Bibliotecas
+- **Biblioteca 3D**: Utilização da biblioteca existente em `D:\Objetos 3D\Curso FRECAD ELETRICO\HRC_Nova_Biblioteca_3D`. Os objetos serão importados como referências externas ou "Part Containers" com propriedades BIM acopladas.
+- **Biblioteca 2D**: Integração via símbolos do Workbench Draft, permitindo a representação simbólica em plantas baixas vinculada ao modelo 3D.

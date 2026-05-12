@@ -559,15 +559,42 @@ class GenerateUnifilar:
     def GetResources(self):
         return {
             'Pixmap': 'freecad',
-            'MenuText': 'Gerar Diagrama Unifilar',
-            'ToolTip': 'Cria um esquema grafico unifilar no TechDraw'
+            'MenuText': 'Gerar Diagrama Unifilar Gráfico',
+            'ToolTip': 'Cria o desenho técnico do quadro no TechDraw'
         }
 
     def Activated(self):
-        # Por enquanto, vamos avisar que os dados estao no Quadro de Cargas
-        # e preparar a folha para o desenho manual auxiliado
+        import FreeCADGui
+        from EletricaLogic.Diagrams import UnifilarGenerator
         from PySide2 import QtWidgets
-        QtWidgets.QMessageBox.information(None, "Diagrama Unifilar", "Funcionalidade de desenho grafico em desenvolvimento.\nUse os dados do Quadro de Cargas para compor sua prancha.")
+        
+        selection = FreeCADGui.Selection.getSelection()
+        panel = next((obj for obj in selection if hasattr(obj, "TipoBIM") and obj.TipoBIM == "Quadro"), None)
+        
+        if not panel:
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione um Quadro (QDC) para gerar o diagrama.")
+            return
+            
+        UnifilarGenerator.create_graphic_diagram(panel)
+        QtWidgets.QMessageBox.information(None, "Sucesso", "Diagrama gerado na aba TechDraw!")
+
+class SPDAGui:
+    """Calculadora de SPDA"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Calculadora de SPDA (Para-Raios)',
+            'ToolTip': 'Calcula Franklin, Faraday e descidas de SPDA'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.SPDA import SPDACalculator
+        
+        h, ok = QtWidgets.QInputDialog.getDouble(None, "SPDA - Franklin", "Altura do Mastro (m):", 6.0, 1, 100, 1)
+        if ok:
+            r = SPDACalculator.calculate_franklin_radius(h)
+            QtWidgets.QMessageBox.information(None, "Resultado SPDA", f"Raio de Proteção (Método Franklin): {r} metros")
 
 class CreatePanel:
     """Comando para criar um quadro de distribuicao (QDC)"""
@@ -638,6 +665,7 @@ FreeCADGui.addCommand('Eletrica_GenerateBOM', GenerateBOM())
 FreeCADGui.addCommand('Eletrica_GenerateWireSymbols', GenerateWireSymbols())
 FreeCADGui.addCommand('Eletrica_GroundingCalculator', GroundingCalculator())
 FreeCADGui.addCommand('Eletrica_GenerateUnifilar', GenerateUnifilar())
+FreeCADGui.addCommand('Eletrica_SPDAGui', SPDAGui())
 FreeCADGui.addCommand('Eletrica_CreatePanel', CreatePanel())
 FreeCADGui.addCommand('Eletrica_InsertTUE', InsertTUE())
 FreeCADGui.addCommand('Eletrica_InsertServiceEntrance', InsertServiceEntrance())

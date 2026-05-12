@@ -66,6 +66,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_GeneratePanelLabels",
             "Eletrica_SolarEstimate",
             "Eletrica_GenerateUnifilar",
+            "Eletrica_SPDAGui",
             "Eletrica_GroundingCalculator",
             "Eletrica_InsertSocket", 
             "Eletrica_InsertLight",

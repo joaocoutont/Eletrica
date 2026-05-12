@@ -197,6 +197,32 @@ class Generate3DWiring:
         for obj in selection:
             WiringManager.generate_3d_cables(obj)
 
+class CreateIndustrialConnection:
+    """Insere Sealtub e Prensa-Cabo no final da linha"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Finalizar p/ Motor (Sealtub/Prensa-Cabo)',
+            'ToolTip': 'Converte o final da linha em flexível estanque e insere prensa-cabo'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Fittings import FittingManager
+        from PySide2 import QtWidgets
+        import FreeCADGui
+        
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione o eletroduto que chega ao motor.")
+            return
+            
+        types = ["PG11", "PG13.5", "PG16", "PG21", "M20", "M25"]
+        gland, ok = QtWidgets.QInputDialog.getItem(None, "Prensa-Cabo", "Selecione o Tamanho:", types, 2, False)
+        
+        if ok:
+            for obj in selection:
+                FittingManager.add_industrial_termination(obj, gland_type=gland)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -208,6 +234,7 @@ cmds = {
     'Eletrica_GenerateUnifilar': GenerateUnifilar(),
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
     'Eletrica_GenerateBudget': GenerateBudget(),
+    'Eletrica_CreateIndustrialConnection': CreateIndustrialConnection(),
     'Eletrica_ToggleDashboard': ToggleDashboard(),
     'Eletrica_CloneFloor': CloneFloor(),
     'Eletrica_Generate3DWiring': Generate3DWiring()

@@ -71,6 +71,33 @@ class FittingManager:
         FreeCAD.Console.PrintMessage(f"{num_clamps} abracadeiras adicionadas a {conduit_obj.Label}.\n")
 
     @staticmethod
+    def add_industrial_termination(conduit_obj, gland_type="PG16"):
+        """Adiciona Sealtub e Prensa-Cabo no final do tubo"""
+        from EletricaLogic.Library import LibraryManager
+        if not hasattr(conduit_obj, "Shape"): return
+        
+        # 1. Obter o ultimo ponto do tubo
+        points = conduit_obj.Shape.Vertexes
+        end_point = points[-1].Point
+        direction = conduit_obj.Shape.tangentAt(conduit_obj.Shape.Length)
+        
+        lib = LibraryManager()
+        
+        # 2. Inserir Prensa-Cabo
+        gland = lib.insert_component("Prensa_Cabo.FCStd", label=f"PrensaCabo_{conduit_obj.Label}")
+        if gland:
+            gland.Placement.Base = end_point
+            # Orientar conforme o tubo
+            
+        # 3. Marcar o tubo como Sealtub
+        if not hasattr(conduit_obj, "TipoMaterial"):
+            conduit_obj.addProperty("App::PropertyString", "TipoMaterial", "Eletrica", "Material")
+        conduit_obj.TipoMaterial = "Sealtub (Flexível Estanque)"
+        conduit_obj.ViewObject.ShapeColor = (0.2, 0.2, 0.2) # Preto/Grafite
+        
+        FreeCAD.ActiveDocument.recompute()
+
+    @staticmethod
     def add_tray_fittings(tray_obj):
         """
         Analisa o caminho da eletrocalha e insere conexoes (curvas horiz/vert).

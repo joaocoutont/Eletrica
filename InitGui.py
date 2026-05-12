@@ -65,6 +65,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_GenerateBudget",
             "Eletrica_CloneFloor",
             "Eletrica_Generate3DWiring",
+            "Eletrica_CreateIndustrialConnection",
             "Eletrica_GenerateReport",
             "Eletrica_GenerateRiseFallSymbols",
             "Eletrica_AnnotateCircuits",

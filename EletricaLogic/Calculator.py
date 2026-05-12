@@ -136,3 +136,16 @@ class ElectricalCalculator:
             if current <= b:
                 return b
         return 125 # Valor maximo para circuitos terminais comuns
+
+    @staticmethod
+    def calculate_short_circuit(voltage, distance_m, section):
+        """
+        Estimativa simplificada da corrente de curto-circuito (kA).
+        """
+        # Resistividade do cobre
+        rho = 0.0172
+        # Impedancia do cabo (aproximada)
+        r_cable = (rho * distance_m) / section
+        z_source = 0.02 # Impedancia da rede/trafo estimada
+        isc = voltage / (z_source + r_cable)
+        return isc / 1000.0 # Em kA

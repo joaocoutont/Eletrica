@@ -5,6 +5,15 @@ from EletricaLogic.Settings import ProjectSettings
 
 class SpaceLightingManager:
     @staticmethod
+    def calculate_required_lumens(area, target_lux=300, utilization_factor=0.5, maintenance_factor=0.8):
+        """
+        Calcula o fluxo luminoso total necessario usando o Metodo dos Lumens.
+        Phi = (E * A) / (u * d)
+        """
+        total_lumens = (target_lux * area) / (utilization_factor * maintenance_factor)
+        return total_lumens
+
+    @staticmethod
     def analyze_space(space_obj):
         """
         Analisa um objeto Arch Space e sugere a iluminacao.
@@ -16,18 +25,16 @@ class SpaceLightingManager:
         min_power = ElectricalCalculator.calculate_min_lighting_power(area)
         
         # Sugestao Luminotecnica (NBR ISO/CIE 8995-1)
-        # Nivel de iluminancia sugerido (lux) baseado no tipo de edificacao
         edificacao = ProjectSettings.get_settings_obj().TipoEdificacao
         
-        lux_target = 300 # Padrao residencial (Sala/Quarto)
+        lux_target = 300 # Padrao residencial
         if edificacao == "Comercial (Escritorio)":
             lux_target = 500
         elif edificacao == "Industrial":
             lux_target = 750
             
-        # Calculo simplificado (Metodo dos Lumens reverso)
-        # Fluxo = (Lux * Area) / (u * d) -> u*d aprox 0.5
-        flux_needed = (lux_target * area) / 0.5
+        # Metodo dos Lumens (u=0.5, d=0.8)
+        flux_needed = SpaceLightingManager.calculate_required_lumens(area, lux_target)
         
         # Se uma lampada LED comum tem ~1000 lumens
         points_suggested = max(1, round(flux_needed / 1000.0))
@@ -36,7 +43,8 @@ class SpaceLightingManager:
             "Area": area,
             "PowerVA": min_power,
             "LuxTarget": lux_target,
-            "PointsSuggested": points_suggested
+            "PointsSuggested": points_suggested,
+            "FluxNeeded": round(flux_needed, 2)
         }
 
     @staticmethod

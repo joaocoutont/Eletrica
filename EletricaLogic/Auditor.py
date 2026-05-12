@@ -25,8 +25,18 @@ class ProjectAuditor:
                 if obj.TaxaOcupacao > 40.0:
                     errors.append(f"Eletroduto [{obj.Label}] esta com ocupacao critica ({round(obj.TaxaOcupacao, 2)}%).")
         
-        # 3. Verificar Queda de Tensao Critica
-        # (Isso poderia vir do CircuitsManager)
+        # 3. Verificar Colisoes (Clash Detection)
+        conduits = [o for o in doc.Objects if hasattr(o, "TaxaOcupacao")]
+        for i in range(len(conduits)):
+            for j in range(i + 1, len(conduits)):
+                bb1 = conduits[i].Shape.BoundBox
+                bb2 = conduits[j].Shape.BoundBox
+                if bb1.intersect(bb2):
+                    # Verificacao mais fina se necessário, ou apenas avisar
+                    warnings.append(f"Possivel colisao entre {conduits[i].Label} e {conduits[j].Label}")
+                    # Destacar no 3D
+                    conduits[i].ViewObject.ShapeColor = (1.0, 0.5, 0.0)
+                    conduits[j].ViewObject.ShapeColor = (1.0, 0.5, 0.0)
         
         return {
             "Errors": errors,

@@ -1,0 +1,59 @@
+# FreeCAD Eletrica Workbench
+# This file is part of the Eletrica Workbench for FreeCAD
+
+import FreeCADGui
+
+class EletricaWorkbench (FreeCADGui.Workbench):
+    "Eletrica Workbench"
+
+    # Icon path - placeholder for now
+    MenuText = "Eletrica"
+    ToolTip = "Ferramentas para Projetos Elétricos BIM"
+    Icon = """
+        /* XPM */
+        static char * xpm_body[] = {
+        "16 16 2 1",
+        " 	c None",
+        ".	c #FFCC00",
+        "                ",
+        "       ..       ",
+        "      ....      ",
+        "     ......     ",
+        "    ........    ",
+        "       ..       ",
+        "       ..       ",
+        "   ..........   ",
+        "       ..       ",
+        "       ..       ",
+        "    ........    ",
+        "     ......     ",
+        "      ....      ",
+        "       ..       ",
+        "                ",
+        "                "};
+        """
+
+    def Initialize(self):
+        "This function is executed when FreeCAD starts"
+        import EletricaGui
+        self.appendToolbar("Predial", ["Eletrica_InsertSocket", "Eletrica_InsertLight"])
+        self.appendMenu("Eletrica", ["Eletrica_InsertSocket", "Eletrica_InsertLight"])
+
+    def Activated(self):
+        "This function is executed when the workbench is activated"
+        return
+
+    def Deactivated(self):
+        "This function is executed when the workbench is deactivated"
+        return
+
+    def ContextMenu(self, recipient):
+        "This function is executed whenever the user right-clicks on an object"
+        return
+
+    def GetClassName(self): 
+        # This function is mandatory if you follow the "frozendict" example 
+        # in the FreeCAD source code.
+        return "Gui::PythonWorkbench"
+
+FreeCADGui.addWorkbench(EletricaWorkbench())

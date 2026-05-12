@@ -567,6 +567,10 @@ class CreateCableTray:
                 tray.addProperty("App::PropertyString", "Material", "Eletrica", "Material").Material = mat
                 tray.addProperty("App::PropertyString", "TipoCalha", "Eletrica", "Tipo").TipoCalha = ctype
             
+            # 3. Adicionar Conexoes e Curvas Automaticas
+            from EletricaLogic.Fittings import FittingManager
+            FittingManager.add_tray_fittings(tray)
+            
             # Ajustar Cor Visual
             if "Alumínio" in mat: tray.ViewObject.ShapeColor = (0.8, 0.8, 0.8)
             elif "Inox" in mat: tray.ViewObject.ShapeColor = (0.9, 0.9, 1.0)

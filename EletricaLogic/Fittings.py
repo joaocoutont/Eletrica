@@ -69,3 +69,33 @@ class FittingManager:
                 
         doc.recompute()
         FreeCAD.Console.PrintMessage(f"{num_clamps} abracadeiras adicionadas a {conduit_obj.Label}.\n")
+
+    @staticmethod
+    def add_tray_fittings(tray_obj):
+        """
+        Analisa o caminho da eletrocalha e insere conexoes (curvas horiz/vert).
+        """
+        from EletricaLogic.Library import LibraryManager
+        if not hasattr(tray_obj, "Shape"): return
+        
+        vertices = tray_obj.Shape.Vertexes
+        lib = LibraryManager()
+        
+        for i in range(1, len(vertices) - 1):
+            p1 = vertices[i-1].Point
+            p2 = vertices[i].Point
+            p3 = vertices[i+1].Point
+            
+            # Mudanca vertical detectada?
+            is_vertical = abs(p1.z - p2.z) > 10.0 or abs(p2.z - p3.z) > 10.0
+            
+            if is_vertical:
+                comp = "Curva_Inversao_Eletrocalha.FCStd"
+            else:
+                comp = "Curva_Horizontal_90_Eletrocalha.FCStd"
+                
+            obj = lib.insert_component(comp, label=f"Conexao_{tray_obj.Label}_{i}")
+            if obj:
+                obj.Placement.Base = p2
+        
+        FreeCAD.ActiveDocument.recompute()

@@ -384,6 +384,36 @@ class AutoConnectCeiling:
             return
         AutoRouter.connect_to_nearest_ceiling(selection)
 
+class CreateExposedConduit:
+    """Cria eletrodutos aparentes (cinza/ferro) com conduletes automaticos"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Lançar Linha Aparente (Conduletes)',
+            'ToolTip': 'Cria eletrodutos cinza e insere caixas de condulete em cada curva'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Conduit import ConduitManager
+        from EletricaLogic.Fittings import FittingManager
+        from PySide2 import QtWidgets
+        import FreeCADGui
+        
+        # 1. Chamar o criador de conduites padrao
+        FreeCADGui.runCommand("Eletrica_CreateConduit")
+        
+        # 2. Pegar o ultimo objeto criado e customizar
+        doc = FreeCAD.ActiveDocument
+        last_obj = doc.Objects[-1]
+        if hasattr(last_obj, "TaxaOcupacao"):
+            last_obj.Label = "Eletroduto_Aparente"
+            last_obj.ViewObject.ShapeColor = (0.3, 0.3, 0.3) # Cinza Tigre/Ferro
+            
+            # 3. Adicionar os conduletes
+            FittingManager.add_conduletes_to_conduit(last_obj)
+            
+        return
+
 class RunProjectAudit:
     """Comando para auditar o projeto em busca de erros"""
     def GetResources(self):
@@ -602,4 +632,5 @@ FreeCADGui.addCommand('Eletrica_GenerateReport', GenerateReport())
 FreeCADGui.addCommand('Eletrica_SolarEstimate', SolarEstimate())
 FreeCADGui.addCommand('Eletrica_GeneratePanelLabels', GeneratePanelLabels())
 FreeCADGui.addCommand('Eletrica_RunProjectAudit', RunProjectAudit())
+FreeCADGui.addCommand('Eletrica_CreateExposedConduit', CreateExposedConduit())
 FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

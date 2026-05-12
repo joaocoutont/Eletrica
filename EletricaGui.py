@@ -297,7 +297,7 @@ class CreateIndustrialConnection:
     """Insere Sealtub e Prensa-Cabo no final da linha"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Merge.png'),
             'MenuText': 'Finalizar p/ Motor (Sealtub/Prensa-Cabo)',
             'ToolTip': 'Converte o final da linha em flexível estanque e insere prensa-cabo'
         }

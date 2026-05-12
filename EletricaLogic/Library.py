@@ -13,7 +13,7 @@ class LibraryManager:
             return []
         return [f for f in os.listdir(self.path_3d) if f.endswith('.FCStd')]
 
-    def insert_component(self, filename, label=None):
+    def insert_component(self, filename, label=None, symbol_height=2700.0):
         """
         Insere um componente da biblioteca no documento ativo usando App::Link.
         Isso mantem o arquivo original como referencia (BIM).
@@ -51,8 +51,8 @@ class LibraryManager:
             # Tentar inserir simbolo 2D correspondente
             symbol_file = self.get_symbol_for_3d(filename)
             if symbol_file:
-                self.insert_symbol(symbol_file, link)
-                FreeCAD.Console.PrintMessage(f"Simbolo 2D '{symbol_file}' vinculado.\n")
+                self.insert_symbol(symbol_file, link, height=symbol_height)
+                FreeCAD.Console.PrintMessage(f"Simbolo 2D '{symbol_file}' vinculado em Z={symbol_height}.\n")
             
             FreeCAD.Console.PrintMessage(f"Inserido: {obj_name}\n")
             return link
@@ -86,8 +86,11 @@ class LibraryManager:
         
         return None
 
-    def insert_symbol(self, symbol_filename, parent_obj=None):
-        """Insere o simbolo 2D e o vincula ao objeto 3D"""
+    def insert_symbol(self, symbol_filename, parent_obj=None, height=2700.0):
+        """
+        Insere o simbolo 2D e o posiciona no nivel do teto (height).
+        Isso evita que simbolos fiquem 'espalhados' em alturas diferentes no 3D.
+        """
         if not symbol_filename: return
         
         full_path = os.path.join(self.path_2d, symbol_filename)
@@ -95,16 +98,17 @@ class LibraryManager:
         
         doc = FreeCAD.ActiveDocument
         try:
-            # Inserir o simbolo como um Link tambem, para manter o original
             sym_name = "Simbolo_" + symbol_filename.replace(".FCStd", "")
             sym_link = doc.addObject("App::Link", sym_name)
             sym_link.LinkedObject = FreeCAD.open(full_path).Objects[0]
             
-            # Se tiver um pai (objeto 3D), vincula a posicao
+            # Posicionamento: X e Y seguem o pai, Z vai para o 'teto'
             if parent_obj:
-                # No FreeCAD, podemos colocar em um Group ou apenas manter proximo
-                # O ideal para BIM e que o simbolo seja um 'filho' visual
-                pass
+                # Copiar X e Y do objeto 3D
+                pos = parent_obj.Placement.Base
+                sym_link.Placement.Base = FreeCAD.Vector(pos.x, pos.y, height)
+            else:
+                sym_link.Placement.Base = FreeCAD.Vector(0, 0, height)
                 
             return sym_link
         except:

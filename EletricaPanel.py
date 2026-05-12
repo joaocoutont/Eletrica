@@ -20,6 +20,16 @@ class LibraryPanel:
         self.refresh_list()
         self.layout.addWidget(self.list_widget)
         
+        # Configuracao de Altura (Teto)
+        self.h_layout = QtWidgets.QHBoxLayout()
+        self.h_label = QtWidgets.QLabel("Altura do Plano 2D (mm):")
+        self.spin_height = QtWidgets.QDoubleSpinBox()
+        self.spin_height.setRange(0, 10000)
+        self.spin_height.setValue(2700.0)
+        self.h_layout.addWidget(self.h_label)
+        self.h_layout.addWidget(self.spin_height)
+        self.layout.addLayout(self.h_layout)
+        
         # Botao Inserir
         self.btn_insert = QtWidgets.QPushButton("Inserir no Projeto")
         self.btn_insert.clicked.connect(self.on_insert)
@@ -45,7 +55,8 @@ class LibraryPanel:
             return
         
         filename = selected.text()
-        self.manager.insert_component(filename)
+        height = self.spin_height.value()
+        self.manager.insert_component(filename, symbol_height=height)
 
 # Comando para abrir o painel
 class OpenLibraryCommand:

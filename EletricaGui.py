@@ -334,6 +334,36 @@ class AutoConnectCeiling:
             return
         AutoRouter.connect_to_nearest_ceiling(selection)
 
+class RunProjectAudit:
+    """Comando para auditar o projeto em busca de erros"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Auditoria de Projeto (Verificar Erros)',
+            'ToolTip': 'Varre o projeto em busca de tomadas sem circuito, tubos cheios e outras falhas'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Auditor import ProjectAuditor
+        
+        report = ProjectAuditor.run_full_audit()
+        
+        msg = "--- Auditoria de Projeto ---\n\n"
+        
+        if report["Errors"]:
+            msg += "❌ ERROS CRÍTICOS:\n"
+            msg += " - " + "\n - ".join(report["Errors"]) + "\n\n"
+            
+        if report["Warnings"]:
+            msg += "⚠️ AVISOS:\n"
+            msg += " - " + "\n - ".join(report["Warnings"]) + "\n"
+            
+        if not report["Errors"] and not report["Warnings"]:
+            msg = "✅ Parabéns! Nenhuma inconsistência encontrada no projeto."
+            
+        QtWidgets.QMessageBox.information(None, "Relatório de Auditoria", msg)
+
 class InsertTUE:
     """Comando para inserir equipamentos de uso especifico (Chuveiro, AC, etc)"""
     def GetResources(self):
@@ -519,4 +549,5 @@ FreeCADGui.addCommand('Eletrica_ApplyHeatmap', ApplyHeatmap())
 FreeCADGui.addCommand('Eletrica_GenerateReport', GenerateReport())
 FreeCADGui.addCommand('Eletrica_SolarEstimate', SolarEstimate())
 FreeCADGui.addCommand('Eletrica_GeneratePanelLabels', GeneratePanelLabels())
+FreeCADGui.addCommand('Eletrica_RunProjectAudit', RunProjectAudit())
 FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

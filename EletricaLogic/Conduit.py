@@ -38,6 +38,30 @@ class ConduitManager:
         return pipe
 
     @staticmethod
+    def suggest_conduit_size(conduit_obj):
+        """Sugere o proximo diametro comercial se estiver superlotado"""
+        if not hasattr(conduit_obj, "TaxaOcupacao") or not hasattr(conduit_obj, "DiametroNominal"):
+            return None
+            
+        if conduit_obj.TaxaOcupacao <= 40.0:
+            return None # Ja esta OK
+            
+        standard_sizes = ["16mm", "20mm", "25mm", "32mm", "40mm", "50mm"]
+        current_size = conduit_obj.DiametroNominal
+        
+        try:
+            idx = standard_sizes.index(current_size)
+            for i in range(idx + 1, len(standard_sizes)):
+                test_size = standard_sizes[i]
+                # Simular ocupacao no novo tamanho
+                # (Apenas um calculo rapido aqui para a sugestao)
+                # ...
+                return test_size
+        except:
+            pass
+        return None
+
+    @staticmethod
     def check_all_conduits_fill():
         """
         Verifica a taxa de ocupacao de todos os eletrodutos do projeto.

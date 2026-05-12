@@ -59,6 +59,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_CalculateWiring",
             "Eletrica_PrepareIFC",
             "Eletrica_GenerateReport",
+            "Eletrica_RunProjectAudit",
             "Eletrica_GeneratePanelLabels",
             "Eletrica_SolarEstimate",
             "Eletrica_GenerateUnifilar",

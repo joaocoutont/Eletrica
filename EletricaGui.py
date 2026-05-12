@@ -141,6 +141,54 @@ class AnalyzeSpaceLighting:
             QtWidgets.QMessageBox.information(None, "Analise de Iluminacao", msg)
             FreeCAD.Console.PrintMessage(msg)
 
+class BalancePhases:
+    """Comando para equilibrar as fases do projeto"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Equilibrar Fases',
+            'ToolTip': 'Distribui os circuitos entre R, S e T automaticamente'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Circuits import CircuitManager
+        CircuitManager.balance_phases()
+        return
+
+class CalculateWiring:
+    """Comando para calcular comprimentos e quedas de tensao"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Calcular Fiacao',
+            'ToolTip': 'Calcula metragem de cabos e verifica queda de tensao'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Wiring import WiringManager
+        from PySide2 import QtWidgets
+        lengths = WiringManager.calculate_circuit_lengths()
+        
+        msg = "--- Resumo de Fiacao ---\n"
+        for c, l in lengths.items():
+            msg += f"Circuito {c}: {l/1000.0:.2f} metros\n"
+        
+        QtWidgets.QMessageBox.information(None, "Relatorio de Fiacao", msg)
+
+class PrepareIFC:
+    """Comando para preparar a exportacao BIM/IFC"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Preparar IFC',
+            'ToolTip': 'Mapeia propriedades para o padrao internacional IFC4'
+        }
+
+    def Activated(self):
+        from EletricaLogic.IFC import IFCExportManager
+        IFCExportManager.prepare_for_ifc()
+        return
+
 FreeCADGui.addCommand('Eletrica_InsertSocket', InsertSocket())
 FreeCADGui.addCommand('Eletrica_InsertLight', InsertLight())
 FreeCADGui.addCommand('Eletrica_CreateConduit', CreateConduit())
@@ -148,3 +196,6 @@ FreeCADGui.addCommand('Eletrica_GenerateLoadSchedule', GenerateLoadSchedule())
 FreeCADGui.addCommand('Eletrica_GenerateLegend', GenerateLegend())
 FreeCADGui.addCommand('Eletrica_OpenSettings', OpenSettings())
 FreeCADGui.addCommand('Eletrica_AnalyzeSpaceLighting', AnalyzeSpaceLighting())
+FreeCADGui.addCommand('Eletrica_BalancePhases', BalancePhases())
+FreeCADGui.addCommand('Eletrica_CalculateWiring', CalculateWiring())
+FreeCADGui.addCommand('Eletrica_PrepareIFC', PrepareIFC())

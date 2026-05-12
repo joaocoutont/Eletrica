@@ -46,6 +46,9 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_GenerateLoadSchedule",
             "Eletrica_GenerateLegend",
             "Eletrica_AnalyzeSpaceLighting",
+            "Eletrica_BalancePhases",
+            "Eletrica_CalculateWiring",
+            "Eletrica_PrepareIFC",
             "Eletrica_InsertSocket", 
             "Eletrica_InsertLight"
         ]

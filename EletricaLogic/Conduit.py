@@ -30,6 +30,9 @@ class ConduitManager:
         if not hasattr(pipe, "Material"):
             pipe.addProperty("App::PropertyString", "Material", "Eletrica", "Material do eletroduto")
             pipe.Material = "PVC Flexivel"
+            
+        if not hasattr(pipe, "CircuitosPassantes"):
+            pipe.addProperty("App::PropertyStringList", "CircuitosPassantes", "Eletrica", "Lista de circuitos que passam por este eletroduto")
 
         doc.recompute()
         return pipe

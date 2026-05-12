@@ -60,4 +60,40 @@ class CircuitManager:
         FreeCAD.Console.PrintMessage("Quadro de Cargas atualizado com sucesso!\n")
         return sheet
 
+    @staticmethod
+    def balance_phases():
+        """
+        Distribui os circuitos entre as fases R, S e T para equilibrar a carga total.
+        """
+        doc = FreeCAD.ActiveDocument
+        # Coletar circuitos e potencias
+        circuits = {}
+        for obj in doc.Objects:
+            if hasattr(obj, "Circuito") and hasattr(obj, "Potencia"):
+                circuits[obj.Circuito] = circuits.get(obj.Circuito, 0.0) + float(obj.Potencia)
+        
+        # Ordenar circuitos por potencia (decrescente) para o algoritmo de empacotamento
+        sorted_circuits = sorted(circuits.items(), key=lambda x: x[1], reverse=True)
+        
+        phases = {"R": 0.0, "S": 0.0, "T": 0.0}
+        distribution = {}
+        
+        for name, power in sorted_circuits:
+            # Encontrar a fase com menor carga atual
+            target_phase = min(phases, key=phases.get)
+            distribution[name] = target_phase
+            phases[target_phase] += power
+            
+        # Aplicar as fases aos objetos
+        for obj in doc.Objects:
+            if hasattr(obj, "Circuito") and obj.Circuito in distribution:
+                if not hasattr(obj, "Fase"):
+                    obj.addProperty("App::PropertyEnumeration", "Fase", "Eletrica", "Fase de alimentacao")
+                    obj.Fase = ["R", "S", "T"]
+                obj.Fase = distribution[obj.Circuito]
+        
+        msg = f"Equilibrio de Fases Concluido:\nR: {phases['R']} VA\nS: {phases['S']} VA\nT: {phases['T']} VA\n"
+        FreeCAD.Console.PrintMessage(msg)
+        return distribution
+
 import math

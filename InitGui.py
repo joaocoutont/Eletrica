@@ -7,7 +7,6 @@ import FreeCADGui
 class EletricaWorkbench (FreeCADGui.Workbench):
     "Eletrica Workbench"
 
-    # Icon path - placeholder for now
     MenuText = "Eletrica"
     ToolTip = "Ferramentas para Projetos Elétricos BIM"
     Icon = """
@@ -40,67 +39,62 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         import EletricaGui
         import EletricaPanel
         
-        # Garante que os comandos do Draft e BIM estejam carregados
         try:
             import DraftGui
             import BIMGui
         except ImportError:
             pass
         
-        # Comandos reais da Suite Elite 3.0
-        eletrica_cmds = [
-            "Eletrica_StartNewProject",
-            "Eletrica_InsertSocket",
-            "Eletrica_InsertLight",
-            "Eletrica_InsertSwitch",
-            "Eletrica_MergeSwitches",
-            "Eletrica_CreatePanel",
-            "Eletrica_CreateConduit",
-            "Eletrica_CreateCableTray",
-            "Eletrica_Generate3DWiring",
-            "Eletrica_CreateIndustrialConnection",
-            "Eletrica_GenerateLoadSchedule",
-            "Eletrica_GenerateCableSchedule",
-            "Eletrica_GenerateBudget",
-            "Eletrica_RunProjectAudit",
-            "Eletrica_GenerateUnifilar",
-            "Eletrica_SyncTitleBlock",
-            "Eletrica_BIMifyEquipment",
-            "Eletrica_DimensionMotorStarter",
-            "Eletrica_InsertBoreholePump",
-            "Eletrica_InsertSubstation",
-            "Eletrica_ServiceEntranceWizard",
-            "Eletrica_SetupEmergencyPower",
-            "Eletrica_RunSafetyAudit",
-            "Eletrica_CheckSelectivity",
-            "Eletrica_InsertSmartDevice",
-            "Eletrica_GenerateProjectQR",
-            "Eletrica_ToggleDashboard",
-            "Eletrica_CloneFloor",
-            "Eletrica_ExportDisciplineBIM"
+        # 1. GRUPO: INÍCIO E CONFIGURAÇÃO
+        toolbar_start = ["Eletrica_StartNewProject", "Eletrica_ToggleDashboard"]
+        
+        # 2. GRUPO: MODELAGEM E CRIAÇÃO (BIM)
+        toolbar_model = [
+            "Eletrica_CreatePanel", "Eletrica_InsertSocket", "Eletrica_InsertLight", 
+            "Eletrica_InsertSwitch", "Eletrica_MergeSwitches", "Eletrica_InsertSmartDevice"
         ]
         
-        # Criando as Toolbars
-        self.appendToolbar("Eletrica Elite (Principal)", eletrica_cmds)
+        # 3. GRUPO: INFRAESTRUTURA
+        toolbar_infra = [
+            "Eletrica_CreateConduit", "Eletrica_CreateCableTray", 
+            "Eletrica_CreateIndustrialConnection", "Eletrica_Generate3DWiring"
+        ]
         
-        # Criando o Menu
-        self.appendMenu("Eletrica", eletrica_cmds)
+        # 4. GRUPO: ENGENHARIA E CÁLCULOS
+        toolbar_eng = [
+            "Eletrica_ServiceEntranceWizard", "Eletrica_InsertSubstation", 
+            "Eletrica_InsertBoreholePump", "Eletrica_DimensionMotorStarter", 
+            "Eletrica_SetupEmergencyPower", "Eletrica_CheckSelectivity"
+        ]
+        
+        # 5. GRUPO: DOCUMENTAÇÃO E SAÍDA
+        toolbar_doc = [
+            "Eletrica_GenerateLoadSchedule", "Eletrica_GenerateCableSchedule", 
+            "Eletrica_GenerateBudget", "Eletrica_GenerateUnifilar", "Eletrica_SyncTitleBlock", 
+            "Eletrica_RunProjectAudit", "Eletrica_RunSafetyAudit", "Eletrica_GenerateProjectQR",
+            "Eletrica_BIMifyEquipment", "Eletrica_ExportDisciplineBIM", "Eletrica_CloneFloor"
+        ]
+        
+        # Registrando as Toolbars Separadas (Isso cria as divisórias visuais)
+        self.appendToolbar("Elite 1: Início", toolbar_start)
+        self.appendToolbar("Elite 2: Modelagem", toolbar_model)
+        self.appendToolbar("Elite 3: Infraestrutura", toolbar_infra)
+        self.appendToolbar("Elite 4: Engenharia", toolbar_eng)
+        self.appendToolbar("Elite 5: Documentação", toolbar_doc)
+        
+        # Menu consolidado
+        self.appendMenu("Eletrica Elite", toolbar_start + toolbar_model + toolbar_infra + toolbar_eng + toolbar_doc)
 
     def Activated(self):
-        "This function is executed when the workbench is activated"
         return
 
     def Deactivated(self):
-        "This function is executed when the workbench is deactivated"
         return
 
     def ContextMenu(self, recipient):
-        "This function is executed whenever the user right-clicks on an object"
         return
 
     def GetClassName(self): 
-        # This function is mandatory if you follow the "frozendict" example 
-        # in the FreeCAD source code.
         return "Gui::PythonWorkbench"
 
 FreeCADGui.addWorkbench(EletricaWorkbench())

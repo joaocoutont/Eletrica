@@ -496,6 +496,47 @@ class DimensionMotorStarter:
                 msg += "\nDados salvos para o Orçamento e BOM."
                 QtWidgets.QMessageBox.information(None, "Engenharia de CCM", msg)
 
+class SetupEmergencyPower:
+    """Configura o Gerador e QTA"""
+    def GetResources(self):
+        return {'Pixmap': 'freecad', 'MenuText': 'Gerador e QTA (Emergência)', 'ToolTip': 'Dimensiona energia reserva'}
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Generators import GeneratorManager
+        kva, ok = QtWidgets.QInputDialog.getInt(None, "Emergência", "Carga Crítica Total (kVA):", 50, 5, 2000, 1)
+        if ok:
+            GeneratorManager.create_generator_bim(kva)
+            QtWidgets.QMessageBox.information(None, "Sucesso", "Gerador e QTA inseridos no projeto.")
+
+class GenerateControlWiring:
+    """Gera o esquema de ligação do comando"""
+    def GetResources(self):
+        return {'Pixmap': 'freecad', 'MenuText': 'Esquema de Comando (Fiação)', 'ToolTip': 'Gera a lógica de ligação do painel'}
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.ControlDiagrams import ControlDiagramManager
+        import FreeCADGui
+        selection = FreeCADGui.Selection.getSelection()
+        for obj in selection:
+            report = ControlDiagramManager.create_text_diagram(obj)
+            QtWidgets.QMessageBox.information(None, "Esquema de Comando", report)
+
+class RunSafetyAudit:
+    """Calcula Risco de Arco Elétrico"""
+    def GetResources(self):
+        return {'Pixmap': 'freecad', 'MenuText': 'Risco de Arco Elétrico (NR-10)', 'ToolTip': 'Define EPI necessário para o painel'}
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Safety import SafetyManager
+        import FreeCADGui
+        selection = FreeCADGui.Selection.getSelection()
+        for obj in selection:
+            res = SafetyManager.apply_safety_to_panel(obj)
+            msg = f"Análise de Segurança para {obj.Label}:\n\n"
+            msg += f"- Energia Incidente: {res['Energia']} cal/cm2\n"
+            msg += f"- EPI Sugerido: {res['EPI_Sugerido']}\n"
+            QtWidgets.QMessageBox.information(None, "Segurança NR-10", msg)
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -515,6 +556,9 @@ cmds = {
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_ServiceEntranceWizard': ServiceEntranceWizard(),
     'Eletrica_InsertSubstation': InsertSubstation(),
+    'Eletrica_SetupEmergencyPower': SetupEmergencyPower(),
+    'Eletrica_GenerateControlWiring': GenerateControlWiring(),
+    'Eletrica_RunSafetyAudit': RunSafetyAudit(),
     'Eletrica_InsertSmartDevice': InsertSmartDevice(),
     'Eletrica_CheckSelectivity': CheckSelectivity(),
     'Eletrica_CreatePanel': CreatePanel(),

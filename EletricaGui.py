@@ -573,6 +573,36 @@ class InsertBoreholePump:
             msg += "\nNota: Dimensionamento rigoroso para evitar queima do motor submerso."
             QtWidgets.QMessageBox.information(None, "Dimensionamento de Poço", msg)
 
+class ExportDisciplineBIM:
+    """Exporta o projeto separado por disciplinas (Eletrica, SPDA, Solar)"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Exportar BIM por Disciplina (Separado)',
+            'ToolTip': 'Gera arquivos IFC/STEP individuais para Elétrica, SPDA ou Solar'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Exporter import DisciplineExporter
+        import os
+        
+        options = ["Elétrica", "SPDA", "Fotovoltaico", "EXPORTAR TUDO (Arquivos Separados)"]
+        choice, ok = QtWidgets.QInputDialog.getItem(None, "Exportar BIM", "Selecione a Disciplina:", options, 0, False)
+        
+        if ok:
+            save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Exportação", "", "Arquivo IFC (*.ifc);;Arquivo STEP (*.step)")
+            if not save_path: return
+            
+            if "TUDO" in choice:
+                base = os.path.splitext(save_path)[0]
+                results = DisciplineExporter.run_multi_export(base)
+                msg = "Exportação Completa:\n" + "\n".join([f"- {k}: {v} objetos" for k,v in results.items()])
+                QtWidgets.QMessageBox.information(None, "Sucesso", msg)
+            else:
+                count = DisciplineExporter.export_by_discipline(choice, save_path)
+                QtWidgets.QMessageBox.information(None, "Sucesso", f"{count} objetos da disciplina {choice} exportados.")
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -584,6 +614,7 @@ cmds = {
     'Eletrica_GenerateLoadSchedule': GenerateLoadSchedule(),
     'Eletrica_GenerateCableSchedule': GenerateCableSchedule(),
     'Eletrica_RunProjectAudit': RunProjectAudit(),
+    'Eletrica_ExportDisciplineBIM': ExportDisciplineBIM(),
     'Eletrica_GenerateUnifilar': GenerateUnifilar(),
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
     'Eletrica_GenerateBudget': GenerateBudget(),

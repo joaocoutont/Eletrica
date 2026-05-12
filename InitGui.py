@@ -60,6 +60,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_AutoConnectCeiling",
             "Eletrica_GenerateLoadSchedule",
             "Eletrica_GenerateCableSchedule",
+            "Eletrica_ExportDisciplineBIM",
             "Eletrica_GenerateBOM",
             "Eletrica_GenerateLegend",
             "Eletrica_GenerateTags",

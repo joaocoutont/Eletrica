@@ -1,41 +1,23 @@
 # ⚡ SUITE ELITE BIM - Engenharia Elétrica
-# Autor: João Couto
-# Contato: joaocoutont@hotmail.com
-# Main Entry Point for Eletrica Workbench
+# InitGui.py - Workbench Registration
+import FreeCAD
 import FreeCADGui
+import os
 
-class EletricaWorkbench (FreeCADGui.Workbench):
-    "Eletrica Workbench"
+class EletricaWorkbench (Workbench):
+    """Bancada de Engenharia Elétrica Elite BIM para FreeCAD 1.1"""
+    
+    ICON_DIR = os.path.join(os.path.dirname(__file__), "Icons")
+    
+    MenuText = "Eletrica Elite"
+    ToolTip = "Suite Profissional de Engenharia Elétrica BIM (NBR 5410)"
+    Icon = os.path.join(ICON_DIR, "StartProject.png")
 
-    MenuText = "Eletrica"
-    ToolTip = "Ferramentas para Projetos Elétricos BIM"
-    Icon = """
-        /* XPM */
-        static char * lightning_xpm[] = {
-        "16 16 3 1",
-        " 	c None",
-        ".	c #FFCC00",
-        "+	c #FFAA00",
-        "                ",
-        "      ...       ",
-        "     ...        ",
-        "    ...         ",
-        "   ...          ",
-        "  .......       ",
-        " .......        ",
-        "    ...         ",
-        "   ...          ",
-        "  ...           ",
-        " ...            ",
-        " ..             ",
-        " .              ",
-        "                ",
-        "                ",
-        "                "};
-        """
+    def GetClassName(self):
+        return "Gui::PythonWorkbench"
 
     def Initialize(self):
-        "This function is executed when FreeCAD starts"
+        "Este método é executado ao carregar a bancada"
         import EletricaGui
         import EletricaPanel
         
@@ -68,14 +50,14 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_RunProjectAudit", "Eletrica_RunSafetyAudit", "Eletrica_GenerateProjectQR",
             "Eletrica_BIMifyEquipment", "Eletrica_ExportDisciplineBIM", "Eletrica_CloneFloor"
         ]
-        
+
         # 6. GRUPO: FERRAMENTAS DE DESENHO (DRAFT)
         toolbar_draft = [
             "Draft_Line", "Draft_Wire", "Draft_Circle", "Draft_Arc", 
             "Draft_Move", "Draft_Rotate", "Draft_Mirror", "Draft_Offset", 
             "Draft_Trimex", "Draft_Stretch", "Draft_Upgrade", "Draft_Downgrade"
         ]
-        
+
         # 7. GRUPO: SNAPS (ENCAIXE)
         toolbar_snap = [
             "Draft_Snap_Lock", "Draft_Snap_Endpoint", "Draft_Snap_Midpoint", 
@@ -83,11 +65,11 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Draft_Snap_Perpendicular", "Draft_Snap_Extension", "Draft_Snap_Parallel", 
             "Draft_Snap_Grid", "Draft_Snap_WorkingPlane"
         ]
-        
+
         # 8. GRUPO: ESTRUTURA BIM
         toolbar_bim = ["Arch_Site", "Arch_Building", "Arch_BuildingPart"]
         
-        # Registrando as Toolbars Separadas (Isso cria as divisórias visuais)
+        # Registrando as Toolbars
         self.appendToolbar("Elite 1: Início", toolbar_start)
         self.appendToolbar("Elite 2: Modelagem", toolbar_model)
         self.appendToolbar("Elite 3: Infraestrutura", toolbar_infra)
@@ -102,32 +84,15 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         self.appendMenu("Eletrica Elite", all_cmds)
 
     def Activated(self):
-        # Opção Nuclear: Ativa rapidamente as bancadas dependentes para registrar os comandos
-        import FreeCADGui
+        # Despertar os comandos de forma passiva (evita loops e travamentos)
         try:
-            # Salva o nome da bancada atual (Eletrica)
-            current_wb = FreeCADGui.activeWorkbench().name()
-            # "Acorda" o Draft e o BIM/Arch
-            FreeCADGui.activateWorkbench("DraftWorkbench")
-            try:
-                FreeCADGui.activateWorkbench("BIMWorkbench")
-            except:
-                try:
-                    FreeCADGui.activateWorkbench("ArchWorkbench")
-                except:
-                    pass
-            # Volta para a Eletrica instantaneamente
-            FreeCADGui.activateWorkbench(current_wb)
+            import DraftGui
+            import BIMGui
         except:
             pass
+        return
 
     def Deactivated(self):
         return
-
-    def ContextMenu(self, recipient):
-        return
-
-    def GetClassName(self): 
-        return "Gui::PythonWorkbench"
 
 FreeCADGui.addWorkbench(EletricaWorkbench())

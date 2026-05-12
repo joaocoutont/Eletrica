@@ -56,6 +56,21 @@ class CreateConduit:
         
         return
 
+class GenerateLoadSchedule:
+    """Comando para gerar o quadro de cargas em planilha"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Quadro de Cargas',
+            'ToolTip': 'Cria uma planilha com o resumo de cargas e dimensionamento'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Circuits import CircuitManager
+        CircuitManager.generate_load_schedule()
+        return
+
 FreeCADGui.addCommand('Eletrica_InsertSocket', InsertSocket())
 FreeCADGui.addCommand('Eletrica_InsertLight', InsertLight())
 FreeCADGui.addCommand('Eletrica_CreateConduit', CreateConduit())
+FreeCADGui.addCommand('Eletrica_GenerateLoadSchedule', GenerateLoadSchedule())

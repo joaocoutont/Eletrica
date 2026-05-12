@@ -4,16 +4,23 @@ import FreeCAD
 import FreeCADGui
 import os
 
-# Caminho absoluto da pasta Mod/Eletrica
-MOD_PATH = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica")
-ICON_PATH = os.path.join(MOD_PATH, "Icons")
-
 class EletricaWorkbench (Workbench):
     """Bancada de Engenharia Elétrica Elite BIM para FreeCAD 1.1"""
     
-    MenuText = "Eletrica Elite"
-    ToolTip = "Suite Profissional de Engenharia Elétrica BIM (NBR 5410)"
-    Icon = os.path.join(ICON_PATH, "StartProject.png")
+    def __init__(self):
+        # Detecção dinâmica de ícones dentro da classe para evitar NameError
+        try:
+            # Tenta pelo caminho relativo do arquivo
+            self._base = os.path.dirname(__file__)
+        except:
+            # Fallback para o diretório de Mods do usuário
+            self._base = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica")
+            
+        self._icon_dir = os.path.join(self.base_path if hasattr(self, "base_path") else self._base, "Icons")
+        
+        self.MenuText = "Eletrica Elite"
+        self.ToolTip = "Suite Profissional de Engenharia Elétrica BIM (NBR 5410)"
+        self.Icon = os.path.join(self._icon_dir, "StartProject.png")
 
     def GetClassName(self):
         return "Gui::PythonWorkbench"

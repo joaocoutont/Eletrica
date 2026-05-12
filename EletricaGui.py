@@ -4,6 +4,10 @@
 # GUI Commands for Eletrica Workbench
 import FreeCAD
 import FreeCADGui
+import os
+
+# Caminho para os novos ícones desenhados
+ICON_DIR = os.path.join(os.path.dirname(__file__), "Icons")
 
 # --- COMPATIBILIDADE PYSIDE2 / PYSIDE6 (FreeCAD 1.1+) ---
 try:
@@ -16,7 +20,7 @@ class StartNewProject:
     """Cria um novo documento e prepara o ambiente de desenho"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'StartProject.png'),
             'MenuText': 'Iniciar Novo Projeto Elétrico',
             'ToolTip': 'Cria um novo documento e prepara o ambiente BIM'
         }
@@ -54,9 +58,9 @@ class GenerateBudget:
     """Gera o orçamento financeiro do projeto"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
-            'MenuText': 'Gerar Orçamento (R$)',
-            'ToolTip': 'Calcula o custo total de materiais do projeto'
+            'Pixmap': os.path.join(ICON_DIR, 'Unifilar.png'),
+            'MenuText': 'Gerar Diagrama Unifilar',
+            'ToolTip': 'Cria o esquema unifilar automático no TechDraw'
         }
 
     def Activated(self):
@@ -73,9 +77,9 @@ class InsertSocket:
     """Insere tomadas com presets de altura e deteccao de andar"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
-            'MenuText': 'Inserir Tomada (TUG)',
-            'ToolTip': 'Insere tomadas em alturas padronizadas (Baixa, Media, Alta)'
+            'Pixmap': os.path.join(ICON_DIR, 'Socket.png'),
+            'MenuText': 'Inserir Tomada',
+            'ToolTip': 'Insere uma tomada configurada no projeto'
         }
 
     def Activated(self):
@@ -108,7 +112,7 @@ class InsertSwitch:
     """Insere interruptores com definicao de tipo e comando"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Switch.png'),
             'MenuText': 'Inserir Interruptor (Comando)',
             'ToolTip': 'Insere interruptores Simples, Paralelo ou Intermediário'
         }
@@ -137,7 +141,7 @@ class MergeSwitches:
     """Mescla interruptores selecionados em uma placa multitecla"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Merge.png'),
             'MenuText': 'Mesclar p/ 2 ou 3 Teclas',
             'ToolTip': 'Transforma interruptores proximos em uma placa conjunta'
         }
@@ -151,14 +155,14 @@ class MergeSwitches:
 
 class InsertLight:
     def GetResources(self):
-        return {'Pixmap': 'freecad', 'MenuText': 'Inserir Iluminação', 'ToolTip': 'Insere um ponto de luz'}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Light.png'), 'MenuText': 'Inserir Iluminação', 'ToolTip': 'Insere um ponto de luz'}
     def Activated(self):
         FreeCAD.Console.PrintMessage("Inserir Iluminação\n")
 
 # --- CLASSES DE INFRAESTRUTURA ---
 class CreateConduit:
     def GetResources(self):
-        return {'Pixmap': 'freecad', 'MenuText': 'Criar Eletroduto', 'ToolTip': 'Converte linha em tubo'}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'), 'MenuText': 'Criar Eletroduto', 'ToolTip': 'Converte linha em tubo'}
     def Activated(self):
         from EletricaLogic.Conduit import ConduitManager
         selection = FreeCADGui.Selection.getSelection()
@@ -194,7 +198,7 @@ class BIMifyEquipment:
 
 class CreateCableTray:
     def GetResources(self):
-        return {'Pixmap': 'freecad', 'MenuText': 'Lançar Eletrocalha', 'ToolTip': 'Cria infra retangular'}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Tray.png'), 'MenuText': 'Lançar Eletrocalha', 'ToolTip': 'Cria infra retangular'}
     def Activated(self):
         from EletricaLogic.Conduit import ConduitManager
         from EletricaLogic.Fittings import FittingManager
@@ -226,14 +230,14 @@ class GenerateLoadSchedule:
         CircuitManager.generate_load_schedule()
 
 class RunProjectAudit:
-    def GetResources(self): return {'Pixmap': 'freecad', 'MenuText': 'Auditoria'}
+    def GetResources(self): return {'Pixmap': os.path.join(ICON_DIR, 'Audit.png'), 'MenuText': 'Auditoria'}
     def Activated(self):
         from EletricaLogic.Auditor import ProjectAuditor
         report = ProjectAuditor.run_full_audit()
         QtWidgets.QMessageBox.information(None, "Auditoria", str(report))
 
 class GenerateUnifilar:
-    def GetResources(self): return {'Pixmap': 'freecad', 'MenuText': 'Diagrama Unifilar'}
+    def GetResources(self): return {'Pixmap': os.path.join(ICON_DIR, 'Unifilar.png'), 'MenuText': 'Diagrama Unifilar'}
     def Activated(self):
         from EletricaLogic.Diagrams import UnifilarGenerator
         selection = FreeCADGui.Selection.getSelection()
@@ -244,7 +248,7 @@ class ToggleDashboard:
     """Liga/Desliga o painel lateral de métricas"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
+            'Pixmap': os.path.join(ICON_DIR, 'Dashboard.png'),
             'MenuText': 'Abrir/Fechar Dashboard',
             'ToolTip': 'Alterna a visualização das métricas em tempo real'
         }
@@ -277,9 +281,9 @@ class Generate3DWiring:
     """Gera os cabos fisicos 3D dentro da infraestrutura"""
     def GetResources(self):
         return {
-            'Pixmap': 'freecad',
-            'MenuText': 'Gerar Fiação 3D (LOD 500)',
-            'ToolTip': 'Desenha os cabos reais dentro dos eletrodutos'
+            'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'),
+            'MenuText': 'Criar Eletroduto',
+            'ToolTip': 'Desenha eletrodutos rígidos ou flexíveis'
         }
 
     def Activated(self):

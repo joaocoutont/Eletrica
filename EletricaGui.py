@@ -58,9 +58,9 @@ class GenerateBudget:
     """Gera o orçamento financeiro do projeto"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Unifilar.png'),
-            'MenuText': 'Gerar Diagrama Unifilar',
-            'ToolTip': 'Cria o esquema unifilar automático no TechDraw'
+            'Pixmap': os.path.join(ICON_DIR, 'Budget.png'),
+            'MenuText': 'Gerar Orçamento (BOM)',
+            'ToolTip': 'Calcula o custo total de materiais do projeto'
         }
 
     def Activated(self):
@@ -113,7 +113,7 @@ class InsertSwitch:
     def GetResources(self):
         return {
             'Pixmap': os.path.join(ICON_DIR, 'Switch.png'),
-            'MenuText': 'Inserir Interruptor (Comando)',
+            'MenuText': 'Inserir Interruptor',
             'ToolTip': 'Insere interruptores Simples, Paralelo ou Intermediário'
         }
 
@@ -646,24 +646,3 @@ cmds = {
 
 for name, obj in cmds.items():
     FreeCADGui.addCommand(name, obj)
-
-# (Outros comandos simplificados para manter o arquivo funcional)
-class Placeholder:
-    def GetResources(self): return {'Pixmap': 'freecad', 'MenuText': 'Comando'}
-    def Activated(self): pass
-
-extra_cmds = [
-    'Eletrica_OpenSettings', 'Eletrica_AnalyzeSpaceLighting', 'Eletrica_BalancePhases',
-    'Eletrica_CalculateWiring', 'Eletrica_PrepareIFC', 'Eletrica_GenerateTags',
-    'Eletrica_CheckConduitFill', 'Eletrica_GenerateBOM', 'Eletrica_GenerateWireSymbols',
-    'Eletrica_GroundingCalculator', 'Eletrica_SPDAGui', 'Eletrica_SPDARiskWizard',
-    'Eletrica_InsertTUE', 'Eletrica_ServiceEntranceWizard', 'Eletrica_CreatePanel', 'Eletrica_InsertServiceEntrance', 'Eletrica_AutoConnectSequence',
-    'Eletrica_AutoConnectCeiling', 'Eletrica_ApplyHeatmap', 'Eletrica_AssignCircuitToConduit',
-    'Eletrica_ClearConduitCircuits', 'Eletrica_GenerateReport', 'Eletrica_SolarEstimate',
-    'Eletrica_GeneratePanelLabels', 'Eletrica_CreateExposedConduit', 'Eletrica_GenerateRiseFallSymbols',
-    'Eletrica_AnnotateCircuits', 'Eletrica_ManageBoxes', 'Eletrica_GenerateLegend', 'Eletrica_CreateTechnicalSheet'
-]
-
-for name in extra_cmds:
-    if name not in cmds:
-        FreeCADGui.addCommand(name, Placeholder())

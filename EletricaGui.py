@@ -360,6 +360,29 @@ class CheckSelectivity:
             is_ok, msg = ElectricalCalculator.check_breaker_selectivity(up, down)
             QtWidgets.QMessageBox.information(None, "Análise de Seletividade", msg)
 
+class CreatePanel:
+    """Comando para criar um quadro de distribuicao ou comando industrial"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Criar Painel (QDC / CCM / CCA)',
+            'ToolTip': 'Cria um painel inteligente com fluxo de Força e Comando'
+        }
+
+    def Activated(self):
+        from PySide2 import QtWidgets
+        from EletricaLogic.Panels import PanelManager
+        
+        name, ok1 = QtWidgets.QInputDialog.getText(None, "Novo Painel", "Nome do Painel (ex: CCM-01):")
+        if not ok1 or not name: return
+        
+        types = ["QDC (Distribuição)", "CCM (Motores)", "CCA (Automação)", "Medidores"]
+        choice, ok2 = QtWidgets.QInputDialog.getItem(None, "Tipo de Painel", "Função do Painel:", types, 0, False)
+        
+        if ok2:
+            PanelManager.create_panel(name, panel_type=choice)
+            FreeCAD.Console.PrintMessage(f"Painel {name} tipo {choice} criado com sucesso.\n")
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
     'Eletrica_InsertSocket': InsertSocket(),
@@ -377,6 +400,7 @@ cmds = {
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_InsertSmartDevice': InsertSmartDevice(),
     'Eletrica_CheckSelectivity': CheckSelectivity(),
+    'Eletrica_CreatePanel': CreatePanel(),
     'Eletrica_CreateIndustrialConnection': CreateIndustrialConnection(),
     'Eletrica_ToggleDashboard': ToggleDashboard(),
     'Eletrica_CloneFloor': CloneFloor(),

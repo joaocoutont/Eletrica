@@ -1,6 +1,7 @@
 # Logica de Eletrodutos e Tubulacoes
 import FreeCAD
 import Arch
+import Draft
 
 class ConduitManager:
     @staticmethod
@@ -12,13 +13,11 @@ class ConduitManager:
         if not doc:
             doc = FreeCAD.newDocument("ProjetoEletrico")
             
-        import Draft
         # 1. Criar o caminho (Wire)
         wire = Draft.make_wire(points, closed=False, face=False)
         wire.Label = f"Caminho_{label}"
         
         # 2. Criar o Eletroduto (Arch Pipe) baseado no Wire
-        # O Arch Pipe do FreeCAD e excelente para isso
         pipe = Arch.makePipe(wire, diameter=diameter)
         pipe.Label = label
         
@@ -42,6 +41,25 @@ class ConduitManager:
         return pipe
 
     @staticmethod
+    def create_cable_tray(points, width=200, height=100, label="Eletrocalha"):
+        """Cria uma eletrocalha retangular industrial"""
+        doc = FreeCAD.ActiveDocument
+        
+        # 1. Caminho
+        wire = Draft.make_wire(points, closed=False)
+        # 2. Perfil Retangular
+        rect = Draft.make_rectangle(width, height)
+        tray = Arch.makeStructure(rect, [wire])
+        tray.Label = label
+        
+        # 3. Propriedades BIM
+        if not hasattr(tray, "CircuitosPassantes"):
+            tray.addProperty("App::PropertyStringList", "CircuitosPassantes", "Eletrica", "Circuitos")
+            
+        doc.recompute()
+        return tray
+
+    @staticmethod
     def suggest_conduit_size(conduit_obj):
         """Sugere o proximo diametro comercial se estiver superlotado"""
         if not hasattr(conduit_obj, "TaxaOcupacao") or not hasattr(conduit_obj, "DiametroNominal"):
@@ -56,11 +74,7 @@ class ConduitManager:
         try:
             idx = standard_sizes.index(current_size)
             for i in range(idx + 1, len(standard_sizes)):
-                test_size = standard_sizes[i]
-                # Simular ocupacao no novo tamanho
-                # (Apenas um calculo rapido aqui para a sugestao)
-                # ...
-                return test_size
+                return standard_sizes[i]
         except:
             pass
         return None
@@ -72,46 +86,25 @@ class ConduitManager:
         """
         doc = FreeCAD.ActiveDocument
         from EletricaLogic.Calculator import ElectricalCalculator
-        from EletricaLogic.Circuits import CircuitManager
         
-        # Obter secoes de cabos por circuito (usando a logica do quadro de cargas)
-        # Simplificacao: Vamos assumir que cada circuito tem 3 cabos (F, N, T)
         results = []
-        
         for obj in doc.Objects:
             if hasattr(obj, "CircuitosPassantes") and hasattr(obj, "Diameter"):
                 num_circuits = len(obj.CircuitosPassantes)
                 if num_circuits == 0: continue
                 
-                # Calcular area ocupada (simplificado: cada circuito = 3 fios de 2.5mm2 padrao)
-                # Em um projeto real, buscaríamos a secao exata calculada para aquele circuito
                 wire_area = ElectricalCalculator.get_wire_external_area(2.5) * 3 * num_circuits
-                
                 conduit_area = ElectricalCalculator.get_conduit_internal_area(float(obj.Diameter))
                 occupancy = (wire_area / conduit_area) * 100
                 
-                # NBR 5410: Max 40% para 3 ou mais cabos
-                limit = 40.0
-                is_ok = occupancy <= limit
-                
                 obj.TaxaOcupacao = occupancy
                 
-                if not is_ok:
-                    results.append(f"ALERTA: {obj.Label} esta com {occupancy:.1f}% de ocupacao (Limite 40%)")
-                    # Mudar cor para vermelho se estiver cheio
+                if occupancy > 40.0:
+                    results.append(f"ALERTA: {obj.Label} esta com {occupancy:.1f}% de ocupacao")
                     if hasattr(obj, "ViewObject"):
                         obj.ViewObject.ShapeColor = (1.0, 0.0, 0.0)
                 else:
                     if hasattr(obj, "ViewObject"):
-                        obj.ViewObject.ShapeColor = (0.7, 0.7, 0.7) # Cor padrao
+                        obj.ViewObject.ShapeColor = (0.7, 0.7, 0.7)
                         
         return results
-
-    @staticmethod
-    def calculate_diameter(n_wires, wire_section):
-        """
-        Calculo simplificado de diametro baseado na NBR 5410 (40% de taxa de ocupacao)
-        Retorna o diametro nominal comercial (20, 25, 32mm...)
-        """
-        # Implementacao futura baseada em tabelas
-        return 20.0

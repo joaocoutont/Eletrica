@@ -462,6 +462,66 @@ class RunProjectAudit:
             
         QtWidgets.QMessageBox.information(None, "Relatório de Auditoria", msg)
 
+class GenerateRiseFallSymbols:
+    """Gera simbolos de prumada (sobe/desce)"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Simbologia de Prumada',
+            'ToolTip': 'Insere circulo com X (desce) ou ponto (sobe) nos trechos verticais'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Annotations import AnnotationManager
+        import FreeCADGui
+        selection = FreeCADGui.Selection.getSelection()
+        for obj in selection:
+            AnnotationManager.create_rise_fall_symbols(obj)
+        FreeCAD.ActiveDocument.recompute()
+
+class AnnotateCircuits:
+    """Escreve os circuitos ao lado do tubo"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Anotar Circuitos nos Tubos',
+            'ToolTip': 'Escreve C1, C2... ao lado dos eletrodutos selecionados'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Annotations import AnnotationManager
+        import FreeCADGui
+        selection = FreeCADGui.Selection.getSelection()
+        for obj in selection:
+            AnnotationManager.annotate_circuits(obj)
+        FreeCAD.ActiveDocument.recompute()
+
+class CreateCableTray:
+    """Cria eletrocalhas retangulares"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Lançar Eletrocalha / Perfilado',
+            'ToolTip': 'Cria infraestrutura industrial retangular'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Conduit import ConduitManager
+        from PySide2 import QtWidgets
+        import FreeCADGui
+        
+        w, ok1 = QtWidgets.QInputDialog.getInt(None, "Eletrocalha", "Largura (mm):", 200, 50, 1000, 50)
+        h, ok2 = QtWidgets.QInputDialog.getInt(None, "Eletrocalha", "Altura (mm):", 100, 50, 1000, 50)
+        
+        if ok1 and ok2:
+            # Implementacao: Pedir pontos via Draft
+            FreeCADGui.runCommand("Draft_Wire")
+            doc = FreeCAD.ActiveDocument
+            last_wire = doc.Objects[-1]
+            if hasattr(last_wire, "Points"):
+                ConduitManager.create_cable_tray(last_wire.Points, w, h)
+                doc.removeObject(last_wire.Name)
+
 class InsertTUE:
     """Comando para inserir equipamentos de uso especifico (Chuveiro, AC, etc)"""
     def GetResources(self):
@@ -732,4 +792,7 @@ FreeCADGui.addCommand('Eletrica_SolarEstimate', SolarEstimate())
 FreeCADGui.addCommand('Eletrica_GeneratePanelLabels', GeneratePanelLabels())
 FreeCADGui.addCommand('Eletrica_RunProjectAudit', RunProjectAudit())
 FreeCADGui.addCommand('Eletrica_CreateExposedConduit', CreateExposedConduit())
+FreeCADGui.addCommand('Eletrica_GenerateRiseFallSymbols', GenerateRiseFallSymbols())
+FreeCADGui.addCommand('Eletrica_AnnotateCircuits', AnnotateCircuits())
+FreeCADGui.addCommand('Eletrica_CreateCableTray', CreateCableTray())
 FreeCADGui.addCommand('Eletrica_ManageBoxes', ManageBoxes())

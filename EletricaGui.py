@@ -205,6 +205,20 @@ class PrepareIFC:
         IFCExportManager.prepare_for_ifc()
         return
 
+class GenerateTags:
+    """Comando para gerar etiquetas de identificacao de circuito nos objetos"""
+    def GetResources(self):
+        return {
+            'Pixmap': 'freecad',
+            'MenuText': 'Gerar Etiquetas de Circuito',
+            'ToolTip': 'Cria textos de identificacao (Ex: C1) ao lado de cada componente'
+        }
+
+    def Activated(self):
+        from EletricaLogic.Tagging import TagManager
+        TagManager.generate_circuit_tags()
+        return
+
 FreeCADGui.addCommand('Eletrica_InsertSocket', InsertSocket())
 FreeCADGui.addCommand('Eletrica_InsertLight', InsertLight())
 FreeCADGui.addCommand('Eletrica_CreateConduit', CreateConduit())
@@ -216,3 +230,4 @@ FreeCADGui.addCommand('Eletrica_BalancePhases', BalancePhases())
 FreeCADGui.addCommand('Eletrica_CalculateWiring', CalculateWiring())
 FreeCADGui.addCommand('Eletrica_PrepareIFC', PrepareIFC())
 FreeCADGui.addCommand('Eletrica_CreateTechnicalSheet', CreateTechnicalSheet())
+FreeCADGui.addCommand('Eletrica_GenerateTags', GenerateTags())

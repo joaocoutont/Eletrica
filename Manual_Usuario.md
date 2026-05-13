@@ -226,7 +226,14 @@ Baseado na **NBR 15751**:
 
 ---
 
-## 17. Resolução de Problemas (Troubleshooting)
+## 20. Instrumentação de MT (TC/TP)
+1.  **Dimensionamento**: Selecione o botão **Dimensionar TC/TP**.
+2.  **Entrada**: Informe a corrente primária máxima e a tensão do sistema (ex: 13.8 kV).
+3.  **Saída**: O sistema sugere a relação de transformação, classe de exatidão e carga nominal (Burden) para medição e proteção.
+
+---
+
+## 21. Resolução de Problemas (Troubleshooting)
 | Problema | Causa Provável | Solução |
 |----------|---------------|---------|
 | Erro `name 'tr' is not defined` | Falha na inicialização do sistema de tradução | Atualize para a versão 3.1 (ou aplique o patch no `InitGui.py`). |

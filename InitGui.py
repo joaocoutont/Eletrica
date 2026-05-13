@@ -148,6 +148,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_eng = [
             "Eletrica_ServiceEntranceWizard", 
             "Eletrica_SubstationWizard",
+            "Eletrica_MTInstrumentationWizard",
             "Eletrica_BusbarSizing",
             "Eletrica_CheckSelectivity",
             "Eletrica_PowerFactorCorrection",

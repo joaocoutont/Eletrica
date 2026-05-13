@@ -1,6 +1,31 @@
 # Gerenciador de Subestacoes Particulares (NBR 14039 / ABNT)
 import FreeCAD
 
+class InstrumentationManager:
+    """Dimensionamento de TC (Transformador de Corrente) e TP (Potencial)"""
+    
+    @staticmethod
+    def dimension_tc(nominal_current):
+        """Sugere TC baseado na corrente nominal"""
+        ratios = [5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200, 300, 400, 500]
+        chosen = next((r for r in ratios if r >= nominal_current * 1.2), ratios[-1])
+        return {
+            "ratio": f"{chosen}/5A",
+            "class": "0.6 C20" if chosen < 100 else "0.3 C50",
+            "burden": "12.5 VA"
+        }
+
+    @staticmethod
+    def dimension_tp(primary_v):
+        """Sugere TP baseado na tensão primária"""
+        v_map = {13.8: "13800/115V", 23.1: "23100/115V", 34.5: "34500/115V"}
+        ratio = v_map.get(primary_v, "13800/115V")
+        return {
+            "ratio": ratio,
+            "class": "0.3 P25",
+            "burden": "25 VA"
+        }
+
 # Tensões nominais de distribuição no Brasil
 VOLTAGE_CLASSES = {
     13.8: "15 kV",

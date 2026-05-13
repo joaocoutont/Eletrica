@@ -2490,8 +2490,46 @@ class ExportBOM:
         from EletricaLogic.BOM import BOMManager
         BOMManager.export_bom_to_csv()
 
+class MTInstrumentationWizard:
+    """Dimensionamento de Instrumentação MT (TC/TP)"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Substation.png'), 'MenuText': tr('Dimensionar TC/TP'), 'ToolTip': tr('Dimensiona transformadores de instrumento para MT') }
+    
+    def Activated(self):
+        from EletricaLogic.Substation import InstrumentationManager
+        import FreeCADGui
+        from PySide import QtWidgets
+        
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Dimensionamento TC/TP")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        spin_i = QtWidgets.QDoubleSpinBox(); spin_i.setRange(1, 1000); spin_i.setValue(100); spin_i.setSuffix(" A")
+        combo_v = QtWidgets.QComboBox(); combo_v.addItems(["13.8 kV", "23.1 kV", "34.5 kV"])
+        
+        layout.addRow("Corrente Primária Máxima:", spin_i)
+        layout.addRow("Tensão do Sistema:", combo_v)
+        
+        def processar():
+            v = float(combo_v.currentText().split()[0])
+            tc = InstrumentationManager.dimension_tc(spin_i.value())
+            tp = InstrumentationManager.dimension_tp(v)
+            
+            msg = "RESULTADO DA INSTRUMENTAÇÃO:\n\n"
+            msg += f"TC Sugerido: {tc['ratio']} | Classe: {tc['class']} | Carga: {tc['burden']}\n"
+            msg += f"TP Sugerido: {tp['ratio']} | Classe: {tp['class']} | Carga: {tp['burden']}\n"
+            
+            QtWidgets.QMessageBox.information(None, "Dimensionamento MT", msg)
+            dlg.accept()
+
+        btn = QtWidgets.QPushButton("Calcular Instrumentação")
+        btn.clicked.connect(processar)
+        layout.addRow(btn)
+        dlg.exec_()
+
 # --- REGISTRO DE COMANDOS ---
 cmds = {
+    'Eletrica_MTInstrumentationWizard': MTInstrumentationWizard(),
     'Eletrica_StartNewProject': StartNewProject(),
     'Eletrica_ProjectProperties': ProjectProperties(),
     'Eletrica_ToggleDashboard': ToggleDashboard(),

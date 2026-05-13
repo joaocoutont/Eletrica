@@ -206,6 +206,7 @@ class BusbarCalculator:
             "bar_t_mm": chosen[1],
             "bar_area_mm2": chosen[2],
             "bar_capacity_a": round(cap, 1),
+            "weight_kg_m": round((chosen[2] / 1e6) * (8960 if material == "Cobre" else 2700), 3),
             "designation": f"{chosen[0]}x{chosen[1]}mm ({material})",
             "phases_desc": f"{phases}x {chosen[0]}x{chosen[1]}mm" + (" + Neutro" if phases == 3 else ""),
         }

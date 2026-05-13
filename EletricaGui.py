@@ -1365,6 +1365,7 @@ class BusbarSizing:
                 f"Área Mínima:         {res['min_area_mm2']} mm²\n\n"
                 f"Perfil Selecionado:  {res['designation']}\n"
                 f"Capacidade:         {res['bar_capacity_a']} A\n"
+                f"Peso Est. (kg/m):   {res['weight_kg_m']} kg\n"
                 f"Configuração:       {res['phases_desc']}\n"
             )
             result_box.setPlainText(txt)

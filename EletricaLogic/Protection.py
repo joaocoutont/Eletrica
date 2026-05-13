@@ -144,10 +144,52 @@ class ArcFlashManager:
         elif energy > 1.2: category = 1
         
         return {
-            "energy": energy,
-            "boundary": boundary_mm,
-            "category": category
+            "incident_energy": energy,
+            "ppe_category": category,
+            "boundary_m": round(boundary_mm / 1000, 2),
+            "label_color": "red" if energy > 40 else ("orange" if energy > 1.2 else "green")
         }
+
+    @staticmethod
+    def export_safety_label(obj):
+        """Gera uma etiqueta de segurança profissional em HTML"""
+        import os
+        from EletricaLogic.Protection import ArcFlashManager
+        
+        # Recalcular dados para garantir precisão
+        icc = getattr(obj, "Icc_kA", 5.0)
+        time = getattr(obj, "TempoExtincao", 0.1)
+        res = ArcFlashManager.calculate_incident_energy(icc, time)
+        
+        html = f"""
+        <html><head><style>
+            .label {{ width: 500px; border: 5px solid {res['label_color']}; font-family: Arial; padding: 20px; }}
+            .header {{ background: {res['label_color']}; color: white; text-align: center; font-size: 30px; font-weight: bold; padding: 10px; }}
+            .warning {{ text-align: center; font-size: 20px; margin: 10px 0; }}
+            .data {{ font-size: 16px; line-height: 1.6; }}
+            .footer {{ font-size: 10px; color: gray; margin-top: 20px; text-align: center; }}
+        </style></head><body>
+            <div class="label">
+                <div class="header">ADVERTÊNCIA / WARNING</div>
+                <div class="warning"><b>RISCO DE ARCO ELÉTRICO E CHOQUE</b></div>
+                <div class="data">
+                    <p><b>Equipamento:</b> {obj.Label}</p>
+                    <p><b>Energia Incidente:</b> {res['incident_energy']:.2f} cal/cm²</p>
+                    <p><b>Fronteira de Risco:</b> {res['boundary_m']} metros</p>
+                    <p><b>Categoria de EPI (NR-10):</b> {res['ppe_category']}</p>
+                    <hr>
+                    <p><i>É obrigatório o uso de vestimentas resistentes ao arco e proteção facial dentro da fronteira de risco.</i></p>
+                </div>
+                <div class="footer">Gerado por Suite Elite BIM - FreeCAD Electrical</div>
+            </div>
+        </body></html>
+        """
+        
+        path = os.path.join(os.path.expanduser("~"), "Downloads", f"Etiqueta_Seguranca_{obj.Label}.html")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(html)
+        
+        return path
 
     @staticmethod
     def generate_safety_label(panel_label, data):

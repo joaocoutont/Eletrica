@@ -1859,15 +1859,33 @@ class ArcFlashAnalysis:
         icc = getattr(panel, "Icc_Calculada", 5.0) # kA
         
         res = ArcFlashManager.calculate_incident_energy(icc, 0.1) # 0.1s padrão de atuação
-        label_html = ArcFlashManager.generate_safety_label(panel.Label, res)
         
         # Mostrar em uma janela de relatório
         dlg = QtWidgets.QDialog()
-        dlg.setWindowTitle("Etiqueta de Segurança - NR-10")
+        dlg.setWindowTitle("Análise de Arc Flash - NR-10")
         layout = QtWidgets.QVBoxLayout(dlg)
-        text = QtWidgets.QTextEdit()
-        text.setHtml(label_html)
-        layout.addWidget(text)
+        
+        info = QtWidgets.QLabel(f"""
+            <b>RESULTADOS TÉCNICOS:</b><br>
+            Energia Incidente: {res['incident_energy']:.2f} cal/cm²<br>
+            Fronteira de Risco: {res['boundary_m']} metros<br>
+            Categoria de EPI: {res['ppe_category']}<br>
+        """)
+        layout.addWidget(info)
+        
+        def exportar():
+            path = ArcFlashManager.export_safety_label(panel)
+            QtWidgets.QMessageBox.information(None, "Segurança", f"Etiqueta exportada para Downloads:\n{path}")
+            os.startfile(path)
+            
+        btn_exp = QtWidgets.QPushButton("Gerar Etiqueta para Impressão (PDF/HTML)")
+        btn_exp.clicked.connect(exportar)
+        layout.addWidget(btn_exp)
+        
+        btn_close = QtWidgets.QPushButton("Fechar")
+        btn_close.clicked.connect(dlg.accept)
+        layout.addWidget(btn_close)
+        
         dlg.exec_()
 
 class BIMifyEquipment:

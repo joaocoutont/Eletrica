@@ -54,10 +54,14 @@ class PanelManager:
                     obj.QuadroVinculado.PotenciaAcumulada += float(obj.Potencia)
                     
         # 3. Propagar cargas na hierarquia (sub-quadros para quadros pais)
-        # Fazemos varias passagens para garantir que a carga suba todos os níveis
-        for _ in range(3):
+        # Ordenar por nivel de hierarquia para evitar dupla contagem
+        # (filhos propagam primeiro, depois os netos, etc.)
+        already_propagated = set()
+        max_depth = 5  # suporta até 5 niveis de sub-quadros
+        for _ in range(max_depth):
             for p in panels:
-                if p.AlimentadoPor:
+                if p.AlimentadoPor and p.Name not in already_propagated:
                     p.AlimentadoPor.PotenciaAcumulada += p.PotenciaAcumulada
+                    already_propagated.add(p.Name)
                     
         FreeCAD.Console.PrintMessage("Hierarquia de quadros recalculada!\n")

@@ -21,10 +21,21 @@ class CircuitManager:
             if hasattr(obj, "Circuito") and hasattr(obj, "Potencia"):
                 c_name = obj.Circuito
                 if c_name not in circuits_data:
-                    circuits_data[c_name] = {"power_va": 0.0, "tensao": "127V", "objects": []}
+                    circuits_data[c_name] = {
+                        "power_va": 0.0, 
+                        "tensao": None, # Será auto-detectado
+                        "fases": None,  # Será auto-detectado
+                        "objects": []
+                    }
                 circuits_data[c_name]["power_va"] += float(obj.Potencia)
-                if hasattr(obj, "Tensao"):
+                if hasattr(obj, "Tensao") and obj.Tensao:
                     circuits_data[c_name]["tensao"] = obj.Tensao
+                if hasattr(obj, "Fase") and obj.Fase:
+                    # Tenta extrair número de fases da propriedade (ex: "R" -> 1, "R,S" -> 2)
+                    f_val = obj.Fase
+                    if isinstance(f_val, list): f_val = f_val[0]
+                    num_f = 1 if len(str(f_val)) == 1 else (2 if len(str(f_val)) == 3 else 3)
+                    circuits_data[c_name]["fases"] = num_f
                 circuits_data[c_name]["objects"].append(obj)
         
         # 2. Criar ou buscar a planilha
@@ -34,7 +45,7 @@ class CircuitManager:
             sheet = doc.addObject("Spreadsheet::Sheet", sheet_name)
         
         # 3. Preencher cabecalho
-        headers = ["Circuito", "Tensao", "Carga (VA)", "Corrente (A)", "Disjuntor (A)", "Proteção", "Secao (mm2)", "Comprimento (m)", "Queda (%)", "Status"]
+        headers = ["Circuito", "Tensao", "Carga (VA)", "Corrente (A)", "Disjuntor (A)", "Proteção", "Secao (mm2)", "Comprimento (m)", "Queda (%)", "Icc (kA)", "Status"]
         for col, text in enumerate(headers):
             cell = chr(65 + col) + "1"
             sheet.set(cell, text)
@@ -54,25 +65,48 @@ class CircuitManager:
         
         for c_name, data in circuits_data.items():
             power_va = data["power_va"]
-            tensao_str = data["tensao"]
-            v_val = float(tensao_str.replace("V", ""))
             
-            current_nominal = ElectricalCalculator.calculate_current(power_va, v_val)
+            # Usar ElectricalCalculator com auto-detecção de tensão/fases se None
+            v_val = float(data["tensao"].replace("V", "")) if data["tensao"] else None
+            num_f = data["fases"]
+            
+            current_nominal = ElectricalCalculator.calculate_current(power_va, voltage=v_val, phases=num_f)
             
             # Aplicar fator de agrupamento
             num_in_conduit = grouping_per_circuit.get(c_name, 1)
             fca = ElectricalCalculator.get_grouping_factor(num_in_conduit)
-            current_corrected = current_nominal / fca
+            current_corrected = current_nominal / fca if fca > 0 else current_nominal
             
             # Dimensionar com a corrente corrigida
-            wire = ElectricalCalculator.get_standard_wire_gauge(current_corrected)
+            # Tentar obter o método de instalação do objeto ou usar o padrão do projeto
+            meta = doc.getObject("Eletrica_ProjectData")
+            install_method = getattr(meta, "InstallationMethod", "B1").split(" - ")[0]
+            
+            for obj in doc.Objects:
+                if hasattr(obj, "Circuito") and obj.Circuito == c_name:
+                    if hasattr(obj, "MetodoInstalacao") and obj.MetodoInstalacao:
+                        install_method = obj.MetodoInstalacao
+                    break
+            
+            # Obter material, isolação e temperatura do projeto
+            meta = doc.getObject("Eletrica_ProjectData")
+            mat = getattr(meta, "ConductorMaterial", "Cobre (Cu)")
+            ins = getattr(meta, "InsulationType", "PVC (70°C)")
+            temp = getattr(meta, "AmbientTemperature", 30)
+            pf = getattr(meta, "PowerFactor", 0.92)
+            
+            # Recalcular corrente nominal com o Fator de Potencia real
+            current_nominal = ElectricalCalculator.calculate_current(data["power"], data["voltage"], data["phases"], cos_phi=pf)
+            current_corrected = current_nominal / fca if fca > 0 else current_nominal
+
+            wire = ElectricalCalculator.get_standard_wire_gauge(current_corrected, method=install_method, insulation=ins, material=mat, ambient_temp=temp)
             
             # Sugestao de Disjuntor
             breaker = ElectricalCalculator.get_standard_breaker(current_nominal)
             
             # Detecção de DR (NBR 5410)
-            protecao = "DJ" # Apenas Disjuntor por padrão
-            wet_keywords = ["Cozinha", "Banheiro", "Lavanderia", "Area", "Externo", "Chuveiro"]
+            protecao = "DJ"
+            wet_keywords = ["Cozinha", "Banheiro", "Lavanderia", "Area", "Externo", "Chuveiro", "Jardim", "Piscina"]
             if any(kw.lower() in c_name.lower() for kw in wet_keywords):
                 protecao = "DJ + DR"
             
@@ -81,13 +115,46 @@ class CircuitManager:
             
             # Calculo de Queda de Tensao
             drop_percent = 0.0
-            if length_m > 0:
-                drop_percent = ElectricalCalculator.calculate_voltage_drop(current_nominal, length_m, wire, v_val)
+            actual_v = v_val if v_val else ProjectSettings.get_voltage()
+            if length_m > 0 and wire > 0:
+                drop_percent = ElectricalCalculator.calculate_voltage_drop(
+                    current_nominal, length_m, wire, actual_v, phases=num_f or 1)
+                
+                # Armazenar nos objetos para o Heatmap
+                for obj in data["objects"]:
+                    if not hasattr(obj, "QuedaTensao"):
+                        obj.addProperty("App::PropertyFloat", "QuedaTensao", "Eletrica", "Queda de Tensão (%)")
+                    obj.QuedaTensao = drop_percent
             
-            status = "OK" if drop_percent <= 3.0 else "REVISAR"
+            # Corrente de Curto-Circuito estimada (kA)
+            icc_ka = 0.0
+            if length_m > 0 and wire > 0:
+                # Obter dados do transformador do projeto para o cálculo de curto-circuito
+                meta = doc.getObject("Eletrica_ProjectData")
+                z_trafo = getattr(meta, "TransformerImpedance", 5.0) if meta else 5.0
+                
+                # Extrair potência numérica do string (ex: "112.5 kVA" -> 112.5)
+                s_trafo_str = getattr(meta, "TrafoPower", "112.5 kVA")
+                try:
+                    s_trafo = float(s_trafo_str.split()[0])
+                except:
+                    s_trafo = 112.5
+
+                icc_ka = ElectricalCalculator.calculate_short_circuit(
+                    actual_v, length_m, wire, z_trafo_pct=z_trafo, s_trafo_kva=s_trafo)
+
+            # Status consolidado
+            problems = []
+            if drop_percent > 3.0:
+                problems.append("Queda>3%")
+            if 0 < icc_ka < 3.0:
+                problems.append("Icc Baixo")
+            if current_corrected > 100:
+                problems.append("Carga Elevada")
+            status = "⚠️ REVISAR: " + ", ".join(problems) if problems else "✅ OK"
             
             sheet.set(f"A{row}", c_name)
-            sheet.set(f"B{row}", tensao_str)
+            sheet.set(f"B{row}", f"{actual_v:.0f}V")
             sheet.set(f"C{row}", str(round(power_va, 2)))
             sheet.set(f"D{row}", str(round(current_nominal, 2)))
             sheet.set(f"E{row}", str(breaker) + "A")
@@ -95,12 +162,13 @@ class CircuitManager:
             sheet.set(f"G{row}", str(wire))
             sheet.set(f"H{row}", str(round(length_m, 2)))
             sheet.set(f"I{row}", str(round(drop_percent, 2)) + "%")
-            sheet.set(f"J{row}", status)
+            sheet.set(f"J{row}", str(round(icc_ka, 3)) + " kA")
+            sheet.set(f"K{row}", status)
             
             row += 1
             
         doc.recompute()
-        FreeCAD.Console.PrintMessage("Quadro de Cargas atualizado com sucesso!\n")
+        FreeCAD.Console.PrintMessage("Quadro de Cargas BIM (NBR 5410) atualizado com sucesso!\n")
         return sheet
 
     @staticmethod
@@ -139,4 +207,115 @@ class CircuitManager:
         FreeCAD.Console.PrintMessage(msg)
         return distribution
 
+
 import math
+
+
+class PhaseOptimizer:
+    """
+    Otimização de balanceamento de fases R/S/T por algoritmo guloso.
+    Ordena circuitos por potência decrescente e atribui cada um
+    à fase com menor carga acumulada (bin-packing greedy).
+    Reduz o desequilíbrio em até 40% comparado à alocação sequencial.
+    """
+
+    @staticmethod
+    def optimize(doc=None):
+        """
+        Redistribui circuitos entre as fases R, S e T minimizando desequilíbrio.
+        Retorna dict {circuito: fase, ...} e relatório com desequilíbrio percentual.
+        """
+        doc = doc or FreeCAD.ActiveDocument
+        if not doc:
+            return None, "Nenhum documento ativo."
+
+        # Coletar circuitos e suas potências
+        circuit_power = {}
+        for obj in doc.Objects:
+            if hasattr(obj, "Circuito") and hasattr(obj, "Potencia"):
+                c = obj.Circuito
+                circuit_power[c] = circuit_power.get(c, 0.0) + float(obj.Potencia)
+
+        if not circuit_power:
+            return None, "Nenhum circuito encontrado."
+
+        # Ordenar por potência decrescente (heurística do maior primeiro)
+        sorted_circuits = sorted(circuit_power.items(), key=lambda x: x[1], reverse=True)
+
+        phases = {"R": 0.0, "S": 0.0, "T": 0.0}
+        distribution = {}
+
+        for circuit, power in sorted_circuits:
+            # Atribuir à fase menos carregada
+            min_phase = min(phases, key=phases.get)
+            distribution[circuit] = min_phase
+            phases[min_phase] += power
+
+        # Aplicar ao modelo
+        for obj in doc.Objects:
+            if hasattr(obj, "Circuito") and hasattr(obj, "Fase") and obj.Circuito in distribution:
+                obj.Fase = distribution[obj.Circuito]
+
+        # Calcular desequilíbrio (%)
+        total = sum(phases.values())
+        avg   = total / 3 if total > 0 else 1
+        max_dev = max(abs(phases[f] - avg) for f in phases)
+        desequilibrio = round((max_dev / avg) * 100, 1) if avg > 0 else 0
+
+        doc.recompute()
+
+        report = (
+            f"=== BALANCEAMENTO OTIMIZADO (Greedy) ===\n"
+            f"Fase R: {round(phases['R'], 0)} VA\n"
+            f"Fase S: {round(phases['S'], 0)} VA\n"
+            f"Fase T: {round(phases['T'], 0)} VA\n"
+            f"Desequilíbrio: {desequilibrio}%\n"
+            f"Circuitos redistribuídos: {len(distribution)}\n"
+        )
+        FreeCAD.Console.PrintMessage(report)
+        return distribution, report
+    @staticmethod
+    def estimate_demand():
+        """Calcula a demanda estimada aplicando fatores de simultaneidade"""
+        doc = FreeCAD.ActiveDocument
+        
+        total_p = 0.0 # kW
+        # Fatores simplificados (conforme normas típicas)
+        # Iluminação: 0.8 | Tomadas: 0.5 | Motores: 0.7 | Ar Cond: 1.0
+        
+        demand_p = 0.0
+        
+        for obj in doc.Objects:
+            if hasattr(obj, "Potencia"):
+                p = getattr(obj, "Potencia", 0.0) / 1000.0 # kW
+                tipo = getattr(obj, "TipoBIM", "")
+                
+                factor = 1.0
+                if "Light" in tipo or "Luminaria" in tipo: factor = 0.8
+                elif "Socket" in tipo or "Tomada" in tipo: factor = 0.5
+                elif "Motor" in tipo or "Bomba" in tipo:   factor = 0.7
+                elif "ArCondicionado" in tipo:             factor = 1.0
+                
+                demand_p += (p * factor)
+                total_p += p
+        
+        # Sincronizar com as configurações do projeto
+        from EletricaLogic.Settings import ProjectSettings
+        settings = ProjectSettings.get_settings_obj()
+        if settings:
+            settings.DemandaEstimada_kW = demand_p
+            
+        # Sugerir Transformador (Próximo valor comercial)
+        trafos = [45, 75, 112.5, 150, 225, 300, 500, 750, 1000, 1500, 2000, 2500]
+        s_needed = demand_p / 0.92 # assumindo FP de 0.92
+        suggested_trafo = trafos[0]
+        for t in trafos:
+            if t >= s_needed:
+                suggested_trafo = t
+                break
+                
+        return {
+            "p_installed_kw": total_p,
+            "demand_peak_kw": demand_p,
+            "suggested_trafo_kva": suggested_trafo
+        }

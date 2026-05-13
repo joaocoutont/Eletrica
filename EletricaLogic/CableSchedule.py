@@ -1,48 +1,77 @@
-# Gerenciador de Lista de Cabos (Cable Schedule)
+# Gerenciador de Lista de Cabos (Cable Schedule) - De/Para
 import FreeCAD
+import csv
+import os
+from EletricaLogic.Calculator import ElectricalCalculator
 
 class CableScheduleManager:
+    """
+    Gera a listagem detalhada de cabos (De/Para) com comprimentos reais.
+    """
+
     @staticmethod
     def generate_cable_schedule():
         """
-        Gera uma lista de cabos baseada nas conexões De/Para do projeto.
+        Gera uma lista de cabos baseada nas conexões do projeto.
         """
         doc = FreeCAD.ActiveDocument
+        if not doc: return []
+        
         schedule = []
+        # Cabeçalho
+        schedule.append(["TAG", "DE (Origem)", "PARA (Destino)", "Circuito", "Seção (mm²)", "Comprimento (m)", "Status"])
         
-        # 1. Cabeçalho
-        schedule.append(["TAG", "Origem (DE)", "Destino (PARA)", "Tipo/Bitola", "Distância (m)", "Função"])
-        
-        # 2. Varrer objetos que possuem conexões elétricas
         for obj in doc.Objects:
-            # Caso 1: Motores/Equipamentos (BIMified)
-            if hasattr(obj, "Circuito") and hasattr(obj, "Alimentacao") or hasattr(obj, "QuadroVinculado"):
-                origin = ""
-                if hasattr(obj, "QuadroVinculado") and obj.QuadroVinculado:
-                    origin = obj.QuadroVinculado.Label
-                elif hasattr(obj, "Alimentacao"):
-                    origin = obj.Alimentacao
+            if hasattr(obj, "Circuito") and hasattr(obj, "Potencia"):
+                # Origem: Quadro Vinculado
+                origin_obj = getattr(obj, "QuadroVinculado", None)
+                origin = origin_obj.Label if origin_obj else "Desconhecido"
                 
-                if origin:
-                    # Cálculo de distância (Distância Euclidiana simplificada ou via Trajeto se houver)
-                    dist = 0.0
-                    if hasattr(obj, "Placement"):
-                        # Se houver um quadro vinculado, calcula distancia entre eles
-                        q = doc.getObject(origin) if isinstance(origin, str) else origin
-                        if q and hasattr(q, "Placement"):
-                            dist = (obj.Placement.Base - q.Placement.Base).Length / 1000.0 * 1.2 # +20% sobra
-                    
-                    tag = f"CB-{obj.Label}"
-                    bitola = "Ver Quadro de Cargas"
-                    funcao = "Força" if "Motor" in obj.Label else "Comando/Geral"
-                    
-                    schedule.append([tag, origin, obj.Label, bitola, f"{dist:.2f}", funcao])
+                # Comprimento: Tenta buscar do WiringManager ou cálculo direto
+                # Para o MVP, vamos usar a distância 3D + fator de sobra
+                dist = 0.0
+                if origin_obj and hasattr(obj, "Placement") and hasattr(origin_obj, "Placement"):
+                    # Comprimento Manhattan (ortogonal) é mais realista que euclidiano
+                    p1 = obj.Placement.Base
+                    p2 = origin_obj.Placement.Base
+                    dist = (abs(p1.x - p2.x) + abs(p1.y - p2.y) + abs(p1.z - p2.z)) / 1000.0
+                    dist *= 1.15 # 15% de sobra para curvas e pontas
+                
+                # Seção do Cabo: Lida do objeto ou recalculada
+                section = getattr(obj, "SecaoCabo", 2.5)
+                
+                tag = f"W-{obj.Circuito}-{obj.Label}"
+                schedule.append([tag, origin, obj.Label, obj.Circuito, f"{section} mm²", f"{dist:.2f}", "OK"])
                     
         return schedule
 
     @staticmethod
+    def export_to_csv():
+        """Exporta a lista de cabos para um arquivo CSV"""
+        doc = FreeCAD.ActiveDocument
+        if not doc: return None
+        
+        data = CableScheduleManager.generate_cable_schedule()
+        filename = f"Lista_Cabos_{doc.Name}.csv"
+        
+        if doc.FileName:
+            file_path = os.path.join(os.path.dirname(doc.FileName), filename)
+        else:
+            file_path = os.path.join(os.path.expanduser("~"), filename)
+            
+        try:
+            with open(file_path, mode='w', encoding='utf-8-sig', newline='') as f:
+                writer = csv.writer(f, delimiter=';')
+                writer.writerows(data)
+            FreeCAD.Console.PrintMessage(f"Lista de Cabos exportada: {file_path}\n")
+            return file_path
+        except Exception as e:
+            FreeCAD.Console.PrintWarning(f"Erro ao exportar cabos: {e}\n")
+            return None
+
+    @staticmethod
     def export_to_spreadsheet():
-        """Exporta a lista para uma planilha do FreeCAD"""
+        """Exporta a lista para uma planilha interna do FreeCAD"""
         import Spreadsheet
         doc = FreeCAD.ActiveDocument
         

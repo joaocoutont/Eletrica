@@ -10,7 +10,11 @@ class EquipmentManager:
             "Ar Cond. 9000 BTU": {"power": 1200, "pf": 0.85, "label": "Ar_Cond"},
             "Ar Cond. 12000 BTU": {"power": 1600, "pf": 0.85, "label": "Ar_Cond"},
             "Forno Eletrico": {"power": 3000, "pf": 1.0, "label": "Forno"},
-            "Motor 1cv (Monofasico)": {"power": 735, "pf": 0.75, "label": "Motor"}
+            "Motor 1cv (Monofasico)": {"power": 735, "pf": 0.75, "label": "Motor"},
+            "Compressor de Ar (5cv)": {"power": 3675, "pf": 0.80, "label": "Compressor"},
+            "Maquina de Solda (Mig/Mag)": {"power": 8000, "pf": 0.60, "label": "Solda"},
+            "Ponte Rolante (10ton)": {"power": 15000, "pf": 0.85, "label": "Ponte_Rolante"},
+            "Nobreak Rack (3kVA)": {"power": 2400, "pf": 0.95, "label": "UPS"}
         }
 
     @staticmethod
@@ -101,6 +105,12 @@ class EquipmentManager:
         # Adicionar Tag BIM
         if not hasattr(obj, "TipoBIM"):
             obj.addProperty("App::PropertyString", "TipoBIM", "BIM", "Categoria").TipoBIM = equipment_type
+            
+        # Adicionar Propriedades de Ciclo de Vida (BIM 6D / O&M)
+        if not hasattr(obj, "NumeroSerie"):
+            obj.addProperty("App::PropertyString", "NumeroSerie",    "Manutencao", "Nº de Série")
+            obj.addProperty("App::PropertyString", "DataInstalacao", "Manutencao", "Data Instalação")
+            obj.addProperty("App::PropertyString", "DataManutencao", "Manutencao", "Próxima Manutenção")
             
         FreeCAD.Console.PrintMessage(f"Objeto {obj.Label} agora é um componente elétrico BIM.\n")
         FreeCAD.ActiveDocument.recompute()

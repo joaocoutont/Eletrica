@@ -5,6 +5,37 @@ from EletricaLogic.Wiring import WiringManager
 
 class BOMManager:
     @staticmethod
+    def get_raw_bom_data():
+        """
+        Central Data Engine: Varre o documento e retorna um dicionário consolidado.
+        Retorna: { 'ItemName': quantidade_float }
+        """
+        import FreeCAD
+        doc = FreeCAD.ActiveDocument
+        if not doc: return {}
+        
+        data = {}
+        for obj in doc.Objects:
+            # 1. Componentes discretos (Tomadas, Luzes, Motores, etc.)
+            if hasattr(obj, "Potencia") and not obj.Label.startswith("Simbolo_"):
+                # Agrupa por prefixo (ex: Tomada_Cozinha -> Tomada)
+                name = obj.Label.split('_')[0]
+                data[name] = data.get(name, 0) + 1
+            
+            # 2. Infraestrutura Linear (Eletrodutos, Eletrocalhas)
+            if hasattr(obj, "Diameter") and hasattr(obj, "Shape"):
+                diam = f"Eletroduto {obj.Diameter}mm"
+                length = obj.Shape.Length / 1000.0 # metros
+                data[diam] = data.get(diam, 0.0) + length
+                
+            if hasattr(obj, "TrayWidth") and hasattr(obj, "Shape"):
+                tray = f"Eletrocalha {obj.TrayWidth}x{obj.TrayHeight}mm"
+                length = obj.Shape.Length / 1000.0
+                data[tray] = data.get(tray, 0.0) + length
+
+        return data
+
+    @staticmethod
     def generate_global_bom():
         """
         Gera uma planilha consolidada com todos os materiais do projeto.
@@ -54,3 +85,22 @@ class BOMManager:
         doc.recompute()
         FreeCAD.Console.PrintMessage("Lista de Materiais gerada com sucesso!\n")
         return sheet
+
+    @staticmethod
+    def export_bom_to_csv():
+        """Exporta o BOM para a pasta Downloads"""
+        import os, csv
+        doc = FreeCAD.ActiveDocument
+        data = BOMManager.get_raw_bom_data()
+        
+        path = os.path.join(os.path.expanduser("~"), "Downloads", f"BOM_{doc.Label}.csv")
+        with open(path, mode='w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f, delimiter=';')
+            writer.writerow(['Material', 'Quantidade', 'Unidade'])
+            for item, qty in data.items():
+                unit = "m" if "Eletroduto" in item or "Cabo" in item else "pç"
+                writer.writerow([item, f"{qty:.2f}", unit])
+        
+        from PySide import QtWidgets
+        QtWidgets.QMessageBox.information(None, "BOM", f"Lista de Materiais exportada para:\n{path}")
+        os.startfile(os.path.dirname(path))

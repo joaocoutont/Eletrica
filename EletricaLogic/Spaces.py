@@ -3,7 +3,10 @@ import FreeCAD
 from EletricaLogic.Calculator import ElectricalCalculator
 from EletricaLogic.Settings import ProjectSettings
 
-class SpaceLightingManager:
+class SpaceSizingManager:
+    """
+    Especialista em dimensionamento de ambientes (Luz e Tomadas) segundo NBR 5410.
+    """
     @staticmethod
     def calculate_required_lumens(area, target_lux=300, utilization_factor=0.5, maintenance_factor=0.8):
         """
@@ -14,18 +17,40 @@ class SpaceLightingManager:
         return total_lumens
 
     @staticmethod
+    def calculate_min_tugs(perimeter, is_wet_area=False):
+        """
+        Calcula o número mínimo de tomadas de uso geral (TUGs) - NBR 5410.
+        Geral: 1 a cada 5m de perímetro.
+        Cozinhas/Áreas de Serviço: 1 a cada 3,5m.
+        """
+        import math
+        spacing = 3.5 if is_wet_area else 5.0
+        return math.ceil(perimeter / spacing)
+
+    @staticmethod
     def analyze_space(space_obj):
         """
-        Analisa um objeto Arch Space e sugere a iluminacao.
+        Analisa um objeto Arch Space e sugere a iluminacao e tomadas.
         """
-        if not hasattr(space_obj, "Area"):
+        if not hasattr(space_obj, "Area") or not hasattr(space_obj, "Shape"):
             return None
             
         area = float(space_obj.Area)
-        min_power = ElectricalCalculator.calculate_min_lighting_power(area)
+        # Calcula perímetro real da face da base
+        perimeter = space_obj.Shape.Length / 2.0 # Aproximação se for um volume extrudado
+        if hasattr(space_obj, "Perimeter"): perimeter = float(space_obj.Perimeter)
+        
+        min_lighting_va = ElectricalCalculator.calculate_min_lighting_power(area)
+        
+        # Detectar se é área úmida pelo label
+        wet_keywords = ["Cozinha", "Banheiro", "Lavanderia", "Serviço", "Copa"]
+        is_wet = any(kw.lower() in space_obj.Label.lower() for kw in wet_keywords)
+        
+        min_tugs = SpaceSizingManager.calculate_min_tugs(perimeter, is_wet)
         
         # Sugestao Luminotecnica (NBR ISO/CIE 8995-1)
-        edificacao = ProjectSettings.get_settings_obj().TipoEdificacao
+        settings = ProjectSettings.get_settings_obj()
+        edificacao = getattr(settings, "TipoEdificacao", "Residencial")
         
         lux_target = 300 # Padrao residencial
         if edificacao == "Comercial (Escritorio)":
@@ -33,18 +58,17 @@ class SpaceLightingManager:
         elif edificacao == "Industrial":
             lux_target = 750
             
-        # Metodo dos Lumens (u=0.5, d=0.8)
-        flux_needed = SpaceLightingManager.calculate_required_lumens(area, lux_target)
-        
-        # Se uma lampada LED comum tem ~1000 lumens
+        flux_needed = SpaceSizingManager.calculate_required_lumens(area, lux_target)
         points_suggested = max(1, round(flux_needed / 1000.0))
         
         return {
-            "Area": area,
-            "PowerVA": min_power,
+            "Area": round(area, 2),
+            "Perimeter": round(perimeter, 2),
+            "MinLightingVA": min_lighting_va,
+            "MinTUGs": min_tugs,
+            "IsWetArea": is_wet,
             "LuxTarget": lux_target,
-            "PointsSuggested": points_suggested,
-            "FluxNeeded": round(flux_needed, 2)
+            "PointsSuggested": points_suggested
         }
 
     @staticmethod

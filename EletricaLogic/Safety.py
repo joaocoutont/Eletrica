@@ -1,42 +1,65 @@
-# Analise de Seguranca NR-10 e Arco Eletrico (Arc Flash)
+# Lógica de Proteção e Segurança - NBR 5410
 import FreeCAD
 
 class SafetyManager:
-    @staticmethod
-    def calculate_arc_flash(ka_short_circuit, voltage=380, distance_mm=455):
-        """
-        Calculo simplificado de Energia Incidente (cal/cm2) baseado na IEEE 1584.
-        """
-        # Constantes simplificadas para baixa tensao
-        energy = (ka_short_circuit * (voltage/1000) * 1.5) / (distance_mm/100)
-        
-        # Categorias de EPI (NR-10 / NFPA 70E)
-        if energy < 1.2:
-            cat = "Categoria 0 (Farda Algodão)"
-        elif energy < 4:
-            cat = "Categoria 1 (FR - 4 cal/cm2)"
-        elif energy < 8:
-            cat = "Categoria 2 (FR - 8 cal/cm2)"
-        elif energy < 25:
-            cat = "Categoria 3 (FR - 25 cal/cm2)"
-        else:
-            cat = "Categoria 4 (Risco Extremo - 40 cal/cm2)"
-            
-        return {
-            "Energia": round(energy, 2),
-            "EPI_Sugerido": cat,
-            "DistanciaSegura": "1.5 metros"
-        }
+    """
+    Especialista em Proteção (DR, DPS, Aterramento).
+    """
 
     @staticmethod
-    def apply_safety_to_panel(panel_obj):
-        """Aplica analise de arco eletrico ao painel"""
-        # Pega o curto circuito calculado anteriormente (ou default se nao houver)
-        ka = getattr(panel_obj, "CurtoCircuitoKA", 10.0)
-        result = SafetyManager.calculate_arc_flash(ka)
+    def analyze_protection_needs():
+        """
+        Analisa o projeto e sugere proteções DR e DPS.
+        """
+        doc = FreeCAD.ActiveDocument
+        if not doc: return {}
+
+        results = {
+            "DR_Required": [],
+            "DPS_Recommendation": "Classe II (Quadro Geral)",
+            "Grounding_Check": "OK"
+        }
+
+        # 1. Analisar necessidade de DR (Áreas Molhadas / Tomadas Externas)
+        wet_keywords = ["Cozinha", "Banheiro", "Lavanderia", "Area", "Externo", "Chuveiro", "Piscina", "Jardim"]
         
-        if not hasattr(panel_obj, "RiscoArco"):
-            panel_obj.addProperty("App::PropertyString", "RiscoArco", "Segurança").RiscoArco = result["EPI_Sugerido"]
-            panel_obj.addProperty("App::PropertyFloat", "EnergiaIncidente", "Segurança").EnergiaIncidente = result["Energia"]
+        for obj in doc.Objects:
+            if hasattr(obj, "Circuito"):
+                c_name = obj.Circuito
+                if any(kw.lower() in c_name.lower() for kw in wet_keywords):
+                    if c_name not in results["DR_Required"]:
+                        results["DR_Required"].append(c_name)
+
+        # 2. Analisar DPS baseado no ProjectData
+        meta = doc.getObject("Eletrica_ProjectData")
+        if meta:
+            p_type = getattr(meta, "ProjectType", "Residencial")
+            if p_type == "Industrial" or getattr(meta, "SPDARequired", False):
+                results["DPS_Recommendation"] = "Classe I + II (Entrada)"
+        
+        return results
+
+    @staticmethod
+    def apply_protections_to_panels():
+        """
+        Aplica as recomendações de proteção aos objetos de Quadro (Panels).
+        """
+        doc = FreeCAD.ActiveDocument
+        needs = SafetyManager.analyze_protection_needs()
+        
+        panels = [o for o in doc.Objects if hasattr(o, "TipoBIM") and o.TipoBIM == "Quadro"]
+        
+        for p in panels:
+            if not hasattr(p, "PossuiDR"):
+                p.addProperty("App::PropertyBool", "PossuiDR", "Proteção", "Se possui IDR")
+            if not hasattr(p, "PossuiDPS"):
+                p.addProperty("App::PropertyBool", "PossuiDPS", "Proteção", "Se possui DPS")
             
-        return result
+            # Sugestão inteligente
+            if needs["DR_Required"]:
+                p.PossuiDR = True
+            
+            if "Classe I" in needs["DPS_Recommendation"]:
+                p.PossuiDPS = True
+        
+        return needs

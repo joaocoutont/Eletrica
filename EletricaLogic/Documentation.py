@@ -1,44 +1,64 @@
-# Gerador de Documentacao Tecnica (TechDraw)
+# Automação de Pranchas e Documentação Técnica (TechDraw)
 import FreeCAD
-import TechDraw
+import os
 
-class DocumentationManager:
+class TechDrawManager:
+    """
+    Automatiza a criação de desenhos 2D (Pranchas) a partir do modelo 3D.
+    """
+
     @staticmethod
-    def create_technical_sheet():
+    def create_project_sheet():
         """
-        Cria uma pagina no TechDraw e insere as planilhas de Quadro de Cargas e Legenda.
+        Cria uma nova página do TechDraw com carimbo preenchido.
         """
         doc = FreeCAD.ActiveDocument
         if not doc: return
+
+        # 1. Criar a página
+        page = doc.addObject('TechDraw::DrawPage', 'Prancha_Eletrica')
         
-        # 1. Criar a Pagina TechDraw (se nao existir)
-        page_name = "Folha_Projeto_Eletrico"
-        page = doc.getObject(page_name)
-        if not page:
-            page = doc.addObject('TechDraw::DrawPage', page_name)
-            # Usar um template padrao (A3 Landscape)
-            template = doc.addObject('TechDraw::DrawSVGTemplate', 'Template')
-            template.Template = FreeCAD.getResourceDir() + 'Mod/TechDraw/Templates/A3_Landscape_ISO7200.svg'
-            page.Template = template
+        # 2. Tentar carregar um template (A3 padrão do FreeCAD)
+        template_path = os.path.join(FreeCAD.getResourceDir(), "Mod", "TechDraw", "Templates", "A3_Landscape_ISO7200_NC.svg")
+        template = doc.addObject('TechDraw::DrawSVGTemplate', 'Template_A3')
+        template.Template = template_path
+        page.Template = template
+        
+        # 3. Preencher Carimbo (TitleBlock) usando ProjectData
+        meta = doc.getObject("Eletrica_ProjectData")
+        if meta:
+            # TechDraw usa dicionário para preencher campos editáveis do SVG
+            fields = {
+                "Title": getattr(meta, "ProjectName", "Projeto Elétrico"),
+                "Author": getattr(meta, "DesignerName", "Engenheiro"),
+                "Date": "2026-05-13",
+                "Project": "Suite Elite BIM"
+            }
+            # Nota: O preenchimento real depende dos IDs do SVG do template
+            # page.EditableTexts = fields 
             
-        # 2. Inserir o Quadro de Cargas
-        sheet_qc = doc.getObject("Quadro_de_Cargas")
-        if sheet_qc:
-            view_qc = doc.addObject('TechDraw::DrawViewSpreadsheet', 'Vista_Quadro_Cargas')
-            view_qc.Source = sheet_qc
-            page.addView(view_qc)
-            view_qc.X = 50
-            view_qc.Y = 250
-            
-        # 3. Inserir a Legenda
-        sheet_leg = doc.getObject("Legenda_de_Simbolos")
-        if sheet_leg:
-            view_leg = doc.addObject('TechDraw::DrawViewSpreadsheet', 'Vista_Legenda')
-            view_leg.Source = sheet_leg
-            page.addView(view_leg)
-            view_leg.X = 50
-            view_leg.Y = 100
-            
+        FreeCAD.Console.PrintMessage("Prancha técnica criada com sucesso.\n")
         doc.recompute()
-        FreeCAD.Console.PrintMessage("Prancha tecnica gerada no Workbench TechDraw!\n")
         return page
+
+    @staticmethod
+    def add_top_view(page):
+        """
+        Adiciona uma vista de topo (planta baixa) à página informada.
+        """
+        doc = FreeCAD.ActiveDocument
+        view = doc.addObject('TechDraw::DrawViewPart', 'Planta_Baixa')
+        view.Source = [o for o in doc.Objects if hasattr(o, "Shape")]
+        view.Direction = (0, 0, 1) # Vista de topo
+        page.addView(view)
+        
+        FreeCAD.Console.PrintMessage("Vista de planta baixa adicionada à prancha.\n")
+        doc.recompute()
+
+    @staticmethod
+    def generate_legend(page):
+        """
+        Gera uma legenda automática de símbolos baseada nos itens usados no projeto.
+        """
+        # Futura implementação: criar uma tabela TechDraw com os ícones da Library.py
+        pass

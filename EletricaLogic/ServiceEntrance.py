@@ -4,45 +4,78 @@ import FreeCAD
 class ServiceEntranceWizard:
     @staticmethod
     def get_utilities_data():
-        """Dados simplificados baseados nas normas tecnicas"""
+        """Dados simplificados baseados nas normas tecnicas das concessionarias"""
         return {
-            "CEMIG (ND-5.1)": {
+            "Cemig": {
+                "norma": "ND-5.1",
                 "Categorias": [
                     {"max_kw": 15, "fase": "Monofasico", "disjuntor": "40A", "cabo": "10mm2", "caixa": "CM-1"},
-                    {"max_kw": 25, "fase": "Bifasico", "disjuntor": "50A", "cabo": "16mm2", "caixa": "CM-2"},
-                    {"max_kw": 75, "fase": "Trifasico", "disjuntor": "100A", "cabo": "35mm2", "caixa": "CM-3"}
+                    {"max_kw": 25, "fase": "Bifasico",   "disjuntor": "50A", "cabo": "16mm2", "caixa": "CM-2"},
+                    {"max_kw": 75, "fase": "Trifasico",  "disjuntor": "100A","cabo": "35mm2", "caixa": "CM-3"}
                 ]
             },
-            "ENERGISA (NDU-001)": {
+            "Energisa": {
+                "norma": "NDU-001",
                 "Categorias": [
                     {"max_kw": 12, "fase": "Monofasico", "disjuntor": "50A", "cabo": "10mm2", "caixa": "Tipo E"},
-                    {"max_kw": 24, "fase": "Bifasico", "disjuntor": "63A", "cabo": "16mm2", "caixa": "Tipo H"},
-                    {"max_kw": 75, "fase": "Trifasico", "disjuntor": "100A", "cabo": "50mm2", "caixa": "Tipo N"}
+                    {"max_kw": 24, "fase": "Bifasico",   "disjuntor": "63A", "cabo": "16mm2", "caixa": "Tipo H"},
+                    {"max_kw": 75, "fase": "Trifasico",  "disjuntor": "100A","cabo": "50mm2", "caixa": "Tipo N"}
                 ]
             },
-            "ENEL / CPFL": {
+            "Enel": {
+                "norma": "NTC-901001",
                 "Categorias": [
                     {"max_kw": 10, "fase": "Monofasico", "disjuntor": "40A", "cabo": "10mm2", "caixa": "Individual"},
-                    {"max_kw": 20, "fase": "Bifasico", "disjuntor": "50A", "cabo": "16mm2", "caixa": "Individual"},
-                    {"max_kw": 75, "fase": "Trifasico", "disjuntor": "100A", "cabo": "35mm2", "caixa": "Individual"}
+                    {"max_kw": 20, "fase": "Bifasico",   "disjuntor": "50A", "cabo": "16mm2", "caixa": "Individual"},
+                    {"max_kw": 75, "fase": "Trifasico",  "disjuntor": "100A","cabo": "35mm2", "caixa": "Individual"}
+                ]
+            },
+            "CPFL": {
+                "norma": "NTC-901001",
+                "Categorias": [
+                    {"max_kw": 10, "fase": "Monofasico", "disjuntor": "40A", "cabo": "10mm2", "caixa": "Individual"},
+                    {"max_kw": 20, "fase": "Bifasico",   "disjuntor": "50A", "cabo": "16mm2", "caixa": "Individual"},
+                    {"max_kw": 75, "fase": "Trifasico",  "disjuntor": "100A","cabo": "35mm2", "caixa": "Individual"}
+                ]
+            },
+            "Neoenergia": {
+                "norma": "PAD-DIS-SRT/BT-001",
+                "Categorias": [
+                    {"max_kw": 12, "fase": "Monofasico", "disjuntor": "40A", "cabo": "10mm2", "caixa": "Individual"},
+                    {"max_kw": 24, "fase": "Bifasico",   "disjuntor": "50A", "cabo": "16mm2", "caixa": "Individual"},
+                    {"max_kw": 75, "fase": "Trifasico",  "disjuntor": "100A","cabo": "35mm2", "caixa": "Individual"}
+                ]
+            },
+            "Copel": {
+                "norma": "NTC-905200",
+                "Categorias": [
+                    {"max_kw": 12, "fase": "Monofasico", "disjuntor": "40A", "cabo": "10mm2", "caixa": "Individual"},
+                    {"max_kw": 24, "fase": "Bifasico",   "disjuntor": "50A", "cabo": "16mm2", "caixa": "Individual"},
+                    {"max_kw": 75, "fase": "Trifasico",  "disjuntor": "100A","cabo": "35mm2", "caixa": "Individual"}
                 ]
             }
         }
 
     @staticmethod
     def recommend_entrance(utility_name, total_kw):
-        """Recomenda o padrao de entrada ideal"""
+        """Recomenda o padrao de entrada ideal. Aceita nomes do formulario de propriedades."""
         data = ServiceEntranceWizard.get_utilities_data()
-        if utility_name not in data: return None
-        
+        # Busca direta ou fallback para a primeira que contenha o nome
+        if utility_name not in data:
+            for key in data:
+                if utility_name.lower() in key.lower():
+                    utility_name = key
+                    break
+            else:
+                FreeCAD.Console.PrintWarning(f"Concessionaria '{utility_name}' nao encontrada. Usando padrao generico.\n")
+                return None
+
         categories = data[utility_name]["Categorias"]
-        recommendation = categories[-1] # Default para o maior se ultrapassar
-        
+        recommendation = categories[-1]
         for cat in categories:
             if total_kw <= cat["max_kw"]:
                 recommendation = cat
                 break
-                
         return recommendation
 
     @staticmethod

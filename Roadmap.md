@@ -23,23 +23,24 @@
 ---
 
 
----
-
-## ✅ Fase 2: Elétrica Industrial (CONCLUÍDA)
-- [x] Assistente de Motor Industrial com UI Qt completa (potência, tensão, método de partida).
-- [x] Catálogo WEG expandido de **1 a 1000 CV** (MPW → DWJ Caixa Moldada → ACB Aberto).
-- [x] Dimensionamento completo: In, Icurtocircuito, relé térmico, cabo de força, disjuntor.
-- [x] Objeto BIM de Motor salvo no documento com todas as propriedades técnicas.
-- [x] Verificação de Seletividade com UI Qt (montante vs. jusante, IEC 60947).
-- [x] Dimensionamento de Barramentos de Cobre e Alumínio (perfis comerciais).
-- [x] Gerador de Diagrama de Comando CCM em planilha FreeCAD.
+## Fase 2: Industrial & Segurança (CONCLUÍDA ✅)
+- [x] Catálogo de Motores e Partidas (Padrão WEG).
+- [x] Dimensionador de Barramentos com Peso de Materiais.
+- [x] Análise de Arc Flash (IEEE 1584) e Etiquetas NR-10.
+- [x] Automação e IIoT (CLP, IHM, MQTT).
+- [x] Dimensionamento de Condutores de Motores Automático.
+- [x] Gestão de Ativos BIM 7D (QR Codes de Manutenção).
+- [x] Cálculo Luminotécnico Industrial (Método dos Lúmens).
 - [x] Barra de ferramentas "Elite 9: Industrial" integrada à bancada.
 - [x] Modelagem 3D de Eletrocalhas com propriedades BIM (Tipo, Material, Taxa de Ocupação, Capacidade kg/m).
 - [x] Assistente de Eletrocalha: dimensionamento automático por lista de cabos com `CableTrayCalculator`.
 - [x] Corrente de curto-circuito (Icc kA) integrada ao Quadro de Cargas — coluna J com status.
 
-## ✅ Fase 3: Distribuição e Alta Tensão (CONCLUÍDA)
-- [x] Dimensionamento de Redes Aéreas — `AerialNetwork.py` com condutores CA/CAA (10–300 mm²) e postes por ambiente.
+## Fase 3: Alta Tensão & Distribuição (INICIADA 🚀)
+- [x] Assistente de Rede Aérea de Distribuição MT.
+- [x] Análise de Risco SPDA Completa (NBR 5419:2015).
+- [ ] Dimensionamento de Transformadores de Corrente (TC) e Potencial (TP).
+- [ ] Diagramas Unifilares de MT Automáticos.
 - [x] Cálculo de queda de tensão em linhas longas (MT) com limites ANEEL (7%).
 - [x] Suporte a 4 tensões de distribuição: 13,8 kV / 23,1 kV / 34,5 kV / 69 kV.
 - [x] Subestações Particulares (Poste Único → H → CSP Pré-Fabricada → Abrigada) + objeto BIM.

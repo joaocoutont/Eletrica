@@ -209,3 +209,47 @@ class BusbarCalculator:
             "designation": f"{chosen[0]}x{chosen[1]}mm ({material})",
             "phases_desc": f"{phases}x {chosen[0]}x{chosen[1]}mm" + (" + Neutro" if phases == 3 else ""),
         }
+
+class MotorDimensioning:
+    """Lógica de dimensionamento de condutores e proteção para motores (Padrão WEG)"""
+    
+    # Tabela simplificada: CV -> Corrente (220V/380V) -> Cabo (mm2) -> Disjuntor (A)
+    MOTOR_TABLE = {
+        0.5:  {"i220": 2.1,  "i380": 1.2,  "cable": 1.5, "breaker": 6},
+        1.0:  {"i220": 3.6,  "i380": 2.1,  "cable": 1.5, "breaker": 10},
+        2.0:  {"i220": 6.8,  "i380": 3.9,  "cable": 2.5, "breaker": 16},
+        5.0:  {"i220": 15.2, "i380": 8.8,  "cable": 4.0, "breaker": 25},
+        10.0: {"i220": 28.0, "i380": 16.2, "cable": 6.0, "breaker": 40},
+        20.0: {"i220": 54.0, "i380": 31.0, "cable": 16.0, "breaker": 63},
+        50.0: {"i220": 130.0, "i380": 75.0, "cable": 35.0, "breaker": 100}
+    }
+
+    @staticmethod
+    def get_sizing(cv, voltage, method):
+        """Retorna dimensionamento completo"""
+        # Busca a potência mais próxima
+        p_list = sorted(MotorDimensioning.MOTOR_TABLE.keys())
+        cv_match = min(p_list, key=lambda x: abs(x - cv))
+        data = MotorDimensioning.MOTOR_TABLE[cv_match]
+        
+        current = data['i220'] if voltage < 300 else data['i380']
+        cable = data['cable']
+        breaker = data['breaker']
+        
+        # Ajustes por método de partida
+        if method == "Estrela-Triângulo":
+            cable = cable * 0.58 # 1/sqrt(3) para cabos internos
+            comment = "Fiação interna para 6 terminais."
+        elif method in ["Soft-Starter", "Inversor"]:
+            breaker = breaker * 1.2 # Margem para harmônicos
+            comment = "Considerar cabos blindados (Inversor)."
+        else:
+            comment = "Partida Direta Convencional."
+            
+        return {
+            "current": current,
+            "cable": cable,
+            "breaker": breaker,
+            "cv_used": cv_match,
+            "comment": comment
+        }

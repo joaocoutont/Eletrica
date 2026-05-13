@@ -121,6 +121,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_MergeSwitches", 
             "Eletrica_InsertSmartDevice",
             "Eletrica_DimensionMotorStarter",
+            "Eletrica_MotorWiringWizard",
             "Eletrica_InsertAirConditioner",
             "Eletrica_InsertPumpSet",
             "Eletrica_LinkPumpSet",

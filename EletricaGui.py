@@ -1691,6 +1691,65 @@ class InsertHMI:
             if not hasattr(obj, "TipoBIM"): obj.addProperty("App::PropertyString", "TipoBIM", "Eletrica", "Tipo").TipoBIM = "IHM"
             FreeCADGui.runCommand("Draft_Move")
 
+class MotorWiringWizard:
+    """Assistente de Alimentação de Motores WEG"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.png'), 'MenuText': tr('Dimensionar Alimentação Motor'), 'ToolTip': tr('Dimensiona cabos e disjuntores para motores') }
+    
+    def Activated(self):
+        from EletricaLogic.Starters import MotorDimensioning
+        import FreeCADGui
+        from PySide import QtWidgets
+        obj = FreeCADGui.Selection.getSelection()
+        if not obj or not hasattr(obj[0], "Potencia"):
+            QtWidgets.QMessageBox.warning(None, "Seleção", "Selecione um Motor no 3D.")
+            return
+            
+        motor = obj[0]
+        # Puxar potência em CV/HP
+        cv = 1.0
+        if hasattr(motor, "PotenciaHP"): cv = motor.PotenciaHP
+        elif hasattr(motor, "Potencia"): cv = motor.Potencia / 735.5 # W to CV
+        
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Dimensionamento WEG - Motor")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_v = QtWidgets.QComboBox(); combo_v.addItems(["220V", "380V", "440V"])
+        combo_m = QtWidgets.QComboBox(); combo_m.addItems(["Direta", "Estrela-Triângulo", "Soft-Starter", "Inversor"])
+        
+        layout.addRow("Tensão de Operação:", combo_v)
+        layout.addRow("Método de Partida:", combo_m)
+        
+        def processar():
+            v = int(combo_v.currentText().replace("V", ""))
+            res = MotorDimensioning.get_sizing(cv, v, combo_m.currentText())
+            
+            # Aplicar ao objeto no 3D
+            if not hasattr(motor, "SecaoCabo"): motor.addProperty("App::PropertyFloat", "SecaoCabo", "Eletrica", "Cabo (mm2)")
+            if not hasattr(motor, "Disjuntor"): motor.addProperty("App::PropertyInteger", "Disjuntor", "Eletrica", "Disjuntor (A)")
+            if not hasattr(motor, "CorrenteNom"): motor.addProperty("App::PropertyFloat", "CorrenteNom", "Eletrica", "Corrente (A)")
+            if not hasattr(motor, "MetodoPartida"): motor.addProperty("App::PropertyString", "MetodoPartida", "Eletrica", "Método")
+            
+            motor.SecaoCabo = res['cable']
+            motor.Disjuntor = res['breaker']
+            motor.CorrenteNom = res['current']
+            motor.MetodoPartida = combo_m.currentText()
+            
+            msg = f"Dimensionamento Concluído para {cv:.1f} CV:\n"
+            msg += f"- Corrente: {res['current']:.1f} A\n"
+            msg += f"- Cabo Sugerido: {res['cable']:.1f} mm²\n"
+            msg += f"- Proteção Sugerida: {res['breaker']} A\n"
+            msg += f"Nota: {res['comment']}"
+            
+            QtWidgets.QMessageBox.information(None, "Sizing WEG", msg)
+            dlg.accept()
+
+        btn = QtWidgets.QPushButton("Aplicar Dimensionamento ao Modelo")
+        btn.clicked.connect(processar)
+        layout.addRow(btn)
+        dlg.exec_()
+
 class LightingAnalysis:
     """Assistente de Cálculo Luminotécnico (Método dos Lúmens)"""
     def GetResources(self):
@@ -2426,6 +2485,8 @@ cmds = {
     'Eletrica_MergeSwitches': MergeSwitches(),
     'Eletrica_InsertSmartDevice': InsertSmartDevice(),
     'Eletrica_InsertAirConditioner': InsertAirConditioner(),
+    'Eletrica_MotorWiringWizard': MotorWiringWizard(),
+    'Eletrica_InsertPumpSet': InsertPumpSet(),
     'Eletrica_InsertTelecomPoint': InsertTelecomPoint(),
     'Eletrica_InsertVDIRack': InsertVDIRack(),
     'Eletrica_ToggleVoltageDropHeatmap': ToggleVoltageDropHeatmap(),

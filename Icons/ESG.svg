@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <path d="M32 50c-10 0-18-8-18-18s8-18 18-18 18 8 18 18-8 18-18 18z" fill="#2ecc71" fill-opacity="0.2" stroke="#27ae60" stroke-width="2"/>
+  <path d="M32 40c0-8 8-12 8-12s-8 4-8 12z" fill="#27ae60"/>
+  <text x="32" y="58" font-family="Arial" font-size="14" fill="#27ae60" text-anchor="middle" font-weight="bold">ESG</text>
+</svg>

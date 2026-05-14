@@ -3031,7 +3031,7 @@ class GenerateSustainabilityReport:
     """Gera relatório de impacto ambiental e sustentabilidade do projeto"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'ESG.svg'),
             'MenuText': tr('Relatório de Sustentabilidade'),
             'ToolTip': tr('Calcula impacto ambiental, economia de CO2 e árvores equivalentes')
         }
@@ -3152,11 +3152,11 @@ class RunSelectivityAudit:
     def Activated(self):
         QtWidgets.QMessageBox.information(None, "Seletividade", "Iniciando análise de curvas de proteção...\n\nStatus: Todas as proteções de motores estão coordenadas com os disjuntores gerais dos quadros (Padrão NBR 5410).")
 
-class GenerateMaintenancePlan:
+class GenerateBIM6D:
     """Gera o Plano de Manutenção Preventiva (BIM 6D)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'BIM6D.svg'),
             'MenuText': tr('Plano de Manutenção BIM 6D'),
             'ToolTip': tr('Gera cronograma automático de manutenção baseada nos equipamentos do projeto')
         }
@@ -3186,7 +3186,7 @@ class GenerateMaintenancePlan:
 class GenerateBIM4D:
     """Gera Cronograma de Execução (BIM 4D)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'), 'MenuText': tr('Cronograma de Obra (4D)'), 'ToolTip': tr('Gera estimativa de tempo para execução das etapas da obra') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM4D.svg'), 'MenuText': tr('Cronograma de Obra (4D)'), 'ToolTip': tr('Gera estimativa de tempo para execução das etapas da obra') }
     def Activated(self):
         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Cronograma 4D", "", "Markdown (*.md)")
         if not save_path: return
@@ -3205,7 +3205,7 @@ class GenerateBIM4D:
 class GenerateBIM5D:
     """Gera Orçamento Completo (BIM 5D)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'), 'MenuText': tr('Orçamento da Obra (5D)'), 'ToolTip': tr('Gera orçamento detalhado de materiais e mão de obra') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM5D.svg'), 'MenuText': tr('Orçamento da Obra (5D)'), 'ToolTip': tr('Gera orçamento detalhado de materiais e mão de obra') }
     def Activated(self):
         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Orçamento 5D", "", "Markdown (*.md)")
         if not save_path: return
@@ -3271,21 +3271,17 @@ class GenerateSingleLineDiagram:
     """Gera diagrama unifilar automático via TechDraw"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Auditor.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Unifilar.svg'),
             'MenuText': tr('Gerar Diagrama Unifilar'),
             'ToolTip': tr('Cria representação esquemática automática dos quadros e circuitos')
         }
     def Activated(self):
         QtWidgets.QMessageBox.information(None, "Diagrama Unifilar", "Diagrama unifilar gerado na aba 'TechDraw'.\n\nTodos os quadros e disjuntores foram mapeados esquematicamente.")
 
-class GenerateCommissioningChecklist:
+class GenerateBIM9D:
     """Gera Checklist de Comissionamento (BIM 9D)"""
     def GetResources(self):
-        return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
-            'MenuText': tr('Checklist de Comissionamento (9D)'),
-            'ToolTip': tr('Gera lista de verificações técnicas para entrega da obra')
-        }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM9D.svg'), 'MenuText': tr('Checklist de Comissionamento (9D)'), 'ToolTip': tr('Gera lista de verificações técnicas para entrega da obra') }
     def Activated(self):
         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Checklist 9D", "", "Markdown (*.md)")
         if not save_path: return
@@ -3305,11 +3301,11 @@ class GenerateCommissioningChecklist:
             f.write("\n--- Emitido pelo Elite Industrial Suite ---")
         QtWidgets.QMessageBox.information(None, "BIM 9D", "Checklist de Comissionamento gerado com sucesso!")
 
-class RunFinancialAnalysis:
+class FinancialViability:
     """Calcula viabilidade financeira (Payback, TIR, VPL)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'ROI.svg'),
             'MenuText': tr('Viabilidade Financeira (ROI)'),
             'ToolTip': tr('Calcula Payback, TIR e VPL do projeto (Especialmente para Solar)')
         }

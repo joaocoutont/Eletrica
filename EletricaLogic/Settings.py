@@ -18,13 +18,13 @@ class ProjectSettings:
             obj.Language = ["pt-BR", "en-US", "es-ES"]
             obj.Language = "pt-BR"
 
-            obj.addProperty("App::PropertyEnumeration", "Sistema", "Eletrica", "Sistema de fornecimento")
-            obj.Sistema = ["Monofasico (F+N)", "Bifasico (2F+N)", "Trifasico (3F+N)"]
-            obj.Sistema = "Trifasico (3F+N)"
+            obj.addProperty("App::PropertyEnumeration", "SistemaPadrao", "Eletrica", "Sistema Padrão do Projeto")
+            obj.SistemaPadrao = ["Monofasico (F+N)", "Bifasico (2F+N)", "Trifasico (3F+N)"]
+            obj.SistemaPadrao = "Trifasico (3F+N)"
             
-            obj.addProperty("App::PropertyEnumeration", "Tensao", "Eletrica", "Tensao nominal")
-            obj.Tensao = ["127V", "220V", "380V"]
-            obj.Tensao = "220V"
+            obj.addProperty("App::PropertyEnumeration", "TensaoPadrao", "Eletrica", "Tensão Padrão do Projeto")
+            obj.TensaoPadrao = ["127V", "220V", "380V"]
+            obj.TensaoPadrao = "220V"
             
             obj.addProperty("App::PropertyFloat", "FatorPotencia", "Eletrica", "Fator de potencia global")
             obj.FatorPotencia = 0.95
@@ -63,7 +63,7 @@ class ProjectSettings:
     def get_voltage():
         obj = ProjectSettings.get_settings_obj()
         if not obj: return 220.0
-        val = obj.Tensao
+        val = obj.TensaoPadrao
         return float(val.replace("V", ""))
 
     @staticmethod

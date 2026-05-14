@@ -28,8 +28,18 @@ class CircuitManager:
                         "objects": []
                     }
                 circuits_data[c_name]["power_va"] += float(obj.Potencia)
+                
+                # Hierarquia de Tensão: Componente -> Quadro -> Projeto
+                obj_voltage = None
                 if hasattr(obj, "Tensao") and obj.Tensao:
-                    circuits_data[c_name]["tensao"] = obj.Tensao
+                    obj_voltage = obj.Tensao
+                elif hasattr(obj, "QuadroVinculado") and obj.QuadroVinculado:
+                    if hasattr(obj.QuadroVinculado, "TensaoNominal"):
+                        obj_voltage = obj.QuadroVinculado.TensaoNominal
+                
+                if obj_voltage:
+                    circuits_data[c_name]["tensao"] = obj_voltage
+
                 if hasattr(obj, "Fase") and obj.Fase:
                     # Tenta extrair número de fases da propriedade (ex: "R" -> 1, "R,S" -> 2)
                     f_val = obj.Fase

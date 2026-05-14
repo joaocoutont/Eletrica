@@ -26,6 +26,16 @@ class PanelManager:
         obj.addProperty("App::PropertyFloat", "PotenciaAcumulada", "Eletrica", "Soma das cargas (VA)")
         obj.PotenciaAcumulada = 0.0
         
+        # Propriedades de Tensao e Sistema (Conforme sua observação técnica)
+        group_v = "Parametros Eletricos"
+        obj.addProperty("App::PropertyEnumeration", "TensaoNominal", group_v, "Tensão de operação do barramento")
+        obj.TensaoNominal = ["220V", "127V", "380V", "440V", "13.8kV", "34.5kV"]
+        obj.TensaoNominal = "220V" # Padrao comum
+        
+        obj.addProperty("App::PropertyEnumeration", "Sistema", group_v, "Configuração de fases")
+        obj.Sistema = ["3F+N (380/220V)", "3F (220V Delta)", "2F+N (220/110V)", "2F (220V)", "1F+N (220V)", "1F+N (127V)"]
+        obj.Sistema = "3F+N (380/220V)" # Padrao industrial/residencial comum
+        
         # Protecoes Adicionais
         obj.addProperty("App::PropertyBool", "PossuiDR", "Proteção", "Se possui IDR")
         obj.addProperty("App::PropertyBool", "PossuiDPS", "Proteção", "Se possui DPS")

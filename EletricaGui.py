@@ -3623,6 +3623,12 @@ class ConsolidateMultiDocument:
         return { 'Pixmap': os.path.join(ICON_DIR, 'Consolidate.svg'), 'MenuText': 'Consolidar Projeto (Multi-Arquivo)', 'ToolTip': 'Soma cargas e materiais de todos os documentos abertos' }
 
     def Activated(self):
+        from EletricaLogic.Panels import PanelManager
+        doc = FreeCAD.ActiveDocument
+        panels = [o for o in doc.Objects if hasattr(o, "TipoBIM") and o.TipoBIM == "Quadro"]
+        for p in panels:
+            PanelManager.sync_voltage_from_source(p)
+
         from EletricaLogic.ProjectManager import MultiDocumentManager
         total, summary = MultiDocumentManager.aggregate_load_data()
         

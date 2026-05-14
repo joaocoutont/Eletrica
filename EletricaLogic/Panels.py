@@ -48,6 +48,28 @@ class PanelManager:
         return obj
 
     @staticmethod
+    def sync_voltage_from_source(panel_obj):
+        """Sincroniza a tensão do quadro baseada na sua fonte de alimentação (Trafo ou Quadro Pai)"""
+        if not hasattr(panel_obj, "AlimentadoPor") or not panel_obj.AlimentadoPor:
+            return
+        
+        source = panel_obj.AlimentadoPor
+        
+        # Se a fonte for uma Subestação (Transformador)
+        if hasattr(source, "TipoBIM") and source.TipoBIM == "Subestacao":
+            if hasattr(source, "TensaoSecundaria"):
+                panel_obj.TensaoNominal = source.TensaoSecundaria
+                FreeCAD.Console.PrintMessage(f"Quadro {panel_obj.Label} herdou {source.TensaoSecundaria} da Subestação.\n")
+        
+        # Se a fonte for outro Quadro (Cascata de QDCs)
+        elif hasattr(source, "TipoBIM") and source.TipoBIM == "Quadro":
+            if hasattr(source, "TensaoNominal"):
+                panel_obj.TensaoNominal = source.TensaoNominal
+                FreeCAD.Console.PrintMessage(f"Quadro {panel_obj.Label} herdou {source.TensaoNominal} do Quadro Pai {source.Label}.\n")
+
+        FreeCAD.ActiveDocument.recompute()
+
+    @staticmethod
     def recalculate_hierarchy():
         """Soma as cargas de todos os componentes vinculados aos quadros"""
         doc = FreeCAD.ActiveDocument

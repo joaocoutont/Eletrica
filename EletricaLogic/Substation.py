@@ -102,7 +102,11 @@ class SubstationManager:
         obj.Label = f"SE_{data['Tipo'].split()[0]}_{kva}kVA"
 
         obj.addProperty("App::PropertyFloat",  "PotenciaKVA",      "MT", "Potência (kVA)").PotenciaKVA = float(kva)
-        obj.addProperty("App::PropertyString", "TensaoPrimaria",   "MT", "Tensão MT").TensaoPrimaria = data["Tensao_MT"]
+        obj.addProperty("App::PropertyString", "TensaoPrimaria",   "MT", "Tensão MT (Entrada)").TensaoPrimaria = data["Tensao_MT"]
+        obj.addProperty("App::PropertyEnumeration", "TensaoSecundaria", "BT", "Tensão Secundária (Saída)")
+        obj.TensaoSecundaria = ["127V", "220V", "380V", "440V", "480V"]
+        obj.TensaoSecundaria = "380V" if kva > 75 else "220V"
+        
         obj.addProperty("App::PropertyString", "ClasseIsolamento", "MT", "Classe").ClasseIsolamento = data["Classe"]
         obj.addProperty("App::PropertyString", "TipoSubestacao",   "Eng", "Tipo").TipoSubestacao = data["Tipo"]
         obj.addProperty("App::PropertyString", "Transformador",    "Eng", "Transformador").Transformador = data["Transformador"]

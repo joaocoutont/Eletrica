@@ -380,7 +380,7 @@ class ToggleDashboard:
 class CreatePanel:
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Panel.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'IndustrialPanel.svg'),
             'MenuText': tr('Criar Painel (QDC / CCM)'),
             'ToolTip': tr('Cria um painel inteligente')
         }
@@ -2780,7 +2780,7 @@ class InsertNetworkSignaling:
     """Insere placas de perigo, chapas anti-escalada e esferas de sinalização"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Manual.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'NetworkSignaling.svg'),
             'MenuText': tr('Sinalização de Rede'),
             'ToolTip': tr('Insere placas de perigo, esferas de sinalização e proteção anti-escalada')
         }
@@ -3417,7 +3417,7 @@ class ExportKML:
 class CreateRDUDrawing:
     """Gera folha de desenho 2D automática para a Rede"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Manual.svg'), 'MenuText': tr('Gerar Prancha 2D'), 'ToolTip': tr('Cria folha de projeto com planta e legenda automática') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'DrawingSheet.svg'), 'MenuText': tr('Gerar Prancha 2D'), 'ToolTip': tr('Cria folha de projeto com planta e legenda automática') }
     def Activated(self):
         doc = FreeCAD.ActiveDocument
         page = doc.addObject("TechDraw::DrawPage", "Prancha_RDU")

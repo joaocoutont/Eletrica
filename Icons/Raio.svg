@@ -1,8 +1,8 @@
 <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-    <!-- Novo Raio Industrial - Sem Circulo e Sharp -->
+    <!-- Raio Industrial com Visibilidade para Temas Claros e Escuros -->
     <path d="M19 2L7 18H15L13 30L25 12H17L19 2Z" 
-          fill="black" 
-          stroke="black" 
-          stroke-width="1" 
+          fill="#FFD700" 
+          stroke="#000000" 
+          stroke-width="1.5" 
           stroke-linejoin="round"/>
 </svg>

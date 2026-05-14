@@ -140,14 +140,12 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_CreateConduit", 
             "Eletrica_CreateCableTray", 
             "Eletrica_CableTrayAssistant",
-            "Eletrica_AerialLineWizard",
-            "Eletrica_SPDAWizard"
+            "Eletrica_AerialLineWizard"
         ]
         
         # 4. ENGINEERING: Engenharia de Sistemas e Cálculos MT/BT
         toolbar_eng = [
             "Eletrica_ServiceEntranceWizard", 
-            "Eletrica_SubstationWizard",
             "Eletrica_MTInstrumentationWizard",
             "Eletrica_BusbarSizing",
             "Eletrica_CheckSelectivity",
@@ -162,7 +160,6 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_mgmt = [
             "Eletrica_CreatePanel", 
             "Eletrica_ConsolidateMultiDocument", 
-            "Eletrica_CCMCommandDiagram",
             "Eletrica_Generate3DWiring",
             "Eletrica_CloneFloor"
         ]
@@ -232,8 +229,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         # 9. Energia Solar Fotovoltaica (PV)
         toolbar_solar = [
             "Eletrica_InsertSolarPanel",
-            "Eletrica_SolarWizard",
-            "Eletrica_GenerateSustainabilityReport"
+            "Eletrica_SolarWizard"
         ]
 
         # 10. Subestações e Média Tensão (MT)
@@ -246,9 +242,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_special_systems = [
             "Eletrica_InsertFireDevice",
             "Eletrica_InsertSecurityDevice",
-            "Eletrica_InsertSoundDevice",
-            "Eletrica_InsertEmergencyLight",
-            "Eletrica_InsertExitSign"
+            "Eletrica_InsertSoundDevice"
         ]
         
         # 12. Energia Crítica e de Emergência
@@ -266,7 +260,6 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         # 14. Ciclo de Vida BIM (4D até 9D)
         toolbar_lifecycle = [
             "Eletrica_GenerateBIM4D",            # 4D: Tempo
-            "Eletrica_GenerateBIM5D",            # 5D: Custo
             "Eletrica_GenerateSustainabilityReport", # 6D: Sustentabilidade
             "Eletrica_GenerateMaintenancePlan",   # 7D: Facilidades
             "Eletrica_GenerateBIM8D",             # 8D: Segurança

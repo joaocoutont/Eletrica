@@ -250,55 +250,61 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_snaps = ["Eletrica_Tool_" + c for c in snap_cmds]
         toolbar_bim   = ["Eletrica_Tool_" + c for c in bim_cmds]
         
-        # 18. CONSOLIDAÇÃO EM TRÊS BARRAS MESTRAS (Equilíbrio Perfeito de UX)
+        # 18. DISPOSIÇÃO SUPREMA: SISTEMA DE 4 FASES (LINEAR WORKFLOW)
         
-        # BARRA 1: BIM & MODELAGEM (O "Fazer")
-        toolbar_master_modeling = (
+        # FASE I: ARQUITETURA & CARGAS (BIM) - O Início
+        toolbar_phase_1 = (
             toolbar_setup + 
             toolbar_mod_lighting + 
             toolbar_mod_loads + 
-            toolbar_mod_motors + 
             toolbar_telecom + 
-            toolbar_infra + 
             toolbar_automation + 
+            toolbar_special_systems
+        )
+
+        # FASE II: INFRAESTRUTURA & REDES (HEAVY DUTY) - O Meio
+        toolbar_phase_2 = (
+            toolbar_infra + 
+            toolbar_mod_motors + 
+            toolbar_industrial_adv + 
+            toolbar_rdu_poles + 
+            toolbar_rdu_equip + 
+            toolbar_rdu_lines
+        )
+
+        # FASE III: ENGENHARIA, SOLAR & ANÁLISE - A Inteligência
+        toolbar_phase_3 = (
+            toolbar_eng_cables + 
+            toolbar_eng_analysis + 
+            toolbar_simulation + 
+            toolbar_solar + 
+            toolbar_substation + 
+            toolbar_critical + 
             toolbar_earthing + 
             toolbar_safety
         )
 
-        # BARRA 2: ENGENHARIA & REDES (O "Calcular")
-        toolbar_master_engineering = (
-            toolbar_eng_cables + 
-            toolbar_eng_analysis + 
-            toolbar_rdu_poles + 
-            toolbar_rdu_equip + 
-            toolbar_rdu_lines + 
-            toolbar_rdu_ground + 
-            toolbar_solar + 
-            toolbar_substation + 
-            toolbar_critical + 
-            toolbar_industrial_adv
-        )
-
-        # BARRA 3: GESTÃO & ENTREGA (O "Documentar")
-        toolbar_master_outputs = (
+        # FASE IV: CICLO DE VIDA BIM & ENTREGA - O Resultado
+        toolbar_phase_4 = (
             toolbar_mgmt + 
             toolbar_audit + 
+            toolbar_lifecycle + 
+            toolbar_bi + 
+            toolbar_innovation + 
             toolbar_doc_reports + 
             toolbar_doc_export + 
             toolbar_doc_drawing + 
-            toolbar_lifecycle + 
-            toolbar_simulation + 
-            toolbar_bi + 
-            toolbar_innovation
+            toolbar_rdu_ground
         )
 
-        # Montagem das Três Toolbars no FreeCAD
-        self.appendToolbar(tr("Elite Eletrica - Modelagem (BIM)"), toolbar_master_modeling)
-        self.appendToolbar(tr("Elite Eletrica - Engenharia & Redes"), toolbar_master_engineering)
-        self.appendToolbar(tr("Elite Eletrica - Gestão & Entrega"), toolbar_master_outputs)
+        # Montagem das 4 Barras de Fluxo no FreeCAD
+        self.appendToolbar(tr("Fase I: Arquitetura & BIM"), toolbar_phase_1)
+        self.appendToolbar(tr("Fase II: Infra & Redes"), toolbar_phase_2)
+        self.appendToolbar(tr("Fase III: Engenharia & Solar"), toolbar_phase_3)
+        self.appendToolbar(tr("Fase IV: BIM Lifecycle & Doc"), toolbar_phase_4)
         
-        # Auxiliares permanecem como utilitários
-        self.appendToolbar(tr("Elite Eletrica - Auxiliares"), toolbar_draft + toolbar_snaps)
+        # Auxiliares (Draft/Snaps)
+        self.appendToolbar(tr("Auxiliares (Draft/Snaps)"), toolbar_draft + toolbar_snaps)
         
         # Menu Suspenso Consolidado
         self.appendMenu("Eletrica", toolbar_setup + toolbar_mod_lighting + toolbar_mod_loads + toolbar_mod_motors + toolbar_rdu_poles + toolbar_rdu_equip + toolbar_telecom + toolbar_infra + toolbar_eng_cables + toolbar_eng_analysis + toolbar_mgmt + toolbar_doc_reports + toolbar_doc_export)

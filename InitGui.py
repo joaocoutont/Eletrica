@@ -250,43 +250,55 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_snaps = ["Eletrica_Tool_" + c for c in snap_cmds]
         toolbar_bim   = ["Eletrica_Tool_" + c for c in bim_cmds]
         
-        # 18. CONSOLIDAÇÃO EM DUAS BARRAS MESTRAS (Para visual limpo e profissional)
-        toolbar_master_bim = (
+        # 18. CONSOLIDAÇÃO EM TRÊS BARRAS MESTRAS (Equilíbrio Perfeito de UX)
+        
+        # BARRA 1: BIM & MODELAGEM (O "Fazer")
+        toolbar_master_modeling = (
             toolbar_setup + 
             toolbar_mod_lighting + 
             toolbar_mod_loads + 
             toolbar_mod_motors + 
+            toolbar_telecom + 
             toolbar_infra + 
-            toolbar_eng_cables + 
-            toolbar_eng_analysis + 
             toolbar_automation + 
             toolbar_earthing + 
-            toolbar_critical + 
-            toolbar_industrial_adv
+            toolbar_safety
         )
 
-        toolbar_master_rdu_mgmt = (
+        # BARRA 2: ENGENHARIA & REDES (O "Calcular")
+        toolbar_master_engineering = (
+            toolbar_eng_cables + 
+            toolbar_eng_analysis + 
             toolbar_rdu_poles + 
             toolbar_rdu_equip + 
             toolbar_rdu_lines + 
             toolbar_rdu_ground + 
             toolbar_solar + 
             toolbar_substation + 
+            toolbar_critical + 
+            toolbar_industrial_adv
+        )
+
+        # BARRA 3: GESTÃO & ENTREGA (O "Documentar")
+        toolbar_master_outputs = (
+            toolbar_mgmt + 
+            toolbar_audit + 
+            toolbar_doc_reports + 
+            toolbar_doc_export + 
+            toolbar_doc_drawing + 
             toolbar_lifecycle + 
             toolbar_simulation + 
             toolbar_bi + 
-            toolbar_innovation + 
-            toolbar_doc_reports + 
-            toolbar_doc_export + 
-            toolbar_doc_drawing
+            toolbar_innovation
         )
 
-        # Montagem das Duas Toolbars no FreeCAD
-        self.appendToolbar(tr("Elite Eletrica (BIM & Industrial)"), toolbar_master_bim)
-        self.appendToolbar(tr("Elite Eletrica (RDU & Gestão)"), toolbar_master_rdu_mgmt)
+        # Montagem das Três Toolbars no FreeCAD
+        self.appendToolbar(tr("Elite Eletrica - Modelagem (BIM)"), toolbar_master_modeling)
+        self.appendToolbar(tr("Elite Eletrica - Engenharia & Redes"), toolbar_master_engineering)
+        self.appendToolbar(tr("Elite Eletrica - Gestão & Entrega"), toolbar_master_outputs)
         
-        # Opcional: Manter Snaps e Draft separados pois são utilitários
-        self.appendToolbar(tr("Auxiliares (Draft/Snaps)"), toolbar_draft + toolbar_snaps)
+        # Auxiliares permanecem como utilitários
+        self.appendToolbar(tr("Elite Eletrica - Auxiliares"), toolbar_draft + toolbar_snaps)
         
         # Menu Suspenso Consolidado
         self.appendMenu("Eletrica", toolbar_setup + toolbar_mod_lighting + toolbar_mod_loads + toolbar_mod_motors + toolbar_rdu_poles + toolbar_rdu_equip + toolbar_telecom + toolbar_infra + toolbar_eng_cables + toolbar_eng_analysis + toolbar_mgmt + toolbar_doc_reports + toolbar_doc_export)

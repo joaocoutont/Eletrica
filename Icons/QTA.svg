@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="12" y="8" width="40" height="48" fill="#7f8c8d" stroke="#2c3e50" stroke-width="2"/>
+  <rect x="20" y="16" width="24" height="12" fill="#34495e"/>
+  <path d="M24 40h4l4-4 4 4h4" fill="none" stroke="#e67e22" stroke-width="3" stroke-linecap="round"/>
+  <text x="32" y="25" font-family="Arial" font-size="8" fill="white" text-anchor="middle">QTA</text>
+</svg>

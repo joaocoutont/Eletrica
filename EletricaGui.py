@@ -1045,7 +1045,7 @@ class InsertBoreholePump:
 class SetupEmergencyPower:
     """Assistente de Dimensionamento de Grupo Motor Gerador (GMG)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Generator.svg'), 'MenuText': tr('Dimensionar Gerador'), 'ToolTip': tr('Dimensiona GMG baseado em cargas essenciais') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'QTA.svg'), 'MenuText': tr('Dimensionar Gerador'), 'ToolTip': tr('Dimensiona GMG baseado em cargas essenciais') }
 
     def Activated(self):
         doc = FreeCAD.ActiveDocument
@@ -2731,6 +2731,45 @@ class InsertPublicLighting:
                 obj.addProperty("App::PropertyString", "Potencia", "Técnico").Potencia = combo_led.currentText()
                 FreeCADGui.runCommand("Draft_Move")
 
+class InsertGenerator:
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Generator.svg'),
+            'MenuText': tr('Inserir GMG'),
+            'ToolTip': tr('Adiciona Grupo Motor Gerador ao projeto')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("Generator.FCStd")
+        if obj: FreeCADGui.runCommand("Draft_Move")
+
+class InsertUPS:
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'UPS.svg'),
+            'MenuText': tr('Inserir UPS/Nobreak'),
+            'ToolTip': tr('Adiciona sistema de energia ininterrupta')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("UPS.FCStd")
+        if obj: FreeCADGui.runCommand("Draft_Move")
+
+class InsertQTA:
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'QTA.svg'),
+            'MenuText': tr('Inserir QTA'),
+            'ToolTip': tr('Adiciona Quadro de Transferência Automática')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("QTA.FCStd")
+        if obj: FreeCADGui.runCommand("Draft_Move")
+
 class InsertPoleGrounding:
     """Adiciona descida de terra e hastes na base do poste"""
     def GetResources(self):
@@ -3238,21 +3277,7 @@ class GenerateBIM8D:
             f.write("- Tapetes de borracha isolante para quadros\n")
         QtWidgets.QMessageBox.information(None, "BIM 8D", "Plano de Segurança 8D gerado com sucesso!")
 
-class InsertUPS:
-    """Insere sistemas de nobreak (UPS)"""
-    def GetResources(self):
-        return {
-            'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'),
-            'MenuText': tr('Nobreak (UPS)'),
-            'ToolTip': tr('Insere sistemas de nobreak industriais')
-        }
-    def Activated(self):
-        from EletricaLogic.Library import LibraryManager
-        lib = LibraryManager()
-        obj = lib.insert_component("UPS_Nobreak.FCStd")
-        if obj:
-            obj.addProperty("App::PropertyString", "TipoBIM", "Crítico").TipoBIM = "UPS"
-            FreeCADGui.runCommand("Draft_Move")
+
 
 class RunLoadFlowSimulation:
     """Executa simulação de fluxo de carga e estabilidade da rede"""
@@ -3799,7 +3824,9 @@ cmds = {
     'Eletrica_SolarWizard': SolarWizard(),
     'Eletrica_InsertMTCubicle': InsertMTCubicle(),
     'Eletrica_InsertGeneratorDevice': InsertGeneratorDevice(),
+    'Eletrica_InsertGenerator': InsertGenerator(),
     'Eletrica_InsertUPS': InsertUPS(),
+    'Eletrica_InsertQTA': InsertQTA(),
     'Eletrica_InsertBuswayDevice': InsertBuswayDevice(),
     'Eletrica_InsertEVCharger': InsertEVCharger(),
     'Eletrica_RunSelectivityAudit': RunSelectivityAudit(),

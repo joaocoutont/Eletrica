@@ -279,7 +279,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         self.appendToolbar(tr("Snaps"), toolbar_snaps)
         
         # Menu Suspenso Consolidado
-        self.appendMenu("Eletrica", toolbar_setup + toolbar_modeling + toolbar_rdu + toolbar_telecom + toolbar_infra + toolbar_eng + toolbar_mgmt + toolbar_doc)
+        self.appendMenu("Eletrica", toolbar_setup + toolbar_mod_lighting + toolbar_mod_loads + toolbar_mod_motors + toolbar_rdu_poles + toolbar_rdu_equip + toolbar_telecom + toolbar_infra + toolbar_eng_cables + toolbar_eng_analysis + toolbar_mgmt + toolbar_doc_reports + toolbar_doc_export)
 
     def Activated(self):
         return

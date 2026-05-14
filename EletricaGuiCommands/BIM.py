@@ -17,7 +17,7 @@ class InsertSocket:
 
 class InsertSpecialSocket:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Socket.svg'), 'MenuText': tr('Inserir Tomada (TUE)'), 'ToolTip': tr('Insere tomada de uso específico (Ex: Chuveiro, Forno)') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SpecialSocket.svg'), 'MenuText': tr('Inserir Tomada (TUE)'), 'ToolTip': tr('Insere tomada de uso específico (Ex: Chuveiro, Forno)') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         lib = LibraryManager()

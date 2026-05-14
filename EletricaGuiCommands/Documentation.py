@@ -8,14 +8,14 @@ ICON_DIR = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica", "Icons")
 
 class GenerateLoadSchedule:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'TechnicalReport.svg'), 'MenuText': tr('Quadro de Cargas'), 'ToolTip': tr('Gera planilha de cargas NBR 5410') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'LoadSchedule.svg'), 'MenuText': tr('Quadro de Cargas'), 'ToolTip': tr('Gera planilha de cargas NBR 5410') }
     def Activated(self):
         from EletricaLogic.Circuits import CircuitManager
         CircuitManager.generate_load_schedule()
 
 class GenerateCableSchedule:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Tray.svg'), 'MenuText': tr('Lista de Cabos'), 'ToolTip': tr('Gera lista de cabos com comprimentos e seções') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'CableSchedule.svg'), 'MenuText': tr('Lista de Cabos'), 'ToolTip': tr('Gera lista de cabos com comprimentos e seções') }
     def Activated(self):
         pass
 

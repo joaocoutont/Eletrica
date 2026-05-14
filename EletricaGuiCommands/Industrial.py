@@ -8,7 +8,7 @@ ICON_DIR = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica", "Icons")
 
 class InsertMTCubicle:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'), 'MenuText': tr('Cubículo de MT'), 'ToolTip': tr('Insere cubículo blindado de proteção/medição em MT') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'MTCubicle.svg'), 'MenuText': tr('Cubículo de MT'), 'ToolTip': tr('Insere cubículo blindado de proteção/medição em MT') }
     def Activated(self):
         pass
 
@@ -64,7 +64,7 @@ class InsertMotor:
 
 class SetupMotorWizard:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Automation.svg'), 'MenuText': tr('Dimensionar Partida'), 'ToolTip': tr('Wizard para dimensionamento de partida Estrela-Triângulo/Soft-Starter') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.svg'), 'MenuText': tr('Dimensionar Partida'), 'ToolTip': tr('Wizard para dimensionamento de partida Estrela-Triângulo/Soft-Starter') }
     def Activated(self):
         pass
 

@@ -4,7 +4,7 @@ import FreeCADGui
 from PySide import QtWidgets
 from EletricaLogic.i18n import tr
 
-ICON_DIR = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica", "Icons")
+ICON_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Icons")
 
 class InsertConduit:
     def GetResources(self):

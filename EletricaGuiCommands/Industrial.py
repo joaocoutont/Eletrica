@@ -4,7 +4,7 @@ import FreeCADGui
 from PySide import QtWidgets
 from EletricaLogic.i18n import tr
 
-ICON_DIR = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica", "Icons")
+ICON_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Icons")
 
 class InsertMTCubicle:
     def GetResources(self):
@@ -55,7 +55,7 @@ class InsertCCM:
 
 class InsertMotor:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Motor.svg'), 'MenuText': tr('Inserir Motor'), 'ToolTip': tr('Insere motor elétrico WEG/Industrial') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.svg'), 'MenuText': tr('Inserir Motor'), 'ToolTip': tr('Insere motor elétrico WEG/Industrial') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         lib = LibraryManager()

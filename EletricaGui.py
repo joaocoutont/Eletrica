@@ -3833,6 +3833,7 @@ cmds = {
     'Eletrica_RunSafetyAudit': RunSafetyAudit(),
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_GenerateMaintenancePlan': GenerateBIM6D(),
+    'Eletrica_GenerateMaintenanceQR': GenerateMaintenanceQR(),
     'Eletrica_BIMifyEquipment': BIMifyEquipment(),
     'Eletrica_ExportDisciplineBIM': ExportDisciplineBIM(),
     'Eletrica_CloneFloor': CloneFloor(),

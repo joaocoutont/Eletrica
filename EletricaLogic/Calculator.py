@@ -55,8 +55,19 @@ class ElectricalCalculator:
             "C":  {1.5: 23, 2.5: 31, 4: 42, 6: 54, 10: 75, 16: 100, 25: 133, 35: 164, 50: 197},
         }
 
-        active_table = TABLES_XLPE_CU if "90" in insulation or "EPR" in insulation else TABLES_PVC_CU
-        table = active_table.get(method.upper(), active_table["B1"])
+        # Tabelas NBR 14039 (MT - 15kV XLPE)
+        TABLES_XLPE_15KV_CU = {
+            "TRIF": {35: 155, 50: 185, 70: 230, 95: 280, 120: 320, 150: 360, 185: 410, 240: 480},
+            "DUTO": {35: 135, 50: 165, 70: 200, 95: 240, 120: 275, 150: 310, 185: 355, 240: 415},
+        }
+
+        if "15kV" in insulation:
+            active_table = TABLES_XLPE_15KV_CU
+            method = "DUTO" if method in ["A1", "B1"] else "TRIF"
+        else:
+            active_table = TABLES_XLPE_CU if "90" in insulation or "EPR" in insulation else TABLES_PVC_CU
+        
+        table = active_table.get(method.upper(), list(active_table.values())[0])
         
         factor = 1.0
         if "Al" in material: factor = 0.77

@@ -1,61 +1,54 @@
-# Eletrica Workbench for FreeCAD 1.1 ⚡🏭
-**The Professional Industrial Electrical Engineering Suite for BIM Workflows**
+# Elite Industrial Suite - FreeCAD Electrical Workbench (v1.0)
 
-[![License: LGPL v2.1](https://img.shields.io/badge/License-LGPL%20v2.1-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)
-[![FreeCAD Version](https://img.shields.io/badge/FreeCAD-1.1-orange.svg)](https://www.freecad.org)
+O **Elite Industrial Suite** é um workbench profissional para o FreeCAD voltado para engenharia elétrica, infraestrutura e gestão BIM. Ele cobre todo o ciclo de vida do projeto, desde a conexão com a concessionária até a manutenção preventiva.
 
-## 🇧🇷 Sobre o Projeto
-O **Eletrica** é um workbench avançado para o FreeCAD 1.1, focado em transformar o processo de projeto elétrico em um fluxo BIM 7D completo. Desenvolvido para atender desde instalações residenciais até subestações industriais complexas, ele integra cálculos normativos (NBR 5410, 5419, 15751) com modelagem 3D inteligente e gestão de ativos.
+## 🚀 Principais Módulos
 
-## 🇺🇸 About the Project
-**Eletrica** is an advanced workbench for FreeCAD 1.1, designed to transform the electrical design process into a full BIM 7D workflow. Built for everything from residential installations to complex industrial substations, it integrates regulatory calculations (IEC standards / NBR) with intelligent 3D modeling and asset management.
+### 1. Redes de Distribuição (RDU/RDR)
+- Projeto completo de redes urbanas e rurais (MRT).
+- Cálculos mecânicos de esforços em postes, flechas, vento e tração.
+- Dimensionamento elétrico de MT (13.8/34.5 kV) e BT (Multiplexados).
+- Integração GIS: Conversão de pontos do QGIS em postes BIM e exportação KML.
 
----
+### 2. Subestação e Média Tensão (MT)
+- Inserção de cubículos de MT (Medição, Proteção, Entrada).
+- Dimensionamento de barramentos de cobre de média tensão.
+- Assistente de transformadores industriais até 2500 kVA.
 
-## 🚀 Principais Recursos / Key Features
+### 3. Energia Solar Fotovoltaica (PV)
+- Assistente de geração mensal (kWh/mês).
+- Dimensionamento de strings e cabos CC.
+- Inserção automática de arrays de painéis (Telhado/Solo).
+- Relatório de Sustentabilidade (ESG) com economia de CO2.
 
-### 🏗️ Industrial & High Voltage (MT/BT)
-*   **Substation Wizard**: Full design of primary cabins and transformer sizing.
-*   **Busbar Sizing**: Automated calculation for copper/aluminum bars in industrial panels.
-*   **NBR 15751 Compliance**: Critical grounding analysis for substations (Touch/Step voltages).
-*   **Arc Flash Analysis (IEEE 1584)**: Incident energy calculation and safety labeling (NR-10).
+### 4. Sistemas Especiais e Segurança
+- **SDAI**: Detecção e alarme de incêndio (Detectores, Sirenes, Centrais).
+- **Segurança**: CFTV (Câmeras IP), Controle de Acesso e Sensores PIR.
+- **Sonorização**: Avisos sonoros e som ambiente industrial.
 
-### 🤖 Automation & Industry 4.0 (IIoT)
-*   **PLC & HMI Integration**: Insert smart controllers with metadata for MQTT, OPC UA, and Profinet.
-*   **Network Topology**: Industrial communication protocols selection for IIoT interoperability.
-*   **Motor Control Centers (CCM)**: Automated command diagram generation and starter sizing.
+### 5. Energia Crítica e Industrial
+- **Energia Crítica**: Geradores Diesel, Nobreaks (UPS) e Quadros de Transferência (QTA).
+- **Busway**: Barramentos blindados de alta potência e caixas plug-in (Tap-offs).
+- **Mobilidade**: Estações de recarga para Veículos Elétricos (EV).
 
-### 📐 BIM 7D & Documentation
-*   **BIM Asset Management**: Automated QR Code generation for physical equipment maintenance.
-*   **Smart Reports**: Professional HTML/PDF export for Grounding, BOM, and Load Schedules.
-*   **TechDraw Integration**: Real-time synchronization of Title Blocks and Single-line diagrams.
-*   **IFC4 Export**: Full Pset mapping for interoperability with Revit, Navisworks, and Archicad.
+### 6. Inteligência BIM Full-Stack (3D até 8D)
+- **3D**: Modelagem geométrica rica.
+- **4D (Tempo)**: Gerador de cronograma de execução da obra.
+- **5D (Custo)**: Orçamento detalhado de materiais e mão de obra.
+- **6D (Sustentabilidade)**: Impacto ambiental e economia de recursos.
+- **7D (Manutenção)**: Plano de Manutenção Preventiva automático.
+- **8D (Segurança)**: Plano de Segurança do Trabalho e Prevenção NR-10.
 
-### ⚡ Protection & Safety
-*   **SPDA (NBR 5419)**: Risk analysis wizard and automated 3D mesh generation.
-*   **Circuit Audit**: Real-time verification of voltage drop, overcrowding, and selectivity.
+## 🛠️ Instalação
+1. Clone este repositório na sua pasta `Mod` do FreeCAD.
+2. Reinicie o FreeCAD.
+3. Ative o workbench `Eletrica` no menu de seleção.
 
----
-
-## 📦 Instalação / Installation
-
-1.  **Download**: Clone or download this repository.
-2.  **Path**: Place the `Eletrica` folder into your FreeCAD User AppData directory:
-    *   `%AppData%\FreeCAD\Mod\Eletrica` (Windows)
-    *   `~/.local/share/FreeCAD/Mod/Eletrica` (Linux)
-3.  **Restart**: Open FreeCAD and select the **Eletrica** workbench.
-
----
-
-## 🛠️ Tecnologias / Tech Stack
-*   **Core**: Python 3.x, FreeCAD API.
-*   **GUI**: PySide (Qt), TechDraw SVG.
-*   **BIM**: IFC4 Schema, OpenBIM standards.
+## 📊 Relatórios Automáticos
+- Memorial de Cálculo RDU (Markdown).
+- Lista de Materiais Explodida (Kits de Estruturas).
+- Quadro de Cargas NBR 5410.
+- Cronogramas e Orçamentos BIM.
 
 ---
-
-## 📜 Licença / License
-Distributed under the LGPL v2.1 License. See `LICENSE` for more information.
-
----
-**Developed with ❤️ for the Electrical Engineering Community.**
+*Elite Industrial Suite - Desenvolvido para a Engenharia do Futuro.*

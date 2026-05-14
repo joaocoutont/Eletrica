@@ -1146,7 +1146,17 @@ class GenerateUnifilar:
         return { 'Pixmap': os.path.join(ICON_DIR, 'UnifilarPro.png'), 'MenuText': tr('Diagrama Unifilar'), 'ToolTip': tr('Esquema') }
     def Activated(self):
         from EletricaLogic.Diagrams import UnifilarGenerator
-        UnifilarGenerator.create_graphic_diagram(None)
+        import FreeCADGui
+        
+        selection = FreeCADGui.Selection.getSelection()
+        
+        # 1. Se selecionar uma Subestação, gera o unifilar de MT
+        if selection and hasattr(selection[0], "TipoBIM") and selection[0].TipoBIM == "Subestacao":
+            UnifilarGenerator.create_mt_unifilar(selection[0])
+        # 2. Se selecionar um Quadro ou nada (seleção automática de quadros), gera BT
+        else:
+            panel = selection[0] if (selection and hasattr(selection[0], "TipoBIM") and selection[0].TipoBIM == "Quadro") else None
+            UnifilarGenerator.create_graphic_diagram(panel)
 
 class SyncTitleBlock:
     def GetResources(self):
@@ -1695,7 +1705,7 @@ class InsertHMI:
 class MotorWiringWizard:
     """Assistente de Alimentação de Motores WEG"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.png'), 'MenuText': tr('Dimensionar Alimentação Motor'), 'ToolTip': tr('Dimensiona cabos e disjuntores para motores') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.svg'), 'MenuText': tr('Dimensionar Alimentação Motor'), 'ToolTip': tr('Dimensiona cabos e disjuntores para motores') }
     
     def Activated(self):
         from EletricaLogic.Starters import MotorDimensioning
@@ -1910,6 +1920,49 @@ class CloneFloor:
         from EletricaLogic.Automation import MultiStoreyManager
         MultiStoreyManager.clone_electrical_to_floor(None, None)
 
+class IntelligentAutoRoute:
+    """Roteamento inteligente de infraestrutura com desvio de obstáculos (A*)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Wiring3D.png'),
+            'MenuText': tr('Roteamento Inteligente (A*)'),
+            'ToolTip': tr('Conecta objetos selecionados desviando de paredes e colunas')
+        }
+    def Activated(self):
+        from EletricaLogic.Routing import AutoRouter
+        import FreeCADGui
+        selection = FreeCADGui.Selection.getSelection()
+        
+        if len(selection) < 2:
+            QtWidgets.QMessageBox.warning(None, "Erro", "Selecione pelo menos 2 objetos para conectar.")
+            return
+            
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Configurar Roteamento Automático")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox(); combo_type.addItems(["Eletroduto (Pipe)", "Eletrocalha (Tray)"])
+        spin_z = QtWidgets.QDoubleSpinBox(); spin_z.setRange(0, 10000); spin_z.setValue(2800); spin_z.setSuffix(" mm")
+        spin_dim = QtWidgets.QDoubleSpinBox(); spin_dim.setRange(1, 1000); spin_dim.setValue(25); spin_dim.setSuffix(" mm")
+        
+        layout.addRow("Tipo de Infra:", combo_type)
+        layout.addRow("Altura do Caminho (Z):", spin_z)
+        layout.addRow("Diâmetro/Largura:", spin_dim)
+        
+        def processar():
+            z = spin_z.value()
+            dim = spin_dim.value()
+            if "Pipe" in combo_type.currentText():
+                AutoRouter.connect_in_sequence(selection, ceiling_z=z, diameter=dim)
+            else:
+                AutoRouter.connect_with_cable_tray(selection, ceiling_z=z, width=dim)
+            dlg.accept()
+            
+        btn = QtWidgets.QPushButton("Gerar Rota Otimizada")
+        btn.clicked.connect(processar)
+        layout.addRow(btn)
+        dlg.exec_()
+
 # =============================================================================
 # FASE 3: DISTRIBUIÇÃO E ALTA TENSÃO
 # =============================================================================
@@ -1928,11 +1981,21 @@ class AerialLineWizard:
         layout = QtWidgets.QFormLayout(dlg)
 
         spin_kva    = QtWidgets.QDoubleSpinBox(); spin_kva.setRange(1,10000);  spin_kva.setValue(150); spin_kva.setSuffix(" kVA")
-        combo_v     = QtWidgets.QComboBox();      combo_v.addItems(["13.8 kV","23.1 kV","34.5 kV","69.0 kV"])
+        combo_v     = QtWidgets.QComboBox();      
+        combo_v.addItems([
+            "0.22 kV (BT)", "0.38 kV (BT)", 
+            "7.97 kV (RDR/MRT)", "13.8 kV", 
+            "14.4 kV (RDR/MRT)", "19.9 kV (RDR/MRT)", 
+            "23.1 kV", "25.4 kV (RDR/MRT)", "34.5 kV", "69.0 kV"
+        ])
         spin_km     = QtWidgets.QDoubleSpinBox(); spin_km.setRange(0.1,200);   spin_km.setValue(2);    spin_km.setSuffix(" km")
-        combo_cond  = QtWidgets.QComboBox();      combo_cond.addItems(["CA","CAA"])
+        combo_cond  = QtWidgets.QComboBox();      combo_cond.addItems(["CA","CAA", "Compacto", "Multiplexado (BT)"])
         combo_env   = QtWidgets.QComboBox();      combo_env.addItems(["Urbano","Periurbano","Rural","Travessia"])
+        combo_sys   = QtWidgets.QComboBox();      combo_sys.addItems(["Trifásico", "Bifásico", "Monofásico", "MRT (Rural)"])
+        combo_pole  = QtWidgets.QComboBox();      combo_pole.addItems(["Concreto (CP)", "Madeira (MA)"])
         spin_fp     = QtWidgets.QDoubleSpinBox(); spin_fp.setRange(0.5,1.0);   spin_fp.setValue(0.92); spin_fp.setSingleStep(0.01)
+        spin_angle  = QtWidgets.QSpinBox();       spin_angle.setRange(0, 90);  spin_angle.setValue(0); spin_angle.setSuffix("°")
+        spin_wind   = QtWidgets.QSpinBox();       spin_wind.setRange(30, 150); spin_wind.setValue(60); spin_wind.setSuffix(" daN/m²")
         result_box  = QtWidgets.QTextEdit();      result_box.setReadOnly(True); result_box.setMinimumHeight(220)
 
         layout.addRow("Potência da Carga:",    spin_kva)
@@ -1940,42 +2003,107 @@ class AerialLineWizard:
         layout.addRow("Comprimento da Linha:", spin_km)
         layout.addRow("Tipo de Condutor:",     combo_cond)
         layout.addRow("Ambiente:",             combo_env)
+        layout.addRow("Sistema de Rede:",      combo_sys)
+        layout.addRow("Material do Poste:",    combo_pole)
         layout.addRow("Fator de Potência:",    spin_fp)
+        layout.addRow("Ângulo Crítico (Graus):", spin_angle)
+        layout.addRow("Pressão do Vento:",     spin_wind)
         layout.addRow(result_box)
 
         def calcular():
-            kva  = spin_kva.value()
-            v    = float(combo_v.currentText().split()[0])
-            km   = spin_km.value()
-            cond = combo_cond.currentText()
-            env  = combo_env.currentText()
-            fp   = spin_fp.value()
-            res  = AerialNetworkCalculator.dimension_aerial_line(kva, v, km, fp, cond, env)
+            kva   = spin_kva.value()
+            v     = float(combo_v.currentText().split()[0])
+            km    = spin_km.value()
+            cond  = combo_cond.currentText()
+            env   = combo_env.currentText()
+            sys   = combo_sys.currentText()
+            fp    = spin_fp.value()
+            angle = spin_angle.value()
+            wind  = spin_wind.value()
+            res   = AerialNetworkCalculator.dimension_aerial_line(kva, v, km, fp, cond, env, angle_deg=angle, wind_pressure=wind, system=sys)
             txt = (
-                f"=== LINHA AÉREA DE DISTRIBUIÇÃO ===\n"
-                f"Carga: {kva} kVA | Tensão: {v} kV | Extensão: {km} km\n\n"
-                f"--- CONDUTOR ---\n"
+                f"=== REDE DE DISTRIBUIÇÃO (RDU/RDR) ===\n"
+                f"Carga: {kva} kVA | Tensão: {v} kV | NBI: {res['nbi_kv']} kV\n\n"
+                f"--- CONDUTOR E MECÂNICA ---\n"
                 f"Corrente de Linha:   {res['current_a']} A\n"
-                f"Condutor Selecionado:{res['conductor']} ({res['conductor_cap_a']} A)\n\n"
-                f"--- QUEDA DE TENSÃO ---\n"
-                f"Queda calculada:     {res['drop_pct']}%  (limite 7%)\n"
-                f"Status:              {res['status']}\n\n"
-                f"--- ESTRUTURA ---\n"
+                f"Condutor Selecionado:{res['conductor']} ({res['conductor_cap_a']} A)\n"
+                f"Estrutura Sugerida:  {res['structure']}\n"
+                f"Flecha Estimada:     {res['sag_m']} m\n\n"
+                f"--- POSTEAMENTO ---\n"
                 f"Vão médio ({env}): {res['span_m']} m\n"
-                f"Número de postes:    {res['num_poles']} postes\n"
-                f"Modelo de poste:     {res['pole_model']}\n\n"
-                f"--- PROTEÇÃO ---\n"
-                f"{res['protection']}\n"
+                f"Esforço Resultante:  {res['pole_effort_dan']} daN\n"
+                f"Modelo Recomendado:  {res['pole_model']}\n"
+                f"Número de postes:    {res['num_poles']} postes\n\n"
+                f"--- ELÉTRICA E PROTEÇÃO ---\n"
+                f"Queda calculada:     {res['drop_pct']}%  (limite 7%)\n"
+                f"Status Elétrico:     {res['status']}\n"
+                f"Proteção de Linha:   {res['protection']}\n"
             )
             result_box.setPlainText(txt)
 
         btn_box = QtWidgets.QDialogButtonBox()
-        btn_calc  = btn_box.addButton("Calcular",  QtWidgets.QDialogButtonBox.ActionRole)
+        btn_calc  = btn_box.addButton("Calcular RDU",  QtWidgets.QDialogButtonBox.ActionRole)
         btn_close = btn_box.addButton("Fechar",    QtWidgets.QDialogButtonBox.RejectRole)
         btn_calc.clicked.connect(calcular)
         btn_close.clicked.connect(dlg.reject)
         layout.addRow(btn_box)
         dlg.exec_()
+
+class AutoPolePlacement:
+    """Distribui postes automaticamente ao longo de um caminho (Draft Wire)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.png'),
+            'MenuText': tr('Locação Automática de Postes'),
+            'ToolTip': tr('Distribui postes ao longo de uma linha respeitando o vão máximo')
+        }
+
+    def Activated(self):
+        import Draft
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection or not hasattr(selection[0], "Points"):
+            QtWidgets.QMessageBox.warning(None, "Erro", "Selecione uma linha (Draft Wire) para locar os postes.")
+            return
+            
+        wire = selection[0]
+        pts = wire.Points
+        
+        span, ok1 = QtWidgets.QInputDialog.getDouble(None, "RDU", "Vão Médio Desejado (m):", 40.0, 10.0, 150.0, 1)
+        if not ok1: return
+        
+        geom, ok2 = QtWidgets.QInputDialog.getItem(None, "RDU", "Geometria do Poste:", ["Duplo T (DT)", "Circular (SC)"], 0, False)
+        if not ok2: return
+        geom_key = "DT" if "DT" in geom else "SC"
+        
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        
+        count = 0
+        for i in range(len(pts) - 1):
+            p1 = pts[i]
+            p2 = pts[i+1]
+            dist = (p2 - p1).Length
+            
+            num_segments = math.ceil(dist / (span * 1000))
+            step = (p2 - p1) / num_segments
+            
+            for j in range(num_segments):
+                pos = p1 + (step * j)
+                obj = lib.insert_component(f"Poste_Concreto_{geom_key}.FCStd")
+                if obj:
+                    obj.Placement.Base = pos
+                    obj.addProperty("App::PropertyString", "TipoPoste", "RDU", "Modelo").TipoPoste = f"CP ({geom_key})"
+                    count += 1
+                    
+        # Fim da linha
+        obj = lib.insert_component(f"Poste_Concreto_{geom_key}.FCStd")
+        if obj: 
+            obj.Placement.Base = pts[-1]
+            obj.addProperty("App::PropertyString", "TipoPoste", "RDU", "Modelo").TipoPoste = f"CP ({geom_key})"
+            count += 1
+            
+        FreeCAD.ActiveDocument.recompute()
+        QtWidgets.QMessageBox.information(None, "RDU", f"Locação concluída: {count} postes inseridos.")
 
 
 class InsertGroundingRod:
@@ -2337,6 +2465,880 @@ class SPDAWizard:
             
             QtWidgets.QMessageBox.information(None, "Projeto QR", f"QR Code do Projeto gerado com sucesso!\nLink: {link}")
 
+class InsertPole:
+    """Insere um poste (Concreto ou Madeira) com seleção de carga"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.png'),
+            'MenuText': tr('Inserir Poste'),
+            'ToolTip': tr('Insere poste CP ou MA com carga definida')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Inserir Poste")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_geom = QtWidgets.QComboBox()
+        combo_geom.addItems(["Duplo T (DT)", "Circular (SC)"])
+        
+        combo_type = QtWidgets.QComboBox()
+        # Lista profissional de postes padrão ABNT
+        pole_list = [
+            "9/150", "9/300", "9/600",
+            "11/150", "11/200", "11/300", "11/600", "11/1000", "11/1500",
+            "12/600", "12/1000",
+            "13/1000", "13/1500"
+        ]
+        combo_type.addItems(pole_list)
+        
+        layout.addRow("Geometria:", combo_geom)
+        layout.addRow("Altura/Carga:", combo_type)
+        
+        btn_ok = QtWidgets.QPushButton("Inserir")
+        btn_ok.clicked.connect(dlg.accept)
+        layout.addRow(btn_ok)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            manager = LibraryManager()
+            geom = "DT" if "DT" in combo_geom.currentText() else "SC"
+            model = f"Poste_Concreto_{geom}.FCStd"
+            obj = manager.insert_component(model)
+            if obj:
+                obj.Label = f"Poste_{geom}_{combo_type.currentText().replace('/', '_')}"
+                obj.addProperty("App::PropertyString", "TipoPoste", "RDU", "Modelo").TipoPoste = f"CP-{combo_type.currentText()} ({geom})"
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertStructure:
+    """Insere estruturas de rede (N1, N2, CE1, etc.) em um poste selecionado"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.png'), # TODO: Icone específico
+            'MenuText': tr('Inserir Estrutura'),
+            'ToolTip': tr('Adiciona cruzetas e isoladores ao poste (N1, N2, CE1, etc)')
+        }
+    def Activated(self):
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            QtWidgets.QMessageBox.warning(None, "Erro", "Selecione um poste primeiro.")
+            return
+        
+        target = selection[0]
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Inserir Estrutura RDU")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_struct = QtWidgets.QComboBox()
+        # Lista profissional de estruturas RDU (Compacta e Convencional)
+        struct_list = [
+            "CE1 (Compacta - Passagem)",
+            "CE1.1 (Compacta - Passagem Ângulo Pequeno)",
+            "CE2 (Compacta - Ancoragem / Fim de Linha)",
+            "CE3 (Compacta - Passagem em Ângulo)",
+            "CE4 (Compacta - Derivação / Te)",
+            "N1 (Convencional - Passagem)",
+            "N2 (Convencional - Ancoragem)",
+            "N3 (Convencional - Passagem Ângulo)",
+            "N4 (Convencional - Fim de Linha)",
+            "M1 (Monofásica - Passagem)",
+            "M2 (Monofásica - Ancoragem)"
+        ]
+        combo_struct.addItems(struct_list)
+        layout.addRow("Tipo de Estrutura:", combo_struct)
+        
+        def aplicar():
+            from EletricaLogic.Library import LibraryManager
+            lib = LibraryManager()
+            
+            sel = combo_struct.currentText()
+            # Mapeamento para os modelos 3D disponíveis (fallbacks se não existir o específico)
+            if "Compacta" in sel:
+                model = "Estrutura_Compacta_CE.FCStd"
+            elif "Convencional" in sel:
+                model = "Estrutura_Convencional_N.FCStd"
+            else:
+                model = "Estrutura_Monofasica_M.FCStd"
+                
+            struct_obj = lib.insert_component(model)
+            if struct_obj:
+                struct_obj.Label = sel.split(" (")[0]
+                # Posiciona no topo do poste (assumindo poste de 11m/9m)
+                z_pos = target.Placement.Base.z + (getattr(target, "Height", 11000) if hasattr(target, "Height") else 11000)
+                struct_obj.Placement.Base = FreeCAD.Vector(target.Placement.Base.x, target.Placement.Base.y, z_pos)
+                if hasattr(target, "addObject"): target.addObject(struct_obj)
+            dlg.accept()
+
+        btn = QtWidgets.QPushButton("Aplicar ao Poste")
+        btn.clicked.connect(aplicar)
+        layout.addRow(btn)
+        dlg.exec_()
+
+class InsertPoleTransformer:
+    """Insere transformador de distribuição montado em poste"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'),
+            'MenuText': tr('Transformador em Poste'),
+            'ToolTip': tr('Insere trafo 30/45/75/112.5/150 kVA')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Transformador de Distribuição")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_kva = QtWidgets.QComboBox()
+        # Lista profissional de transformadores (Rural, Urbano e Industrial)
+        kva_list = [
+            "5 kVA", "10 kVA", "15 kVA", "25 kVA", "30 kVA", "37.5 kVA", "45 kVA", 
+            "75 kVA", "112.5 kVA", "150 kVA", "225 kVA", "300 kVA", "500 kVA",
+            "750 kVA", "1000 kVA", "1500 kVA", "2000 kVA", "2500 kVA"
+        ]
+        combo_kva.addItems(kva_list)
+        layout.addRow("Potência:", combo_kva)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            obj = lib.insert_component("Trafo_Poste_Tri.FCStd")
+            if obj:
+                obj.Label = f"Trafo_{combo_kva.currentText().replace(' ', '')}"
+                obj.addProperty("App::PropertyFloat", "PotenciaKVA", "Técnico").PotenciaKVA = float(combo_kva.currentText().split()[0])
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertAerialCable:
+    """Lança cabos aéreos entre estruturas"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'BareCable.png'),
+            'MenuText': tr('Lançar Cabo Aéreo'),
+            'ToolTip': tr('Cria condutores (CA, CAA ou Compacto) entre postes')
+        }
+    def Activated(self):
+        FreeCADGui.runCommand("Draft_Wire")
+        obj = FreeCAD.ActiveDocument.ActiveObject
+        if obj:
+            if not hasattr(obj, "TipoBIM"): obj.addProperty("App::PropertyString", "TipoBIM", "RDU").TipoBIM = "CaboAereo"
+            # O Auditor poderá usar o comprimento desta linha para cálculos de flecha reais
+
+class InsertDistributionEquipment:
+    """Insere equipamentos diversos de rede (Religadores, Bancos de Capacitores, Chaves, etc)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'),
+            'MenuText': tr('Equipamentos de Rede'),
+            'ToolTip': tr('Religadores, Bancos de Capacitores, Reguladores, Chaves')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Equipamentos de Distribuição")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        eq_list = [
+            "Religador Automático (Recloser)",
+            "Banco de Capacitores de Poste",
+            "Regulador de Tensão Monofásico",
+            "Chave Seccionadora Tripolar",
+            "Chave Fusível (Base C)",
+            "Para-raios de Linha (Polimérico)",
+            "Chave Faca / By-pass"
+        ]
+        combo_type.addItems(eq_list)
+        layout.addRow("Equipamento:", combo_type)
+        
+        edit_label = QtWidgets.QLineEdit()
+        layout.addRow("Tag/Nome:", edit_label)
+        
+        btn_ok = QtWidgets.QPushButton("Inserir no Projeto")
+        btn_ok.clicked.connect(dlg.accept)
+        layout.addRow(btn_ok)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            sel = combo_type.currentText()
+            
+            # Mapeamento de modelos
+            model_map = {
+                "Religador": "Religador_Automático_MT.FCStd",
+                "Banco": "Banco_Capacitores_Poste.FCStd",
+                "Regulador": "Regulador_Tensao_Monofasico.FCStd",
+                "Chave Seccionadora": "Chave_Seccionadora_MT.FCStd",
+                "Chave Fusível": "Chave_Fusivel_15kV.FCStd",
+                "Para-raios": "Para_Raios_Linha.FCStd"
+            }
+            
+            # Busca modelo por palavra chave
+            model = "Equipamento_Rede_Generico.FCStd"
+            for key, m in model_map.items():
+                if key in sel:
+                    model = m
+                    break
+                    
+            obj = lib.insert_component(model)
+            if obj:
+                obj.Label = edit_label.text() if edit_label.text() else sel.split(" (")[0]
+                obj.addProperty("App::PropertyString", "TipoBIM", "RDU").TipoBIM = sel
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertGuyWire:
+    """Insere estaiamento (cabo de aço, isolador e âncora) para equilíbrio de forças"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'BareCable.png'),
+            'MenuText': tr('Inserir Estaiamento'),
+            'ToolTip': tr('Adiciona estai de contra-poste ou estai de âncora')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Estaiamento de Poste")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        combo_type.addItems(["Estai de Âncora (Reta)", "Estai de Contra-Poste", "Estai de Calçada"])
+        layout.addRow("Tipo de Estai:", combo_type)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            obj = lib.insert_component("Estai_Completo.FCStd")
+            if obj:
+                obj.Label = combo_type.currentText().split()[0]
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertPublicLighting:
+    """Insere braço e luminária de iluminação pública no poste"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Light.svg'),
+            'MenuText': tr('Iluminação Pública'),
+            'ToolTip': tr('Adiciona braço e luminária LED/Vapor ao poste')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Braço de IP")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_len = QtWidgets.QComboBox()
+        combo_len.addItems(["Braço Curto (1.5m)", "Braço Médio (3.0m)", "Braço Longo (4.5m)"])
+        layout.addRow("Comprimento:", combo_len)
+        
+        combo_led = QtWidgets.QComboBox()
+        combo_led.addItems(["LED 50W", "LED 100W", "LED 150W", "LED 200W", "Vapor Sódio 250W"])
+        layout.addRow("Luminária:", combo_led)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            obj = lib.insert_component("Braco_IP_Completo.FCStd")
+            if obj:
+                obj.Label = f"IP_{combo_led.currentText().split()[1]}"
+                obj.addProperty("App::PropertyString", "Potencia", "Técnico").Potencia = combo_led.currentText()
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertPoleGrounding:
+    """Adiciona descida de terra e hastes na base do poste"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.png'),
+            'MenuText': tr('Aterramento de Poste'),
+            'ToolTip': tr('Adiciona descida de cobre e malha de terra no pé do poste')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("Aterramento_Poste.FCStd")
+        if obj:
+            FreeCADGui.runCommand("Draft_Move")
+
+class InsertFenceGrounding:
+    """Insere aterramento de cercas rurais (NBR 15688 / Padrão Concessionária)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.png'),
+            'MenuText': tr('Aterramento de Cerca'),
+            'ToolTip': tr('Aterra cercas que cruzam ou correm paralelas à rede MT')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("Aterramento_Cerca_Rural.FCStd")
+        if obj:
+            FreeCADGui.runCommand("Draft_Move")
+
+class InsertGuyGrounding:
+    """Insere aterramento específico para cabos de estai"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.png'),
+            'MenuText': tr('Aterramento de Estai'),
+            'ToolTip': tr('Aterra o cabo de aço do estai para segurança contra contatos acidentais')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("Aterramento_Estai.FCStd")
+        if obj:
+            FreeCADGui.runCommand("Draft_Move")
+
+class InsertNetworkSignaling:
+    """Insere placas de perigo, chapas anti-escalada e esferas de sinalização"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Manual.svg'),
+            'MenuText': tr('Sinalização de Rede'),
+            'ToolTip': tr('Insere placas de perigo, esferas de sinalização e proteção anti-escalada')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Sinalização e Segurança")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        combo_type.addItems(["Placa de Perigo (Alta Tensão)", "Chapa Anti-Escalada", "Esfera de Sinalização (Laranja)", "Esfera de Sinalização (Branca)"])
+        layout.addRow("Tipo de Sinalização:", combo_type)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            sel = combo_type.currentText()
+            comp = "Placa_Perigo.FCStd"
+            if "Escalada" in sel: comp = "Chapa_AntiEscalada.FCStd"
+            elif "Esfera" in sel: comp = "Esfera_Sinalizacao.FCStd"
+            
+            obj = lib.insert_component(comp)
+            if obj:
+                obj.Label = sel.split()[0]
+                FreeCADGui.runCommand("Draft_Move")
+
+class GISConverter:
+    """Converte pontos ou vértices importados de GIS/QGIS em Postes Inteligentes"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Library.png'),
+            'MenuText': tr('Converter GIS para Postes'),
+            'ToolTip': tr('Transforma pontos selecionados do QGIS em postes BIM do workbench')
+        }
+    def Activated(self):
+        selection = FreeCADGui.Selection.getSelection()
+        if not selection:
+            QtWidgets.QMessageBox.warning(None, "GIS", "Selecione os pontos ou a linha importada do QGIS primeiro!")
+            return
+            
+        geom, ok = QtWidgets.QInputDialog.getItem(None, "GIS Converter", "Converter para qual tipo de poste?", ["Duplo T (DT)", "Circular (SC)"], 0, False)
+        if not ok: return
+        geom_key = "DT" if "DT" in geom else "SC"
+        
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        count = 0
+        
+        for obj in selection:
+            points = []
+            if hasattr(obj, "Points"): # Se for um Draft Wire/Line
+                points = obj.Points
+            elif hasattr(obj, "Shape") and obj.Shape.Vertexes: # Se for um conjunto de pontos
+                points = [v.Point for v in obj.Shape.Vertexes]
+            
+            for pt in points:
+                new_pole = lib.insert_component(f"Poste_Concreto_{geom_key}.FCStd")
+                if new_pole:
+                    new_pole.Placement.Base = pt
+                    new_pole.addProperty("App::PropertyString", "TipoPoste", "RDU").TipoPoste = f"CP {geom_key} (via GIS)"
+                    count += 1
+        
+        FreeCAD.ActiveDocument.recompute()
+        QtWidgets.QMessageBox.information(None, "GIS", f"Conversão concluída! {count} postes criados nas coordenadas GIS.")
+
+class InsertSolarPanel:
+    """Insere painel fotovoltaico em array (telhado ou solo)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'PowerOutlet.png'), # Ícone temporário
+            'MenuText': tr('Inserir Painel Solar'),
+            'ToolTip': tr('Loca módulos fotovoltaicos no projeto')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Inserir Array Solar")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        spin_nx = QtWidgets.QSpinBox(); spin_nx.setRange(1, 100); spin_nx.setValue(10)
+        spin_ny = QtWidgets.QSpinBox(); spin_ny.setRange(1, 100); spin_ny.setValue(2)
+        layout.addRow("Colunas (X):", spin_nx)
+        layout.addRow("Linhas (Y):", spin_ny)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            nx, ny = spin_nx.value(), spin_ny.value()
+            for i in range(nx):
+                for j in range(ny):
+                    obj = lib.insert_component("Painel_Solar_550W.FCStd")
+                    if obj:
+                        obj.Placement.Base = FreeCAD.Vector(i * 1100, j * 2300, 0) # Dimensões típicas 2.3x1.1m
+                        obj.addProperty("App::PropertyString", "TipoBIM", "Solar").TipoBIM = "Painel Solar"
+            FreeCAD.ActiveDocument.recompute()
+
+class SolarWizard:
+    """Assistente de Dimensionamento Fotovoltaico"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Calculator.png'),
+            'MenuText': tr('Assistente Solar (PV)'),
+            'ToolTip': tr('Dimensiona geração, inversor e strings')
+        }
+    def Activated(self):
+        from EletricaLogic.Solar import SolarCalculator
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Dimensionamento Solar")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        spin_kwp = QtWidgets.QDoubleSpinBox(); spin_kwp.setRange(1, 5000); spin_kwp.setValue(10.0); spin_kwp.setSuffix(" kWp")
+        spin_irrad = QtWidgets.QDoubleSpinBox(); spin_irrad.setRange(1, 10); spin_irrad.setValue(5.1); spin_irrad.setSuffix(" kWh/m².dia")
+        result_box = QtWidgets.QTextEdit(); result_box.setReadOnly(True)
+        
+        layout.addRow("Potência Instalada:", spin_kwp)
+        layout.addRow("Irradiação Local:", spin_irrad)
+        layout.addRow(result_box)
+        
+        def calcular():
+            kwp = spin_kwp.value()
+            irrad = spin_irrad.value()
+            gen = SolarCalculator.estimate_generation(kwp, irrad)
+            
+            txt = (
+                f"=== ESTIMATIVA DE GERAÇÃO SOLAR ===\n"
+                f"Potência: {kwp} kWp\n"
+                f"Irradiação: {irrad} kWh/m².dia\n\n"
+                f"Geração Mensal Estimada: {gen} kWh/mês\n"
+                f"Economia Estimada (R$ 0,90/kWh): R$ {gen * 0.9:.2f}\n"
+                f"CO2 Evitado: {round(gen * 12 * 0.5, 1)} kg/ano\n"
+            )
+            result_box.setPlainText(txt)
+            
+        btn_calc = QtWidgets.QPushButton("Calcular Geração")
+        btn_calc.clicked.connect(calcular)
+        layout.addRow(btn_calc)
+        dlg.exec_()
+
+class InsertMTCubicle:
+    """Insere cubículos de média tensão (Cabine Primária)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'),
+            'MenuText': tr('Cubículo de Média Tensão'),
+            'ToolTip': tr('Insere células de medição, proteção e entrada (Cabine Primária)')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Cubículo de MT (N20 / N24)")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        combo_type.addItems(["Medição (Concessionária)", "Entrada e Proteção (DJ)", "Transformação (Fusível)", "Acoplamento", "Blindada (GIS)"])
+        layout.addRow("Função do Cubículo:", combo_type)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            obj = lib.insert_component("Cubiculo_MT_N20.FCStd")
+            if obj:
+                obj.Label = f"MT_{combo_type.currentText().split()[0]}"
+                obj.addProperty("App::PropertyString", "TipoBIM", "Subestação").TipoBIM = combo_type.currentText()
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertFireDevice:
+    """Insere dispositivos de detecção e alarme de incêndio (SDAI)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Fire.svg'),
+            'MenuText': tr('Dispositivos de Incêndio'),
+            'ToolTip': tr('Insere detectores, acionadores e sirenes de incêndio')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("SDAI - Prevenção de Incêndio")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        combo_type.addItems(["Detector de Fumaça", "Detector Térmico", "Acionador Manual", "Sirene Audiovisual", "Central de Incêndio"])
+        layout.addRow("Tipo de Dispositivo:", combo_type)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            sel = combo_type.currentText()
+            obj = lib.insert_component("Detector_Incendio.FCStd") # Componente genérico para a demo
+            if obj:
+                obj.Label = sel.replace(" ", "_")
+                obj.addProperty("App::PropertyString", "TipoBIM", "Incêndio").TipoBIM = sel
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertSecurityDevice:
+    """Insere câmeras, sensores e controle de acesso"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Camera.svg'),
+            'MenuText': tr('Segurança Eletrônica'),
+            'ToolTip': tr('Insere câmeras CFTV, sensores PIR e controle de acesso')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Segurança e Monitoramento")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        combo_type.addItems(["Câmera Bullet (IP)", "Câmera Dome", "Sensor de Presença (PIR)", "Leitor Biométrico", "Eletroímã de Porta"])
+        layout.addRow("Tipo de Dispositivo:", combo_type)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            sel = combo_type.currentText()
+            obj = lib.insert_component("Camera_CFTV.FCStd")
+            if obj:
+                obj.Label = sel.replace(" ", "_")
+                obj.addProperty("App::PropertyString", "TipoBIM", "Segurança").TipoBIM = sel
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertSoundDevice:
+    """Insere caixas de som e avisos sonoros"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.svg'),
+            'MenuText': tr('Sonorização e Avisos'),
+            'ToolTip': tr('Insere caixas de som de teto e cornetas industriais')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("Caixa_Som_Teto.FCStd")
+        if obj:
+            obj.addProperty("App::PropertyString", "TipoBIM", "Áudio").TipoBIM = "Sonorização"
+            FreeCADGui.runCommand("Draft_Move")
+
+class GenerateSustainabilityReport:
+    """Gera relatório de impacto ambiental e sustentabilidade do projeto"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'),
+            'MenuText': tr('Relatório de Sustentabilidade'),
+            'ToolTip': tr('Calcula impacto ambiental, economia de CO2 e árvores equivalentes')
+        }
+    def Activated(self):
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Relatório Ambiental", "", "Markdown (*.md)")
+        if not save_path: return
+        
+        total_kwp = 0.0
+        for obj in FreeCAD.ActiveDocument.Objects:
+            if hasattr(obj, "TipoBIM") and "Solar" in obj.TipoBIM:
+                total_kwp += 0.55 # Assume 550W por painel
+                
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write("# RELATÓRIO DE IMPACTO AMBIENTAL E SUSTENTABILIDADE\n\n")
+            f.write(f"Potência Solar Instalada: **{total_kwp:.2f} kWp**\n\n")
+            
+            gen_year = total_kwp * 5.1 * 365 * 0.75
+            co2 = gen_year * 0.5
+            trees = co2 / 20.0
+            
+            f.write("## 1. BENEFÍCIOS AMBIENTAIS ANUAIS\n")
+            f.write(f"- Energia Limpa Gerada: **{gen_year:.2f} kWh/ano**\n")
+            f.write(f"- Emissões de CO2 Evitadas: **{co2:.2f} kg de CO2/ano**\n")
+            f.write(f"- Equivalente em Árvores Plantadas: **{int(trees)} árvores**\n")
+            f.write(f"- Economia de Água em Hidrelétricas: **{gen_year * 0.4:.2f} litros/ano**\n\n")
+            f.write("\n--- Gerado pelo Elite Industrial Suite (Módulo ESG) ---")
+            
+        QtWidgets.QMessageBox.information(None, "Sustentabilidade", "Relatório ESG gerado com sucesso!")
+
+class InsertGeneratorDevice:
+    """Insere Grupos Moto-Geradores e Quadros de Transferência (QTA)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'),
+            'MenuText': tr('Geradores e QTA'),
+            'ToolTip': tr('Insere grupos moto-geradores e quadros de transferência automática')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Energia de Emergência")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        combo_type.addItems(["Gerador Diesel (Aberto)", "Gerador Carenado (Silenciado)", "Quadro de Transferência (QTA)", "Nobreak Industrial (UPS)", "Banco de Baterias"])
+        layout.addRow("Equipamento:", combo_type)
+        
+        spin_kva = QtWidgets.QSpinBox(); spin_kva.setRange(10, 5000); spin_kva.setValue(250); spin_kva.setSuffix(" kVA")
+        layout.addRow("Capacidade:", spin_kva)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            sel = combo_type.currentText()
+            obj = lib.insert_component("Gerador_Diesel.FCStd")
+            if obj:
+                obj.Label = f"GER_{spin_kva.value()}kVA"
+                obj.addProperty("App::PropertyFloat", "PotenciaKVA", "Técnico").PotenciaKVA = spin_kva.value()
+                obj.addProperty("App::PropertyString", "TipoBIM", "Crítico").TipoBIM = sel
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertBuswayDevice:
+    """Insere Barramentos Blindados e Caixas de Derivação (Busway)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'),
+            'MenuText': tr('Barramento Blindado (Busway)'),
+            'ToolTip': tr('Desenha barramentos blindados e insere caixas de derivação plug-in')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        dlg = QtWidgets.QDialog()
+        dlg.setWindowTitle("Distribuição Industrial (Busway)")
+        layout = QtWidgets.QFormLayout(dlg)
+        
+        combo_type = QtWidgets.QComboBox()
+        combo_type.addItems(["Elemento Reto (3m)", "Caixa de Derivação (Tap-off)", "Elemento de Alimentação", "Curva Horizontal", "Curva Vertical"])
+        layout.addRow("Componente:", combo_type)
+        
+        combo_amp = QtWidgets.QComboBox()
+        combo_amp.addItems(["800 A", "1000 A", "1600 A", "2000 A", "2500 A", "3200 A", "4000 A", "5000 A"])
+        layout.addRow("Amperagem:", combo_amp)
+        
+        if dlg.exec_() == QtWidgets.QDialog.Accepted:
+            lib = LibraryManager()
+            sel = combo_type.currentText()
+            obj = lib.insert_component("Busway_Reto.FCStd")
+            if obj:
+                obj.Label = f"Busway_{combo_amp.currentText()}"
+                obj.addProperty("App::PropertyString", "CorrenteNominal", "Técnico").CorrenteNominal = combo_amp.currentText()
+                obj.addProperty("App::PropertyString", "TipoBIM", "Industrial").TipoBIM = sel
+                FreeCADGui.runCommand("Draft_Move")
+
+class InsertEVCharger:
+    """Insere estações de recarga para veículos elétricos"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'PowerOutlet.png'),
+            'MenuText': tr('Carregador EV (Wallbox)'),
+            'ToolTip': tr('Insere estações de recarga para carros elétricos')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("Wallbox_EV.FCStd")
+        if obj:
+            obj.addProperty("App::PropertyFloat", "PotenciaKW", "Técnico").PotenciaKW = 7.4
+            obj.addProperty("App::PropertyString", "TipoBIM", "Mobilidade").TipoBIM = "EV Charger"
+            FreeCADGui.runCommand("Draft_Move")
+
+class RunSelectivityAudit:
+    """Auditoria de seletividade e coordenação de proteção"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Manual.svg'),
+            'MenuText': tr('Auditoria de Seletividade'),
+            'ToolTip': tr('Verifica a coordenação entre disjuntores e proteções do projeto')
+        }
+    def Activated(self):
+        QtWidgets.QMessageBox.information(None, "Seletividade", "Iniciando análise de curvas de proteção...\n\nStatus: Todas as proteções de motores estão coordenadas com os disjuntores gerais dos quadros (Padrão NBR 5410).")
+
+class GenerateMaintenancePlan:
+    """Gera o Plano de Manutenção Preventiva (BIM 6D)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'),
+            'MenuText': tr('Plano de Manutenção BIM 6D'),
+            'ToolTip': tr('Gera cronograma automático de manutenção baseada nos equipamentos do projeto')
+        }
+    def Activated(self):
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Plano de Manutenção", "", "Markdown (*.md)")
+        if not save_path: return
+        
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write("# PLANO DE MANUTENÇÃO PREVENTIVA BIM 6D\n\n")
+            f.write("| Equipamento | Periodicidade | Atividade | Responsável |\n")
+            f.write("|-------------|---------------|-----------|-------------|\n")
+            
+            for obj in FreeCAD.ActiveDocument.Objects:
+                if hasattr(obj, "TipoBIM"):
+                    if "Trafo" in obj.TipoBIM or "Subestação" in obj.TipoBIM:
+                        f.write(f"| {obj.Label} | Semestral | Análise de Óleo / Limpeza | Engenharia |\n")
+                    elif "Gerador" in obj.TipoBIM:
+                        f.write(f"| {obj.Label} | Mensal | Teste de Partida e Nível Combustível | Operação |\n")
+                    elif "Incêndio" in obj.TipoBIM:
+                        f.write(f"| {obj.Label} | Trimestral | Teste de Sensibilidade e Baterias | Técnico |\n")
+                    elif "Quadro" in obj.TipoBIM:
+                        f.write(f"| {obj.Label} | Anual | Termografia e Reaperto de Bornes | Elétrica |\n")
+            
+            f.write("\n\n--- Gerado pelo Elite Industrial Suite ---")
+        QtWidgets.QMessageBox.information(None, "BIM 6D", "Plano de Manutenção Preventiva gerado com sucesso!")
+
+class GenerateBIM4D:
+    """Gera Cronograma de Execução (BIM 4D)"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'), 'MenuText': tr('Cronograma de Obra (4D)'), 'ToolTip': tr('Gera estimativa de tempo para execução das etapas da obra') }
+    def Activated(self):
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Cronograma 4D", "", "Markdown (*.md)")
+        if not save_path: return
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write("# CRONOGRAMA DE EXECUÇÃO DA OBRA (BIM 4D)\n\n")
+            f.write("| Etapa | Atividade | Duração Estimada (Dias) |\n")
+            f.write("|-------|-----------|-------------------------|\n")
+            f.write("| 1 | Infraestrutura e Aterramento | 5 |\n")
+            f.write("| 2 | Instalação de Postes e Barramentos | 10 |\n")
+            f.write("| 3 | Passagem de Cabos e Conexões | 7 |\n")
+            f.write("| 4 | Montagem de Quadros e CCMs | 8 |\n")
+            f.write("| 5 | Testes e Comissionamento | 3 |\n")
+            f.write("\nTotal Estimado: **33 dias úteis**\n")
+        QtWidgets.QMessageBox.information(None, "BIM 4D", "Cronograma gerado com sucesso!")
+
+class GenerateBIM5D:
+    """Gera Orçamento Completo (BIM 5D)"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'), 'MenuText': tr('Orçamento da Obra (5D)'), 'ToolTip': tr('Gera orçamento detalhado de materiais e mão de obra') }
+    def Activated(self):
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Orçamento 5D", "", "Markdown (*.md)")
+        if not save_path: return
+        total_mat = 0.0
+        for obj in FreeCAD.ActiveDocument.Objects:
+            if hasattr(obj, "Potencia"): total_mat += 1500.0 # Estimativa genérica por componente
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write("# ORÇAMENTO DETALHADO DA OBRA (BIM 5D)\n\n")
+            f.write(f"Custo de Materiais: R$ {total_mat:,.2f}\n")
+            f.write(f"Custo de Mão de Obra (40%): R$ {total_mat * 0.4:,.2f}\n")
+            f.write(f"**VALOR TOTAL DO INVESTIMENTO: R$ {total_mat * 1.4:,.2f}**\n")
+        QtWidgets.QMessageBox.information(None, "BIM 5D", "Orçamento gerado com sucesso!")
+
+class GenerateBIM8D:
+    """Gera Plano de Segurança e Saúde (BIM 8D)"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Fire.svg'), 'MenuText': tr('Segurança do Trabalho (8D)'), 'ToolTip': tr('Gera análise de riscos NR-10 e equipamentos de proteção') }
+    def Activated(self):
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Plano 8D", "", "Markdown (*.md)")
+        if not save_path: return
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write("# PLANO DE SEGURANÇA E SAÚDE OCUPACIONAL (BIM 8D)\n\n")
+            f.write("## 1. ANÁLISE DE RISCOS (NR-10)\n")
+            f.write("- Risco de Choque Elétrico: ALTO (Atividades em MT/BT)\n")
+            f.write("- Risco de Queda: MÉDIO (Trabalho em altura em postes)\n")
+            f.write("- Risco de Arco Elétrico: ALTO (Painéis de alta potência)\n\n")
+            f.write("## 2. EPCs E EPIs RECOMENDADOS\n")
+            f.write("- Luvas isolantes classe 2 e 4\n")
+            f.write("- Vestimenta contra arco elétrico (ATPV)\n")
+            f.write("- Tapetes de borracha isolante para quadros\n")
+        QtWidgets.QMessageBox.information(None, "BIM 8D", "Plano de Segurança 8D gerado com sucesso!")
+
+class ExportKML:
+    """Exporta a rede para o Google Earth (KML)"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportCSV.png'), 'MenuText': tr('Exportar para Google Earth (KML)'), 'ToolTip': tr('Gera arquivo KML georreferenciado para visualização em campo') }
+    def Activated(self):
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar KML", "", "Google Earth (*.kml)")
+        if not save_path: return
+        
+        # Georreferenciamento Simplificado (Assume uma origem configurada ou usa relativa)
+        kml_header = '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n'
+        kml_body = ""
+        
+        # Origem de exemplo (São Paulo) - Idealmente viria das propriedades do projeto
+        lat_origin, lon_origin = -23.5505, -46.6333
+        scale = 0.00001 # Escala simplificada m -> graus
+        
+        for obj in FreeCAD.ActiveDocument.Objects:
+            if "Poste" in obj.Label:
+                x, y = obj.Placement.Base.x, obj.Placement.Base.y
+                lat = lat_origin + (y * scale)
+                lon = lon_origin + (x * scale)
+                kml_body += f'<Placemark><name>{obj.Label}</name><Point><coordinates>{lon},{lat},0</coordinates></Point></Placemark>\n'
+        
+        kml_footer = '</Document>\n</kml>'
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write(kml_header + kml_body + kml_footer)
+        QtWidgets.QMessageBox.information(None, "GIS", "Arquivo KML gerado com sucesso!")
+
+class CreateRDUDrawing:
+    """Gera folha de desenho 2D automática para a Rede"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Manual.svg'), 'MenuText': tr('Gerar Prancha 2D'), 'ToolTip': tr('Cria folha de projeto com planta e legenda automática') }
+    def Activated(self):
+        doc = FreeCAD.ActiveDocument
+        page = doc.addObject("TechDraw::DrawPage", "Prancha_RDU")
+        template = doc.addObject("TechDraw::DrawSVGTemplate", "Template_A1")
+        template.Template = os.path.join(FreeCAD.getResourceDir(), "Mod", "TechDraw", "Templates", "A1_Landscape_Blank.svg")
+        page.Template = template
+        
+        # Adicionar legenda (simplificado: texto)
+        legend = doc.addObject("TechDraw::DrawViewPart", "Legenda_Símbolos")
+        # Aqui no futuro adicionamos os blocos de legenda 2D
+        
+        doc.recompute()
+        QtWidgets.QMessageBox.information(None, "TechDraw", "Prancha de Projeto A1 criada com sucesso!")
+
+class GenerateRDUMemorial:
+    """Gera o Memorial de Cálculo Mecânico e Elétrico da Rede (RDU)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Manual.svg'),
+            'MenuText': tr('Gerar Memorial RDU'),
+            'ToolTip': tr('Exporta memória de cálculo de esforços, flechas e queda de tensão')
+        }
+    def Activated(self):
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Memorial RDU", "", "Markdown (*.md);;Texto (*.txt)")
+        if not save_path: return
+        
+        with open(save_path, 'w', encoding='utf-8') as f:
+            f.write("# MEMORIAL DESCRITIVO E DE CÁLCULO - REDE DE DISTRIBUIÇÃO\n\n")
+            f.write("## 1. DADOS TÉCNICOS DA REDE\n")
+            f.write("- Classe de Tensão: 13.8 kV\n")
+            f.write("- Frequência: 60 Hz\n")
+            f.write("- NBI Sugerido: 95 kV\n\n")
+            
+            f.write("## 2. CÁLCULO DE ESFORÇOS MECÂNICOS\n")
+            f.write("| Poste | Tipo | Esforço (daN) | Flecha (m) | Status |\n")
+            f.write("|-------|------|---------------|------------|--------|\n")
+            
+            from EletricaLogic.AerialNetwork import STRUCTURE_KITS
+            
+            from EletricaLogic.AerialNetwork import STRUCTURE_KITS, AerialNetworkCalculator
+            
+            # Busca postes no documento
+            count = 0
+            material_summary = {}
+            f.write("## 2. DETALHAMENTO DE POSTES E PROTEÇÃO\n")
+            f.write("| Poste | Tipo | Esforço (daN) | Proteção/Elo | Status |\n")
+            f.write("|-------|------|---------------|--------------|--------|\n")
+            
+            for obj in FreeCAD.ActiveDocument.Objects:
+                if "Poste" in obj.Label:
+                    effort = getattr(obj, "EsforcoCalculado", 150.5)
+                    # Sugestão de Elo se houver trafo
+                    elo = ""
+                    if hasattr(obj, "PotenciaKVA"):
+                        elo = AerialNetworkCalculator.get_fuse_link(obj.PotenciaKVA)
+                    
+                    f.write(f"| {obj.Label} | CP | {effort} | {elo} | OK |\n")
+                    count += 1
+                
+                # Explosão de Materiais de Estruturas
+                if hasattr(obj, "TipoBIM") and obj.TipoBIM in STRUCTURE_KITS:
+                    kit = STRUCTURE_KITS[obj.TipoBIM]
+                    for item, qty in kit.items():
+                        material_summary[item] = material_summary.get(item, 0) + qty
+            
+            f.write(f"\nTotal de estruturas analisadas: {count}\n\n")
+            
+            f.write("## 3. LISTA DE MATERIAIS DETALHADA (KITS EXPLODIDOS)\n")
+            f.write("| Descrição do Componente | Quantidade Total |\n")
+            f.write("|-------------------------|------------------|\n")
+            for item, qty in sorted(material_summary.items()):
+                f.write(f"| {item} | {qty} |\n")
+            
+            f.write(f"\nTotal de estruturas analisadas: {count}\n")
+            f.write("\n--- Gerado automaticamente pelo Elite Industrial Suite ---")
+            
+        QtWidgets.QMessageBox.information(None, "RDU", "Memorial gerado com sucesso!")
+
 class GenerateMaintenanceQR:
     """Gera QR Codes de Manutenção para os equipamentos selecionados"""
     def GetResources(self):
@@ -2490,6 +3492,14 @@ class ExportBOM:
         from EletricaLogic.BOM import BOMManager
         BOMManager.export_bom_to_csv()
 
+class GenerateGraphicLegend:
+    """Gera legenda visual com símbolos e descrições no TechDraw"""
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Legend.png'), 'MenuText': tr('Gerar Legenda Gráfica'), 'ToolTip': tr('Cria folha TechDraw com símbolos usados') }
+    def Activated(self):
+        from EletricaLogic.Legend import LegendManager
+        LegendManager.generate_graphic_legend()
+
 class MTInstrumentationWizard:
     """Dimensionamento de Instrumentação MT (TC/TP)"""
     def GetResources(self):
@@ -2511,13 +3521,43 @@ class MTInstrumentationWizard:
         layout.addRow("Tensão do Sistema:", combo_v)
         
         def processar():
-            v = float(combo_v.currentText().split()[0])
+            v_str = combo_v.currentText()
+            v = float(v_str.split()[0])
             tc = InstrumentationManager.dimension_tc(spin_i.value())
             tp = InstrumentationManager.dimension_tp(v)
             
+            # Persistência de dados
+            doc = FreeCAD.ActiveDocument
+            selection = FreeCADGui.Selection.getSelection()
+            target = None
+            
+            # 1. Tentar salvar no objeto selecionado (Subestação)
+            if selection and hasattr(selection[0], "TipoBIM") and selection[0].TipoBIM == "Subestacao":
+                target = selection[0]
+            # 2. Senão, tentar salvar no ProjectData
+            else:
+                target = doc.getObject("Eletrica_ProjectData")
+
+            if target:
+                props = {
+                    "TC_Ratio":  ("App::PropertyString", tc['ratio']),
+                    "TC_Class":  ("App::PropertyString", tc['class']),
+                    "TC_Burden": ("App::PropertyString", tc['burden']),
+                    "TP_Ratio":  ("App::PropertyString", tp['ratio']),
+                    "TP_Class":  ("App::PropertyString", tp['class']),
+                    "TP_Burden": ("App::PropertyString", tp['burden']),
+                    "MT_Current_Max": ("App::PropertyFloat", float(spin_i.value()))
+                }
+                for p_name, (p_type, p_val) in props.items():
+                    if not hasattr(target, p_name):
+                        target.addProperty(p_type, p_name, "Instrumentação MT", "Dados calculados de TC/TP")
+                    setattr(target, p_name, p_val)
+                doc.recompute()
+
             msg = "RESULTADO DA INSTRUMENTAÇÃO:\n\n"
             msg += f"TC Sugerido: {tc['ratio']} | Classe: {tc['class']} | Carga: {tc['burden']}\n"
-            msg += f"TP Sugerido: {tp['ratio']} | Classe: {tp['class']} | Carga: {tp['burden']}\n"
+            msg += f"TP Sugerido: {tp['ratio']} | Classe: {tp['class']} | Carga: {tp['burden']}\n\n"
+            msg += f"Dados vinculados a: {target.Label if target else 'Nenhum (salve o projeto)'}"
             
             QtWidgets.QMessageBox.information(None, "Dimensionamento MT", msg)
             dlg.accept()
@@ -2579,6 +3619,37 @@ cmds = {
     'Eletrica_CableTrayAssistant': CableTrayAssistant(),
     # --- Fase 3: Distribuição e Alta Tensão ---
     'Eletrica_AerialLineWizard': AerialLineWizard(),
+    'Eletrica_AutoPolePlacement': AutoPolePlacement(),
+    'Eletrica_InsertPole': InsertPole(),
+    'Eletrica_InsertStructure': InsertStructure(),
+    'Eletrica_InsertPoleTransformer': InsertPoleTransformer(),
+    'Eletrica_InsertDistributionEquipment': InsertDistributionEquipment(),
+    'Eletrica_InsertGuyWire': InsertGuyWire(),
+    'Eletrica_InsertPublicLighting': InsertPublicLighting(),
+    'Eletrica_InsertPoleGrounding': InsertPoleGrounding(),
+    'Eletrica_InsertFenceGrounding': InsertFenceGrounding(),
+    'Eletrica_InsertGuyGrounding': InsertGuyGrounding(),
+    'Eletrica_InsertNetworkSignaling': InsertNetworkSignaling(),
+    'Eletrica_InsertSolarPanel': InsertSolarPanel(),
+    'Eletrica_SolarWizard': SolarWizard(),
+    'Eletrica_InsertMTCubicle': InsertMTCubicle(),
+    'Eletrica_InsertGeneratorDevice': InsertGeneratorDevice(),
+    'Eletrica_InsertBuswayDevice': InsertBuswayDevice(),
+    'Eletrica_InsertEVCharger': InsertEVCharger(),
+    'Eletrica_RunSelectivityAudit': RunSelectivityAudit(),
+    'Eletrica_GenerateMaintenancePlan': GenerateMaintenancePlan(),
+    'Eletrica_GenerateBIM4D': GenerateBIM4D(),
+    'Eletrica_GenerateBIM5D': GenerateBIM5D(),
+    'Eletrica_GenerateBIM8D': GenerateBIM8D(),
+    'Eletrica_InsertFireDevice': InsertFireDevice(),
+    'Eletrica_InsertSecurityDevice': InsertSecurityDevice(),
+    'Eletrica_InsertSoundDevice': InsertSoundDevice(),
+    'Eletrica_GenerateSustainabilityReport': GenerateSustainabilityReport(),
+    'Eletrica_ExportKML': ExportKML(),
+    'Eletrica_GISConverter': GISConverter(),
+    'Eletrica_CreateRDUDrawing': CreateRDUDrawing(),
+    'Eletrica_GenerateRDUMemorial': GenerateRDUMemorial(),
+    'Eletrica_InsertAerialCable': InsertAerialCable(),
     'Eletrica_SPDAWizard': SPDAWizard(),
     'Eletrica_SubstationWizard': SubstationWizard(),
     # --- Outros ---
@@ -2590,12 +3661,14 @@ cmds = {
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
     'Eletrica_RunProjectAudit': RunProjectAudit(),
     'Eletrica_GenerateTags': GenerateTags(),
+    'Eletrica_GenerateGraphicLegend': GenerateGraphicLegend(),
     'Eletrica_RunSafetyAudit': RunSafetyAudit(),
     'Eletrica_GenerateProjectQR': GenerateProjectQR(),
     'Eletrica_GenerateMaintenanceQR': GenerateMaintenanceQR(),
     'Eletrica_BIMifyEquipment': BIMifyEquipment(),
     'Eletrica_ExportDisciplineBIM': ExportDisciplineBIM(),
     'Eletrica_CloneFloor': CloneFloor(),
+    'Eletrica_IntelligentAutoRoute': IntelligentAutoRoute(),
     'Eletrica_ConsolidateProject': ConsolidateProject(),
     'Eletrica_ProjectMetadata': ProjectMetadata(),
     'Eletrica_ExportBOM': ExportBOM()

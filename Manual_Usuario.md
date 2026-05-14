@@ -1,5 +1,6 @@
-# Guia do Usuário - Bancada Eletrica (FreeCAD 1.1)
-**Versão**: 4.0 (Industrial & Automation Suite)
+# Manual do Usuário - Elite Industrial Suite
+**Versão**: 1.0 (Full BIM)
+**Foco**: Engenharia Elétrica, Infraestrutura e Sistemas Especiais
 **Objetivo**: Fluxo de trabalho completo para projetos elétricos residenciais, comerciais e industriais.
 
 ---
@@ -170,7 +171,53 @@ Com os pontos lançados e circuitos nomeados:
 2.  **Heatmap de Queda de Tensão**: Clique em **Ativar Heatmap (V%)**. Os objetos ficarão coloridos (Verde/Amarelo/Vermelho) facilitando a detecção visual de subdimensionamento.
 3.  **Heatmap de Ocupação**: Visualize quais eletrodutos estão próximos do limite de 40% de ocupação.
 
-1.  **Sugestão de DR/DPS**: O sistema analisa áreas molhadas e a categoria da obra para sugerir o uso de Dispositivos Residuais e Protetores de Surto nos quadros.
+---
+
+## 8. Redes de Distribuição e GIS (RDU/RDR)
+Para projetos de infraestrutura urbana ou rural:
+
+1.  **Importação GIS**: Importe seus pontos do QGIS (DXF/SHP) e use a ferramenta **Converter GIS para Postes**. O sistema substituirá os pontos por postes BIM automaticamente.
+2.  **Locação Automática**: Use o **Auto-Posteação** em uma linha (Draft Wire) para inserir postes com vãos fixos (ex: 40m).
+3.  **Estruturas e Kits**: Insira estruturas (N1, CE1, etc.) nos postes. Ao gerar o memorial, o sistema fará a **Explosão de Kit**, listando cada parafuso e isolador.
+4.  **Cálculo Mecânico**: Use o **Assistente de Linha Aérea** para calcular o esforço resultante no poste, considerando ângulo, pressão do vento e flecha (sag).
+
+---
+
+## 9. Energia Solar Fotovoltaica (PV)
+1.  **Inserir Painéis**: Use a ferramenta **Inserir Array Solar** para locar centenas de painéis de uma só vez sobre o telhado ou solo.
+2.  **Dimensionamento**: O **Assistente Solar** calcula a geração mensal (kWh/mês) baseada na irradiação local e ajuda a configurar as strings do inversor.
+3.  **ESG**: Gere o **Relatório de Sustentabilidade** para mostrar ao cliente o CO2 evitado e as árvores equivalentes salvas pelo projeto.
+
+---
+
+## 10. Subestações e Média Tensão (MT)
+1.  **Cubículos**: Insira células de medição e proteção (Cabine Primária) usando o comando **Cubículo de MT**.
+2.  **Transformadores de Alta Potência**: No assistente de subestação, selecione potências de até **2500 kVA**.
+3.  **Proteção**: O sistema sugerirá automaticamente o **Elo Fusível (H/K)** ideal para a proteção do transformador.
+
+---
+
+## 11. Energia Crítica e Especialidades (Incêndio/CFTV)
+1.  **Geradores e UPS**: Adicione grupos moto-geradores e sistemas de nobreak para garantir a continuidade em cargas críticas.
+2.  **Incêndio (SDAI)**: Loque detectores de fumaça e sirenes. O sistema ajuda a verificar o raio de cobertura de cada dispositivo.
+3.  **Segurança e CFTV**: Adicione câmeras, sensores de presença e controle de acesso biométrico integrados ao modelo BIM.
+
+---
+
+## 12. Ciclo de Vida BIM (4D até 8D)
+Acesse a aba **Ciclo de Vida** para gerar os relatórios avançados de gestão:
+*   **BIM 4D**: Cronograma de execução da obra.
+*   **BIM 5D**: Orçamento completo de materiais e mão de obra.
+*   **BIM 8D**: Plano de Segurança do Trabalho e Prevenção NR-10.
+
+---
+
+## 13. Exportação para Campo (Google Earth)
+1.  Com o projeto RDU finalizado, use o comando **Exportar para Google Earth (KML)**.
+2.  Envie o arquivo para o smartphone da equipe de campo. Eles poderão ver a posição exata dos postes usando o GPS, facilitando a locação real no terreno.
+
+---
+*Elite Industrial Suite - Potencializando a Engenharia Brasileira.*
 2.  **Aplicação Automática**: Clique em **Aplicar Proteções** para que o sistema configure as propriedades de segurança em todos os quadros do projeto.
 
 ## 9. Orçamentação Dinâmica (SINAPI)
@@ -191,8 +238,8 @@ Com os pontos lançados e circuitos nomeados:
 2.  **Iluminação**: O sistema sugere a potência em VA e o número de luminárias LED necessárias para atingir o nível de iluminância (Lux) correto.
 
 ## 13. Diagrama Unifilar Gráfico
-1.  **Gerar Diagrama**: Selecione um Quadro de Distribuição e clique em **Gerar Diagrama Unifilar**.
-2.  **Saída TechDraw**: Um esquema elétrico profissional será desenhado automaticamente na folha de desenho, contendo disjuntores, bitolas e potências de cada circuito.
+1.  **Gerar Diagrama**: Selecione um Quadro de Distribuição (BT) ou uma **Subestação (MT)** e clique em **Gerar Diagrama Unifilar**.
+2.  **Saída TechDraw**: Um esquema elétrico profissional será desenhado automaticamente na folha de desenho. Para MT, o sistema inclui símbolos de transformador, para-raios e chaves fusíveis com os dados calculados.
 
 ## 14. Lista de Cabos (De-Para)
 1.  **Relatório de Instalação**: Gere uma lista detalhada que informa a origem, destino, bitola e comprimento de cada trecho de cabo do projeto.
@@ -201,6 +248,11 @@ Com os pontos lançados e circuitos nomeados:
 ## 15. Estudo de Sombreamento Solar
 1.  **Análise de Perdas**: O sistema detecta se outros prédios, árvores ou muros estão projetando sombras sobre seus painéis fotovoltaicos.
 2.  **Fator de Eficiência**: O cálculo de geração anual será ajustado automaticamente considerando essas perdas reais do modelo 3D.
+
+## 16. Redes de Distribuição (RDU/RDR)
+1.  **Rede Compacta (Spacer Cable)**: Suporte total para dimensionamento de cabos protegidos de 15kV a 69kV, com seleção automática de estruturas CE-1/CE-2.
+2.  **Cálculo Mecânico**: O assistente calcula automaticamente a **Flecha (Sag)** e o **Esforço no Topo do Poste** (daN), sugerindo o modelo de concreto (CP) ideal.
+3.  **Locação Automática**: Selecione um caminho (Draft Wire) e use a ferramenta **Locação de Postes** para distribuir as estruturas automaticamente respeitando o vão máximo configurado.
 
 ## 16. Documentação e Entrega
 1.  **Lista de Materiais**: Clique em **Exportar BOM**. Isso gerará um arquivo CSV (Excel) com todos os cabos, eletrodutos e dispositivos.

@@ -39,8 +39,8 @@
 ## Fase 3: Alta Tensão & Distribuição (INICIADA 🚀)
 - [x] Assistente de Rede Aérea de Distribuição MT.
 - [x] Análise de Risco SPDA Completa (NBR 5419:2015).
-- [ ] Dimensionamento de Transformadores de Corrente (TC) e Potencial (TP).
-- [ ] Diagramas Unifilares de MT Automáticos.
+- [x] Dimensionamento de Transformadores de Corrente (TC) e Potencial (TP).
+- [x] Diagramas Unifilares de MT Automáticos.
 - [x] Cálculo de queda de tensão em linhas longas (MT) com limites ANEEL (7%).
 - [x] Suporte a 4 tensões de distribuição: 13,8 kV / 23,1 kV / 34,5 kV / 69 kV.
 - [x] Subestações Particulares (Poste Único → H → CSP Pré-Fabricada → Abrigada) + objeto BIM.

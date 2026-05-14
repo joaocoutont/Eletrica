@@ -122,3 +122,68 @@ class UnifilarGenerator:
         FreeCAD.Console.PrintMessage(f"TechDraw: Carimbo de '{page_obj.Label}' sincronizado com sucesso!\n")
         doc.recompute()
         return True
+    @staticmethod
+    def create_mt_unifilar(substation_obj):
+        """Gera o diagrama unifilar de media tensao da subestacao"""
+        doc = FreeCAD.ActiveDocument
+        if not doc: return False
+        
+        group_name = f"Unifilar_MT_{substation_obj.Label}"
+        if doc.getObject(group_name): doc.removeObject(group_name)
+        group = doc.addObject("App::DocumentObjectGroup", group_name)
+
+        # 1. Linha de Chegada (Entrada)
+        entry_line = Draft.make_line(FreeCAD.Vector(0, 100, 0), FreeCAD.Vector(0, 80, 0))
+        group.addObject(entry_line)
+        Draft.make_text("ENTRADA MT", placement=FreeCAD.Vector(-15, 105, 0))
+        
+        # 2. Símbolo de Para-raios (Zeta)
+        arrester_line = Draft.make_line(FreeCAD.Vector(0, 80, 0), FreeCAD.Vector(0, 70, 0))
+        group.addObject(arrester_line)
+        # Símbolo simplificado (um pequeno ground)
+        gnd = Draft.make_line(FreeCAD.Vector(-5, 65, 0), FreeCAD.Vector(5, 65, 0))
+        group.addObject(gnd)
+        Draft.make_text("P.R.", placement=FreeCAD.Vector(8, 70, 0))
+
+        # 3. Chave Fusível
+        fuse_line = Draft.make_line(FreeCAD.Vector(0, 70, 0), FreeCAD.Vector(0, 50, 0))
+        group.addObject(fuse_line)
+        # Círculo do fusível
+        fuse_circle = Draft.make_circle(2.0, placement=FreeCAD.Vector(0, 60, 0))
+        group.addObject(fuse_circle)
+        Draft.make_text("CH. FUSÍVEL", placement=FreeCAD.Vector(8, 55, 0))
+
+        # 4. Transformador (Dois círculos entrelaçados)
+        trafo_y = 30
+        c1 = Draft.make_circle(8.0, placement=FreeCAD.Vector(0, trafo_y + 4, 0))
+        c2 = Draft.make_circle(8.0, placement=FreeCAD.Vector(0, trafo_y - 4, 0))
+        group.addObject(c1); group.addObject(c2)
+        
+        trafo_info = f"{getattr(substation_obj, 'PotenciaKVA', 75)}kVA\n{getattr(substation_obj, 'TensaoPrimaria', '13.8kV')}"
+        Draft.make_text(trafo_info, placement=FreeCAD.Vector(15, trafo_y, 0))
+
+        # 5. Saída BT (Barramento)
+        bt_line = Draft.make_line(FreeCAD.Vector(0, trafo_y - 12, 0), FreeCAD.Vector(0, 0, 0))
+        group.addObject(bt_line)
+        
+        bus_bt = Draft.make_line(FreeCAD.Vector(-30, 0, 0), FreeCAD.Vector(30, 0, 0))
+        bus_bt.ViewObject.LineWidth = 3.0
+        group.addObject(bus_bt)
+        Draft.make_text("BARRAMENTO BT", placement=FreeCAD.Vector(-20, -10, 0))
+
+        # 6. Configurar Página e Vista
+        page = doc.getObject("Folha_Diagramas_Unifilares") or doc.addObject("TechDraw::DrawPage", "Folha_Diagramas_Unifilares")
+        if not page.Template:
+            template = doc.addObject("TechDraw::DrawSVGTemplate", "Template_Diagrama")
+            template.Template = os.path.join(FreeCAD.getResourceDir(), "Mod", "TechDraw", "Templates", "A3_Landscape_ISO7200_NC.svg")
+            page.Template = template
+        
+        view = doc.addObject("TechDraw::DrawViewDraft", f"Vista_MT_{substation_obj.Label}")
+        view.Source = group
+        page.addView(view)
+        view.X = 100
+        view.Y = 200
+        
+        doc.recompute()
+        FreeCAD.Console.PrintMessage(f"Diagrama Unifilar MT de '{substation_obj.Label}' gerado!\n")
+        return True

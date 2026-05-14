@@ -39,6 +39,16 @@ PROP_MAP = {
     "BTU":               ("NominalCoolingCapacity","App::PropertyString","Capacidade Térmica"),
     "KitWEG":            ("MotorStarterType",     "App::PropertyString", "Componentes de Partida"),
     "SecaoCabo":         ("ConductorCrossSection","App::PropertyFloat",  "Seção do Condutor"),
+    # --- Instrumentação MT ---
+    "TC_Ratio":          ("CurrentTransformerRatio", "App::PropertyString", "Relação TC"),
+    "TC_Class":          ("CurrentTransformerClass", "App::PropertyString", "Classe TC"),
+    "TP_Ratio":          ("VoltageTransformerRatio", "App::PropertyString", "Relação TP"),
+    "TP_Class":          ("VoltageTransformerClass", "App::PropertyString", "Classe TP"),
+    # --- Dados de Placa (Motor) ---
+    "FatorServico":      ("ServiceFactor",        "App::PropertyFloat",  "FS"),
+    "RPM":               ("RatedSpeed",           "App::PropertyInteger","Rotação"),
+    "Polos":             ("NumberOfPoles",        "App::PropertyInteger","Polos"),
+    "CosPhi":            ("PowerFactor",          "App::PropertyFloat",  "Fator de Potência"),
     # --- Gestão de Ativos (BIM 6D / O&M) ---
     "NumeroSerie":       ("SerialNumber",         "App::PropertyString", "Número de Série"),
     "DataInstalacao":    ("InstallationDate",     "App::PropertyString", "Data de Instalação"),
@@ -161,6 +171,8 @@ class IFCExportManager:
             ("TrafoPower",         "Pset_Transformer_Power",             "App::PropertyString", "Potência Trafo"),
             ("TrafoConnection",    "Pset_Transformer_Connection",        "App::PropertyString", "Ligação Trafo"),
             ("DesignerName",       "Pset_ProjectOrder_Designer",         "App::PropertyString", "Responsável"),
+            ("TC_Ratio",           "Pset_Transformer_TCRatio",           "App::PropertyString", "Relação TC"),
+            ("TP_Ratio",           "Pset_Transformer_TPRatio",           "App::PropertyString", "Relação TP"),
         ]
 
         # Adicionar novos campos de Demanda e Aterramento do Configuracoes_Eletrica

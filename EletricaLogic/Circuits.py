@@ -305,8 +305,8 @@ class PhaseOptimizer:
         if settings:
             settings.DemandaEstimada_kW = demand_p
             
-        # Sugerir Transformador (Próximo valor comercial)
-        trafos = [45, 75, 112.5, 150, 225, 300, 500, 750, 1000, 1500, 2000, 2500]
+        # Sugerir Transformador (Próximo valor comercial ABNT)
+        trafos = [5, 10, 15, 25, 30, 37.5, 45, 75, 112.5, 150, 225, 300, 500, 750, 1000, 1500, 2000, 2500]
         s_needed = demand_p / 0.92 # assumindo FP de 0.92
         suggested_trafo = trafos[0]
         for t in trafos:

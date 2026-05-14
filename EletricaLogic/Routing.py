@@ -179,3 +179,18 @@ class AutoRouter:
             ConduitManager.create_conduit(path, label=f"Elet_{dev.Label}_to_{nearest.Label}")
 
         doc.recompute()
+    @staticmethod
+    def connect_with_cable_tray(objects, ceiling_z=3500.0, width=200, height=100):
+        """Conecta objetos em sequência usando eletrocalhas industriais via A*."""
+        doc = FreeCAD.ActiveDocument
+        if not doc: return
+        
+        obstacles = [obj for obj in doc.Objects if any(s in obj.Label for s in ["Wall", "Parede", "Viga", "Coluna", "Pilar"])]
+        
+        for i in range(len(objects) - 1):
+            p1 = objects[i].Placement.Base
+            p2 = objects[i + 1].Placement.Base
+            path = AutoRouter.route_astar(p1, p2, obstacles=obstacles, ceiling_z=ceiling_z)
+            ConduitManager.create_cable_tray(path, width=width, height=height, 
+                                            label=f"Leito_{objects[i].Label}")
+        doc.recompute()

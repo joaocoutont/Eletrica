@@ -1,64 +1,61 @@
-# Estimador Solar Fotovoltaico Completo (ABSOLAR / INMET)
+# Motor de Cálculo Fotovoltaico (Solar PV)
 import math
-import FreeCAD
 
-# ... (HSP_BRASIL, PANEL_POWERS, INVERTERS permanecem iguais)
-
-class SolarEstimator:
-    # ... (métodos existentes permanecem iguais)
+class SolarCalculator:
+    """Cálculos de dimensionamento de sistemas fotovoltaicos."""
 
     @staticmethod
-    def simplified_shadow_analysis(panel_obj, obstacles):
+    def estimate_generation(installed_kwp, irradiation_kwh_m2_day=5.0, performance_ratio=0.75):
         """
-        Analisa o impacto de sombreamento usando intersecção geométrica.
-        Projeta um sólido 'sombra' na direção oposta ao sol e verifica colisões.
+        Estima a geração mensal de energia (kWh/mês).
+        E = P_kwp * Irrad_diaria * 30 dias * PR
         """
-        if not panel_obj or not obstacles:
-            return 1.0 
-            
-        import Part
-        # Vetor Sol simplificado (Médio para Brasil: Elevação 45°, Azimute Norte/180°)
-        # Coordenadas: Z+ (Cima), Y+ (Norte)
-        sun_vec = FreeCAD.Vector(0, 1, 1).normalize()
-        
-        # Cria uma linha de teste (raio) a partir do centro do painel
-        p_center = panel_obj.Shape.CenterOfMass
-        ray_end = p_center + (sun_vec * 10000.0) # 10 metros de raio
-        ray = Part.makeLine(p_center, ray_end)
-        
-        shadow_hits = 0
-        for obs in obstacles:
-            if not hasattr(obs, "Shape") or not obs.Shape: continue
-            if obs.Name == panel_obj.Name: continue
-            
-            # Verifica intersecção real entre o raio do sol e o obstáculo
-            inter = ray.intersect(obs.Shape)
-            if inter:
-                shadow_hits += 1
-                
-        # Perda estimada: 20% por objeto bloqueador detectado
-        loss = max(0.2, 1.0 - (shadow_hits * 0.20))
-        return loss
+        generation_monthly = installed_kwp * irradiation_kwh_m2_day * 30 * performance_ratio
+        return round(generation_monthly, 2)
 
     @staticmethod
-    def estimate_with_3d_data(panel_obj):
-        """Estima a geração lendo a área do objeto 3D e analisando sombras locais."""
-        doc = FreeCAD.ActiveDocument
-        if not panel_obj: return None
+    def dimension_strings(panel_voc, panel_isc, inv_max_v, inv_min_v, inv_max_i, num_panels):
+        """
+        Calcula a configuração de strings (série/paralelo).
+        Retorna: {panels_in_series, num_strings, status}
+        """
+        # Máximo em série por limite de tensão (considerando margem de 10% para frio)
+        max_series = math.floor(inv_max_v / (panel_voc * 1.1))
         
-        # 1. Obter Área Real do painel no 3D
-        area = panel_obj.Shape.Area / 1e6 if hasattr(panel_obj, "Shape") else 2.0 # m2
+        # Mínimo em série para partida do inversor
+        min_series = math.ceil(inv_min_v / panel_voc)
         
-        # 2. Análise de Sombras
-        others = [obj for obj in doc.Objects if obj.Name != panel_obj.Name]
-        sf = SolarEstimator.simplified_shadow_analysis(panel_obj, others)
+        if num_panels <= max_series:
+            series = num_panels
+            strings = 1
+        else:
+            series = max_series
+            strings = math.ceil(num_panels / max_series)
+            
+        # Check de corrente
+        total_isc = strings * panel_isc
+        status = "OK" if total_isc <= inv_max_i else "EXCEDE_CORRENTE"
         
-        # 3. Cálculo base (Assume 550Wp para cada 2.5m2)
-        wp_est = (area / 2.5) * 550.0
+        return {
+            "series": series,
+            "strings": strings,
+            "total_voc": round(series * panel_voc * 1.1, 2),
+            "total_isc": round(total_isc, 2),
+            "status": status
+        }
+
+    @staticmethod
+    def get_dc_cable_section(current_isc, length_m, voltage_v, loss_limit=1.0):
+        """Dimensiona cabo solar CC para queda de tensão < 1%"""
+        # Resistividade Cobre ~0.0172
+        # ΔU = (2 * L * I * rho) / S
+        # S = (2 * L * I * rho) / ΔU_lim
+        delta_u_max = (loss_limit / 100.0) * voltage_v
+        if delta_u_max == 0: return 4.0
         
-        # 4. Resultado com perdas de sombreamento
-        res = SolarEstimator.estimate_pv_system(monthly_kwh=300, efficiency=0.80 * sf)
-        res["fator_sombreamento"] = sf
-        res["potencia_3d_wp"] = round(wp_est, 2)
+        section_needed = (2 * length_m * current_isc * 0.0172) / delta_u_max
         
-        return res
+        for s in [4, 6, 10, 16]:
+            if s >= section_needed:
+                return s
+        return 16 # Max default solar cable

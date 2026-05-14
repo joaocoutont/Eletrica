@@ -1,6 +1,6 @@
 # Memória Técnica - Bancada Eletrica (FreeCAD 1.1)
-**Versão**: 3.0 (Estável)
-**Última Atualização**: 2026-05-13
+**Versão**: 4.0 (Elite Industrial Suite)
+**Última Atualização**: 2026-05-14
 
 ---
 
@@ -119,18 +119,36 @@ Estes dados são usados automaticamente por `Calculator.calculate_demand()` e `S
 - **Barramentos**: dimensiona perfil comercial de Cu ou Al (2,5 A/mm² Cu / 1,6 A/mm² Al) por faixa de corrente.
 - **Diagrama CCM**: gera planilha estruturada com todos os motores do projeto.
 
-### 5.7 Redes Aéreas de Distribuição — Fase 3 (`AerialNetwork.py`)
-- **Condutores CA e CAA** (ACSR): tabela completa de 10 a 300 mm² com capacidade (A) e resistência (Ω/km).
-- **Dimensão de linha aérea**: corrente de linha, condutor mínimo, queda de tensão (%), número de postes e vão por ambiente (Urbano 50m, Rural 100m, Travessia 40m).
-- **Tensões suportadas**: 13,8 kV / 23,1 kV / 34,5 kV / 69 kV com classes de isolação corretas.
-- **Proteção**: chave fusível por classe de tensão.
+### 5.7 Redes Aéreas de Distribuição (RDU/RDR) — Fase 3
+- **Condutores CA, CAA e Aço**: Tabelas completas incluindo cabos de Alumínio e Fios de Aço Zincado para sistemas **MRT (Rural)**.
+- **Cálculo Mecânico Avançado**: Integração de pressão do vento (daN/m²), ângulo de deflexão e cálculo de flecha (sag) via equação da parábola.
+- **Rede de Distribuição Rural (RDR)**: Suporte a vãos longos (120m), postes de madeira (MA) e sistema Monofilar com Retorno por Terra.
+- **Kits de Estruturas**: Explosão automática de materiais (N1, N3, CE1, CE3, M1) em componentes individuais (cruzetas, isoladores, parafusos).
 
-### 5.8 SPDA e Subestações — Fase 3 (`SPDA.py` + `Substation.py`)
-- **SPDA NBR 5419**: análise de risco completa (Ae, Nd, risco vs. tolerável 10⁻⁵), malha de Faraday, esfera rolante, captores Franklin, descidas e aterramento.
-- **Aterramento integrado**: `Grounding.py` calcula hastes por resistividade do solo.
-- **DPS**: recomendação de Classe I+II na entrada + Classe III nos quadros.
-- **Subestações**: 4 tipos (Poste Único, H, CSP Pré-Fabricada, Abrigada) com transformador, proteção MT e para-raios.
-- **Objeto BIM de SE**: salvo com `PotenciaKVA`, `TensaoPrimaria`, `ClasseIsolamento`, `Transformador`, `ProtecaoMT`.
+### 5.8 Subestações e Média Tensão (MT)
+- **Subestações de Cabine Primária**: Inserção de cubículos de MT (Medição, Proteção, Entrada) em alvenaria ou blindados.
+- **Capacidades Industriais**: Transformadores de 5 kVA a 2500 kVA (Seco ou Óleo).
+- **Proteção e Coordenação**: Tabela de elos fusíveis (Tipo H/K) automatizada para sistemas de 13.8 kV a 34.5 kV.
+- **Barramentos de MT**: Dimensionamento de barras de cobre para cubículos.
+
+### 5.9 Energia Solar Fotovoltaica (PV)
+- **Estimativa de Geração**: Cálculo de kWh/mês baseado na irradiação local ($E = P \cdot H \cdot 30 \cdot PR$).
+- **Dimensionamento de Strings**: Lógica de série/paralelo para inversores de string.
+- **Lançamento de Arrays**: Ferramenta de locação em massa de painéis solares para usinas de telhado ou solo.
+
+### 5.10 Sistemas Especiais (SDAI, CFTV, Sonorização)
+- **Incêndio (SDAI)**: Locação de detectores, acionadores e sirenes com controle de raio de cobertura (NBR 17240).
+- **Segurança**: Câmeras IP (Bullet/Dome), sensores PIR e controle de acesso biométrico.
+- **Sonorização**: Caixas de som de teto e cornetas industriais para avisos de emergência.
+
+### 5.11 Ciclo de Vida BIM (4D até 8D)
+- **BIM 4D/5D**: Geradores de Cronograma de Obra e Orçamento Detalhado (Materiais + MO).
+- **BIM 6D/7D**: Relatório ESG (Sustentabilidade) e Plano de Manutenção Preventiva.
+- **BIM 8D**: Plano de Segurança e Saúde Ocupacional (Prevenção NR-10).
+
+### 5.12 Integração GIS e Geoprocessamento
+- **Conversor GIS**: Transforma pontos georreferenciados do QGIS diretamente em postes inteligentes no FreeCAD.
+- **Exportador KML**: Gera arquivos para o Google Earth, permitindo visualização da rede em dispositivos móveis no campo.
 
 ---
 

@@ -208,6 +208,70 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_CCMCommandDiagram"
         ]
         
+        # 8. RDU: Redes de Distribuição Urbana e Rural
+        toolbar_rdu = [
+            "Eletrica_InsertPole",
+            "Eletrica_AutoPolePlacement",
+            "Eletrica_GISConverter",
+            "Eletrica_InsertStructure",
+            "Eletrica_InsertPoleTransformer",
+            "Eletrica_InsertDistributionEquipment",
+            "Eletrica_InsertGuyWire",
+            "Eletrica_InsertPublicLighting",
+            "Eletrica_InsertPoleGrounding",
+            "Eletrica_InsertFenceGrounding",
+            "Eletrica_InsertGuyGrounding",
+            "Eletrica_InsertNetworkSignaling",
+            "Eletrica_InsertAerialCable",
+            "Eletrica_AerialLineWizard",
+            "Eletrica_ExportKML",
+            "Eletrica_CreateRDUDrawing",
+            "Eletrica_GenerateRDUMemorial"
+        ]
+
+        # 9. Energia Solar Fotovoltaica (PV)
+        toolbar_solar = [
+            "Eletrica_InsertSolarPanel",
+            "Eletrica_SolarWizard",
+            "Eletrica_GenerateSustainabilityReport"
+        ]
+
+        # 10. Subestações e Média Tensão (MT)
+        toolbar_substation = [
+            "Eletrica_InsertMTCubicle",
+            "Eletrica_SubstationWizard"
+        ]
+
+        # 11. Segurança, Incêndio e Sistemas Especiais
+        toolbar_special_systems = [
+            "Eletrica_InsertFireDevice",
+            "Eletrica_InsertSecurityDevice",
+            "Eletrica_InsertSoundDevice",
+            "Eletrica_InsertEmergencyLight",
+            "Eletrica_InsertExitSign"
+        ]
+        
+        # 12. Energia Crítica e de Emergência
+        toolbar_critical = [
+            "Eletrica_InsertGeneratorDevice",
+            "Eletrica_InsertUPS"
+        ]
+
+        # 13. Distribuição Industrial Avançada
+        toolbar_industrial_adv = [
+            "Eletrica_InsertBuswayDevice",
+            "Eletrica_RunSelectivityAudit"
+        ]
+
+        # 14. Ciclo de Vida BIM (4D até 8D)
+        toolbar_lifecycle = [
+            "Eletrica_GenerateBIM4D",            # 4D: Tempo
+            "Eletrica_GenerateBIM5D",            # 5D: Custo
+            "Eletrica_GenerateSustainabilityReport", # 6D: Sustentabilidade
+            "Eletrica_GenerateMaintenancePlan",   # 7D: Facilidades
+            "Eletrica_GenerateBIM8D"              # 8D: Segurança
+        ]
+        
         # Auxiliares
         toolbar_draft = ["Eletrica_Tool_" + c for c in draft_cmds]
         toolbar_snaps = ["Eletrica_Tool_" + c for c in snap_cmds]
@@ -216,6 +280,10 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         # Montagem das Toolbars no FreeCAD
         self.appendToolbar(tr("Configuração da Obra"), toolbar_setup)
         self.appendToolbar(tr("Modelagem Elétrica"), toolbar_modeling)
+        self.appendToolbar(tr("Redes de Distribuição (RDU)"), toolbar_rdu)
+        self.appendToolbar(tr("Energia Solar (PV)"), toolbar_solar)
+        self.appendToolbar(tr("Subestação e MT"), toolbar_substation)
+        self.appendToolbar(tr("Sistemas Especiais (Incêndio/CFTV)"), toolbar_special_systems)
         self.appendToolbar(tr("Telecom e Dados"), toolbar_telecom)
         self.appendToolbar(tr("Infraestrutura"), toolbar_infra)
         self.appendToolbar(tr("Engenharia e Cálculos"), toolbar_eng)
@@ -225,12 +293,16 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         self.appendToolbar(tr("Automação e Controle"), toolbar_automation)
         self.appendToolbar(tr("Aterramento e SPDA"), toolbar_earthing)
         self.appendToolbar(tr("Documentação e Custos"), toolbar_doc)
+        self.appendToolbar(tr("Energia Crítica"), toolbar_critical)
+        self.appendToolbar(tr("Busway e Proteção"), toolbar_industrial_adv)
+        self.appendToolbar(tr("Mobilidade Elétrica"), ["Eletrica_InsertEVCharger"])
+        self.appendToolbar(tr("Ciclo de Vida BIM (4D-8D)"), toolbar_lifecycle)
         self.appendToolbar(tr("Desenho (Draft)"), toolbar_draft)
         self.appendToolbar(tr("Precisão (Snaps)"), toolbar_snaps)
         self.appendToolbar(tr("Referência BIM"), toolbar_bim)
         
         # Menu Suspenso Consolidado
-        self.appendMenu("Eletrica", toolbar_setup + toolbar_modeling + toolbar_telecom + toolbar_infra + toolbar_eng + toolbar_mgmt + toolbar_doc)
+        self.appendMenu("Eletrica", toolbar_setup + toolbar_modeling + toolbar_rdu + toolbar_telecom + toolbar_infra + toolbar_eng + toolbar_mgmt + toolbar_doc)
 
     def Activated(self):
         return

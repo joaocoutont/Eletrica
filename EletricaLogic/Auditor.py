@@ -141,7 +141,27 @@ class ProjectAuditor:
                     errors.append(f"❌ {msg}")
                     ProjectAuditor._log_event(msg, "ERROR")
 
-        # 7. Exibir resultado em janela Qt
+        # 7. Auditoria de Segurança Industrial (Motores e Painéis)
+        for obj in doc.Objects:
+            tipo = getattr(obj, "TipoBIM", "")
+            
+            # Motores: Cabo deve ser >= 1.25 * Corrente Nominal
+            if tipo == "Motor" and hasattr(obj, "CorrenteNom") and hasattr(obj, "SecaoCabo"):
+                in_nom = obj.CorrenteNom
+                # Precisamos comparar com a capacidade Iz do cabo, mas para simplificar
+                # vamos verificar se o cabo calculado atende a 1.25 * In
+                if hasattr(obj, "Disjuntor") and obj.Disjuntor < (in_nom * 1.15):
+                    msg = f"Motor [{obj.Label}]: Proteção ({obj.Disjuntor}A) muito próxima da In({in_nom}A). Risco de atuação indevida na partida."
+                    warnings.append(f"⚠️ {msg}")
+                
+            # Painéis: Verificar se houve análise de Arc Flash
+            if tipo in ["Quadro", "CCM", "Subestacao"]:
+                if not hasattr(obj, "EnergiaIncidente") or obj.EnergiaIncidente == 0:
+                    msg = f"Equipamento [{obj.Label}]: Ausência de Etiqueta de Arco Elétrico (Arc Flash). Risco NR-10."
+                    warnings.append(f"⚠️ {msg}")
+                    ProjectAuditor._log_event(msg, "WARN")
+
+        # 8. Exibir resultado em janela Qt
         try:
             from EletricaLogic.i18n import tr
             from PySide2 import QtWidgets

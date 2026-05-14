@@ -3652,6 +3652,20 @@ class RunProjectAudit:
         from EletricaLogic.Auditor import ProjectAuditor
         ProjectAuditor.run_full_audit()
 
+class ToggleVoltageLevelHeatmap:
+    """Ativa/Desativa o mapa de cores por níveis de tensão no 3D"""
+    _active = False
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'PhaseBalance.svg'), 
+            'MenuText': tr('Mapa de Cores por Tensão'), 
+            'ToolTip': tr('Pinta o 3D baseado nos níveis de tensão (MT/BT)')
+        }
+    def Activated(self):
+        from EletricaLogic.Visuals import HeatmapManager
+        self.__class__._active = not self.__class__._active
+        HeatmapManager.apply_voltage_heatmap(self.__class__._active)
+
 class GenerateTags:
     """Gera etiquetas de identificação no 3D"""
     def GetResources(self):
@@ -3862,6 +3876,7 @@ cmds = {
     'Eletrica_GenerateUnifilar': GenerateUnifilar(),
     'Eletrica_SyncTitleBlock': SyncTitleBlock(),
     'Eletrica_RunProjectAudit': RunProjectAudit(),
+    'Eletrica_ToggleVoltageLevelHeatmap': ToggleVoltageLevelHeatmap(),
     'Eletrica_GenerateTags': GenerateTags(),
     'Eletrica_GenerateGraphicLegend': GenerateGraphicLegend(),
     'Eletrica_RunSafetyAudit': RunSafetyAudit(),

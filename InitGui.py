@@ -146,6 +146,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         # 6. QUALITY & BIM: Auditoria e Exportação
         toolbar_audit = [
             "Eletrica_RunProjectAudit",
+            "Eletrica_ToggleVoltageLevelHeatmap",
             "Eletrica_ToggleVoltageDropHeatmap",
             "Eletrica_GenerateTags",
             "Eletrica_GenerateMaintenanceQR",

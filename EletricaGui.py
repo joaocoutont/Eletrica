@@ -2849,9 +2849,9 @@ class InsertSolarPanel:
     """Insere painel fotovoltaico em array (telhado ou solo)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Solar.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'SolarPanel.svg'),
             'MenuText': tr('Inserir Painel Solar'),
-            'ToolTip': tr('Loca módulos fotovoltaicos no projeto')
+            'ToolTip': tr('Adiciona módulo fotovoltaico ao projeto')
         }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
@@ -2879,7 +2879,7 @@ class SolarWizard:
     """Assistente de Dimensionamento Fotovoltaico"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Solar.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'SolarWizard.svg'),
             'MenuText': tr('Assistente Solar (PV)'),
             'ToolTip': tr('Dimensiona geração, inversor e strings')
         }
@@ -3436,7 +3436,7 @@ class GenerateRDUMemorial:
     """Gera o Memorial de Cálculo Mecânico e Elétrico da Rede (RDU)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Manual.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'TechnicalReport.svg'),
             'MenuText': tr('Gerar Memorial RDU'),
             'ToolTip': tr('Exporta memória de cálculo de esforços, flechas e queda de tensão')
         }

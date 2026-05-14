@@ -111,6 +111,12 @@ class SubstationManager:
         obj.addProperty("App::PropertyString", "TipoSubestacao",   "Eng", "Tipo").TipoSubestacao = data["Tipo"]
         obj.addProperty("App::PropertyString", "Transformador",    "Eng", "Transformador").Transformador = data["Transformador"]
         obj.addProperty("App::PropertyString", "ProtecaoMT",       "Eng", "Proteção MT").ProtecaoMT = data["Protecao_MT"]
+        obj.addProperty("App::PropertyFloat", "ImpedanciaTrafo", "Eng", "Impedância do Trafo (%)").ImpedanciaTrafo = 5.0
+        
+        group_conc = "Concessionaria"
+        obj.addProperty("App::PropertyFloat", "Icc_Concessionaria", group_conc, "Icc no Ponto de Entrega (kA)").Icc_Concessionaria = 10.0
+        obj.addProperty("App::PropertyFloat", "XR_Concessionaria",  group_conc, "Relação X/R").XR_Concessionaria = 7.0
+        
         obj.addProperty("App::PropertyString", "TipoBIM",          "Eletrica", "Tipo BIM").TipoBIM = "Subestacao"
 
         FreeCAD.ActiveDocument.recompute()

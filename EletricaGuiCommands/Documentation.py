@@ -15,7 +15,7 @@ class GenerateLoadSchedule:
 
 class GenerateCableSchedule:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'CableTray.svg'), 'MenuText': tr('Lista de Cabos'), 'ToolTip': tr('Gera lista de cabos com comprimentos e seções') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Tray.svg'), 'MenuText': tr('Lista de Cabos'), 'ToolTip': tr('Gera lista de cabos com comprimentos e seções') }
     def Activated(self):
         pass
 

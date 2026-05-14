@@ -104,7 +104,7 @@ class InsertNetworkSignaling:
 
 class InsertAerialCable:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'CableTray.svg'), 'MenuText': tr('Lançar Cabo Aéreo'), 'ToolTip': tr('Desenha cabos de MT/BT entre postes com catenária automática') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Tray.svg'), 'MenuText': tr('Lançar Cabo Aéreo'), 'ToolTip': tr('Desenha cabos de MT/BT entre postes com catenária automática') }
     def Activated(self):
         pass
 

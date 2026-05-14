@@ -138,7 +138,7 @@ class GenerateBIM5D:
 
 class GenerateBIM8D:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM8D.svg'), 'MenuText': tr('BIM 8D (Segurança)'), 'ToolTip': tr('Plano de segurança do trabalho integrado ao modelo') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.svg'), 'MenuText': tr('BIM 8D (Segurança)'), 'ToolTip': tr('Plano de segurança do trabalho integrado ao modelo') }
     def Activated(self):
         pass
 

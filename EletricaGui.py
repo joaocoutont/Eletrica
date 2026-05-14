@@ -25,7 +25,7 @@ class StartNewProject:
     """Cria um novo documento e prepara o ambiente de desenho"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'StartProject.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'StartProject.svg'),
             'MenuText': tr('Iniciar Novo Projeto Elétrico'),
             'ToolTip': tr('Cria um novo documento e prepara o ambiente BIM')
         }
@@ -227,7 +227,7 @@ class ProjectProperties:
     """Configura os metadados do projeto elétrico com campos técnicos"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Report.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Report.svg'),
             'MenuText': tr('Propriedades Técnicas do Projeto'),
             'ToolTip': tr('Define Nome, Autor, Tensão e Concessionária')
         }
@@ -366,7 +366,7 @@ class ToggleDashboard:
     """Liga/Desliga o painel lateral de métricas"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Dashboard.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Dashboard.svg'),
             'MenuText': tr('Abrir/Fechar Dashboard'),
             'ToolTip': tr('Alterna a visualização das métricas em tempo real')
         }
@@ -380,7 +380,7 @@ class ToggleDashboard:
 class CreatePanel:
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Panel.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Criar Painel (QDC / CCM)'),
             'ToolTip': tr('Cria um painel inteligente')
         }
@@ -406,7 +406,7 @@ class InsertSocket:
     """Insere tomadas com Assistente NBR 5410"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Socket.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Socket.svg'),
             'MenuText': tr('Inserir Tomada'),
             'ToolTip': tr('Insere uma tomada com sugestão NBR 5410')
         }
@@ -498,7 +498,7 @@ class InsertSpecialSocket:
 
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'SpecialSocket.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Inserir TUE (Especial)'),
             'ToolTip': tr('Tomadas com potência definida por equipamento')
         }
@@ -555,7 +555,7 @@ class InsertAirConditioner:
     """Assistente para inserção de Ar Condicionado com conversão BTU -> Watts"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'AirConditioning.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Inserir Ar Condicionado'),
             'ToolTip': tr('Dimensiona e insere ar condicionado (Split/Janela)')
         }
@@ -688,7 +688,7 @@ class InsertPumpSet:
     """Assistente de Conjunto Motobomba (Hidráulica + Elétrica)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'PumpSet.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Inserir Conjunto Motobomba'),
             'ToolTip': tr('Dimensiona bomba pela vazão/altura e define motor')
         }
@@ -794,7 +794,7 @@ class LinkPumpSet:
     """Aplica propriedades de Motobomba a um objeto 3D já existente (importado)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'BIMify.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Vincular Dados de Motobomba'),
             'ToolTip': tr('Transforma objeto selecionado em uma Motobomba inteligente')
         }
@@ -903,7 +903,7 @@ class InsertTelecomPoint:
     """Insere pontos de cabeamento estruturado (Rede, TV, Tel)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Telecom.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Inserir Ponto de Telecom'),
             'ToolTip': tr('Rede / TV / Telefone / CFTV')
         }
@@ -1439,7 +1439,7 @@ class PowerFactorCorrection:
     """Assistente para correção de Fator de Potência e Reativos"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'PowerFactor.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Correção de Fator de Potência'),
             'ToolTip': tr('Dimensiona banco de capacitores para o projeto')
         }
@@ -1924,7 +1924,7 @@ class IntelligentAutoRoute:
     """Roteamento inteligente de infraestrutura com desvio de obstáculos (A*)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Wiring3D.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Roteamento Inteligente (A*)'),
             'ToolTip': tr('Conecta objetos selecionados desviando de paredes e colunas')
         }
@@ -2053,7 +2053,7 @@ class AutoPolePlacement:
     """Distribui postes automaticamente ao longo de um caminho (Draft Wire)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Locação Automática de Postes'),
             'ToolTip': tr('Distribui postes ao longo de uma linha respeitando o vão máximo')
         }
@@ -2469,7 +2469,7 @@ class InsertPole:
     """Insere um poste (Concreto ou Madeira) com seleção de carga"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Inserir Poste'),
             'ToolTip': tr('Insere poste CP ou MA com carga definida')
         }
@@ -2609,7 +2609,7 @@ class InsertAerialCable:
     """Lança cabos aéreos entre estruturas"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'BareCable.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Lançar Cabo Aéreo'),
             'ToolTip': tr('Cria condutores (CA, CAA ou Compacto) entre postes')
         }
@@ -2685,7 +2685,7 @@ class InsertGuyWire:
     """Insere estaiamento (cabo de aço, isolador e âncora) para equilíbrio de forças"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'BareCable.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Inserir Estaiamento'),
             'ToolTip': tr('Adiciona estai de contra-poste ou estai de âncora')
         }
@@ -2740,7 +2740,7 @@ class InsertPoleGrounding:
     """Adiciona descida de terra e hastes na base do poste"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Aterramento de Poste'),
             'ToolTip': tr('Adiciona descida de cobre e malha de terra no pé do poste')
         }
@@ -2755,7 +2755,7 @@ class InsertFenceGrounding:
     """Insere aterramento de cercas rurais (NBR 15688 / Padrão Concessionária)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Aterramento de Cerca'),
             'ToolTip': tr('Aterra cercas que cruzam ou correm paralelas à rede MT')
         }
@@ -2770,7 +2770,7 @@ class InsertGuyGrounding:
     """Insere aterramento específico para cabos de estai"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Aterramento de Estai'),
             'ToolTip': tr('Aterra o cabo de aço do estai para segurança contra contatos acidentais')
         }
@@ -3101,7 +3101,7 @@ class InsertBuswayDevice:
     """Insere Barramentos Blindados e Caixas de Derivação (Busway)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Barramento Blindado (Busway)'),
             'ToolTip': tr('Desenha barramentos blindados e insere caixas de derivação plug-in')
         }
@@ -3133,7 +3133,7 @@ class InsertEVCharger:
     """Insere estações de recarga para veículos elétricos"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'PowerOutlet.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'PowerOutlet.svg'),
             'MenuText': tr('Carregador EV (Wallbox)'),
             'ToolTip': tr('Insere estações de recarga para carros elétricos')
         }
@@ -3398,7 +3398,7 @@ class ExportBusbarCNC:
 class ExportKML:
     """Exporta a rede para o Google Earth (KML)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportCSV.png'), 'MenuText': tr('Exportar para Google Earth (KML)'), 'ToolTip': tr('Gera arquivo KML georreferenciado para visualização em campo') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportKML.svg'), 'MenuText': tr('Exportar para Google Earth (KML)'), 'ToolTip': tr('Gera arquivo KML georreferenciado para visualização em campo') }
     def Activated(self):
         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar KML", "", "Google Earth (*.kml)")
         if not save_path: return
@@ -3622,7 +3622,7 @@ class RunProjectAudit:
     """Executa a auditoria completa de normas e segurança"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Auditoria de Projeto'),
             'ToolTip': tr('Verifica erros de norma, queda de tensão e colisões')
         }
@@ -3634,7 +3634,7 @@ class GenerateTags:
     """Gera etiquetas de identificação no 3D"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'QR_AR.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
             'MenuText': tr('Gerar Etiquetas 3D'),
             'ToolTip': tr('Cria etiquetas de circuito e bitola sobre os componentes')
         }

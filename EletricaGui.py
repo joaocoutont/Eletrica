@@ -394,7 +394,7 @@ class OptimizePhases:
     """Otimiza a distribuição de cargas entre as fases R, S e T"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Dashboard.svg'), # Usaremos o ícone do Dashboard temporariamente
+            'Pixmap': os.path.join(ICON_DIR, 'PhaseBalance.svg'),
             'MenuText': tr('Otimizar Fases'),
             'ToolTip': tr('Balanceia automaticamente as cargas entre R, S e T')
         }
@@ -2048,7 +2048,7 @@ class AutoPolePlacement:
     """Distribui postes automaticamente ao longo de um caminho (Draft Wire)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'AutoPlacement.svg'),
             'MenuText': tr('Locação Automática de Postes'),
             'ToolTip': tr('Distribui postes ao longo de uma linha respeitando o vão máximo')
         }
@@ -2572,7 +2572,7 @@ class InsertPoleTransformer:
     """Insere transformador de distribuição montado em poste"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'PoleTransformer.svg'),
             'MenuText': tr('Transformador em Poste'),
             'ToolTip': tr('Insere trafo 30/45/75/112.5/150 kVA')
         }
@@ -2750,7 +2750,7 @@ class InsertFenceGrounding:
     """Insere aterramento de cercas rurais (NBR 15688 / Padrão Concessionária)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Grounding.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'FenceGrounding.svg'),
             'MenuText': tr('Aterramento de Cerca'),
             'ToolTip': tr('Aterra cercas que cruzam ou correm paralelas à rede MT')
         }
@@ -2765,7 +2765,7 @@ class InsertGuyGrounding:
     """Insere aterramento específico para cabos de estai"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Grounding.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'GuyGrounding.svg'),
             'MenuText': tr('Aterramento de Estai'),
             'ToolTip': tr('Aterra o cabo de aço do estai para segurança contra contatos acidentais')
         }
@@ -3660,7 +3660,8 @@ class GenerateGraphicLegend:
 class MTInstrumentationWizard:
     """Dimensionamento de Instrumentação MT (TC/TP)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'), 'MenuText': tr('Dimensionar TC/TP'), 'ToolTip': tr('Dimensiona transformadores de instrumento para MT') }
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Instrumentation.svg'), 'MenuText': tr('Dimensionar TC/TP'), 'ToolTip': tr('Dimensiona transformadores de instrumento para MT') }
     
     def Activated(self):
         from EletricaLogic.Substation import InstrumentationManager

@@ -26,7 +26,7 @@ class SetupEmergencyPower:
 
 class ArcFlashAnalysis:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ArcFlash.svg'), 'MenuText': tr('Estudo de Arc Flash'), 'ToolTip': tr('Calcula energia incidente e define EPIs (NFPA 70E)') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Raio.svg'), 'MenuText': tr('Estudo de Arc Flash'), 'ToolTip': tr('Calcula energia incidente e define EPIs (NFPA 70E)') }
     def Activated(self):
         pass
 
@@ -69,7 +69,7 @@ class RunSelectivityAudit:
 
 class RunSurgeSimulation:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'SPDA.svg'), 'MenuText': tr('Simulação de Surto'), 'ToolTip': tr('Verifica propagação de transientes e eficácia dos DPS') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Raio.svg'), 'MenuText': tr('Simulação de Surto'), 'ToolTip': tr('Verifica propagação de transientes e eficácia dos DPS') }
     def Activated(self):
         pass
 

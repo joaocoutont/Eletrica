@@ -1,13 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Círculo de Fundo Tecnológico -->
-  <circle cx="32" cy="32" r="30" fill="#2c3e50" stroke="#3498db" stroke-width="2"/>
-  <circle cx="32" cy="32" r="25" fill="none" stroke="#3498db" stroke-width="1" stroke-dasharray="4,4"/>
-  
-  <!-- Raio Estilizado Central -->
-  <path d="M38 12L22 34h10L26 52l16-22H32L38 12z" fill="#f1c40f" stroke="#f39c12" stroke-width="1.5" stroke-linejoin="round">
-    <animate attributeName="opacity" values="1;0.8;1" dur="2s" repeatCount="indefinite" />
-  </path>
-  
-  <!-- Detalhes de Conexão -->
-  <circle cx="32" cy="32" r="2" fill="white"/>
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <!-- Novo Raio Industrial - Sem Circulo e Sharp -->
+    <path d="M19 2L7 18H15L13 30L25 12H17L19 2Z" 
+          fill="black" 
+          stroke="black" 
+          stroke-width="1" 
+          stroke-linejoin="round"/>
 </svg>

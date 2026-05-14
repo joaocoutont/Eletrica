@@ -250,33 +250,43 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_snaps = ["Eletrica_Tool_" + c for c in snap_cmds]
         toolbar_bim   = ["Eletrica_Tool_" + c for c in bim_cmds]
         
-        # Montagem das Toolbars no FreeCAD
-        self.appendToolbar(tr("Setup"), toolbar_setup)
-        self.appendToolbar(tr("Iluminação"), toolbar_mod_lighting)
-        self.appendToolbar(tr("Tomadas"), toolbar_mod_loads)
-        self.appendToolbar(tr("Industrial/Motores"), toolbar_mod_motors)
-        self.appendToolbar(tr("Infraestrutura"), toolbar_infra)
-        self.appendToolbar(tr("Engenharia - Dimensionamento"), toolbar_eng_cables)
-        self.appendToolbar(tr("Engenharia - Simulação"), toolbar_eng_analysis)
-        self.appendToolbar(tr("Paineis e Gestão"), toolbar_mgmt)
-        self.appendToolbar(tr("Auditoria e BIM"), toolbar_audit)
-        self.appendToolbar(tr("Segurança/Incêndio"), toolbar_safety)
-        self.appendToolbar(tr("Automação"), toolbar_automation)
-        self.appendToolbar(tr("Aterramento/SPDA"), toolbar_earthing)
-        self.appendToolbar(tr("Relatórios"), toolbar_doc_reports)
-        self.appendToolbar(tr("Exportação/Orçamento"), toolbar_doc_export)
-        self.appendToolbar(tr("RDU - Postes"), toolbar_rdu_poles)
-        self.appendToolbar(tr("RDU - Equipamentos"), toolbar_rdu_equip)
-        self.appendToolbar(tr("RDU - Redes/GIS"), toolbar_rdu_lines)
-        self.appendToolbar(tr("RDU - Proteção"), toolbar_rdu_ground)
-        self.appendToolbar(tr("RDU - Doc"), toolbar_doc_drawing)
-        self.appendToolbar(tr("Solar (PV)"), toolbar_solar)
-        self.appendToolbar(tr("Subestação"), toolbar_substation)
-        self.appendToolbar(tr("Ciclo de Vida BIM"), toolbar_lifecycle)
-        self.appendToolbar(tr("Simulação Avançada"), toolbar_simulation)
-        self.appendToolbar(tr("BI e Inovação"), toolbar_bi + toolbar_innovation)
-        self.appendToolbar(tr("Draft"), toolbar_draft)
-        self.appendToolbar(tr("Snaps"), toolbar_snaps)
+        # 18. CONSOLIDAÇÃO EM DUAS BARRAS MESTRAS (Para visual limpo e profissional)
+        toolbar_master_bim = (
+            toolbar_setup + 
+            toolbar_mod_lighting + 
+            toolbar_mod_loads + 
+            toolbar_mod_motors + 
+            toolbar_infra + 
+            toolbar_eng_cables + 
+            toolbar_eng_analysis + 
+            toolbar_automation + 
+            toolbar_earthing + 
+            toolbar_critical + 
+            toolbar_industrial_adv
+        )
+
+        toolbar_master_rdu_mgmt = (
+            toolbar_rdu_poles + 
+            toolbar_rdu_equip + 
+            toolbar_rdu_lines + 
+            toolbar_rdu_ground + 
+            toolbar_solar + 
+            toolbar_substation + 
+            toolbar_lifecycle + 
+            toolbar_simulation + 
+            toolbar_bi + 
+            toolbar_innovation + 
+            toolbar_doc_reports + 
+            toolbar_doc_export + 
+            toolbar_doc_drawing
+        )
+
+        # Montagem das Duas Toolbars no FreeCAD
+        self.appendToolbar(tr("Elite Eletrica (BIM & Industrial)"), toolbar_master_bim)
+        self.appendToolbar(tr("Elite Eletrica (RDU & Gestão)"), toolbar_master_rdu_mgmt)
+        
+        # Opcional: Manter Snaps e Draft separados pois são utilitários
+        self.appendToolbar(tr("Auxiliares (Draft/Snaps)"), toolbar_draft + toolbar_snaps)
         
         # Menu Suspenso Consolidado
         self.appendMenu("Eletrica", toolbar_setup + toolbar_mod_lighting + toolbar_mod_loads + toolbar_mod_motors + toolbar_rdu_poles + toolbar_rdu_equip + toolbar_telecom + toolbar_infra + toolbar_eng_cables + toolbar_eng_analysis + toolbar_mgmt + toolbar_doc_reports + toolbar_doc_export)

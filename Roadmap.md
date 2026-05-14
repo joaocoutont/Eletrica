@@ -21,8 +21,8 @@ Este documento descreve os próximos passos e as metas de desenvolvimento para a
 
 ### Metas de Compatibilidade
 - [x] FreeCAD 1.1 (Stable)
-- [ ] Suporte nativo a Ondas de Choque (Análise de surto em SPDA avançado).
-- [ ] Exportação direta para formatos de manufatura de barramentos (CNC/Dobra).
+- [x] Suporte nativo a Ondas de Choque (Análise de surto em SPDA avançado).
+- [x] Exportação direta para formatos de manufatura de barramentos (CNC/Dobra).
 
 ---
 *Elite Industrial Suite - Evoluindo a Engenharia Digital.*

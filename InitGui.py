@@ -285,10 +285,12 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_GenerateBIM5D"
         ]
 
-        # 17. IA, Inovação e VR
+        # 17. IA, Inovação e Manufatura
         toolbar_innovation = [
             "Eletrica_RunGenerativeRouting",
-            "Eletrica_ExportVRModel"
+            "Eletrica_ExportVRModel",
+            "Eletrica_RunSurgeSimulation",
+            "Eletrica_ExportBusbarCNC"
         ]
         
         # Auxiliares

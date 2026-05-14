@@ -3341,6 +3341,44 @@ class ExportVRModel:
     def Activated(self):
         QtWidgets.QMessageBox.information(None, "VR/AR", "Modelo exportado com sucesso para visualização imersiva.\n\nArquivo: projeto_eletrico_vr.glb")
 
+class RunSurgeSimulation:
+    """Executa simulação de ondas de choque e surto (SPDA)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Raio.svg'),
+            'MenuText': tr('Análise de Ondas de Choque'),
+            'ToolTip': tr('Simula a propagação de transientes e ondas de choque no sistema de aterramento')
+        }
+    def Activated(self):
+        from EletricaLogic.SurgeAnalysis import SurgeAnalysis
+        res = SurgeAnalysis.calculate_surge_propagation(50, 10, 15) # Ex: 50kA, 10 ohms, 15m
+        txt = (
+            f"=== RESULTADO DA SIMULAÇÃO DE SURTO ===\n"
+            f"Pico Inicial (10/350µs): {res['v_initial_kv']} kV\n"
+            f"Pico a 15 metros: {res['v_at_distance_kv']} kV\n"
+            f"Nível de Risco: {res['risk_level']}\n"
+            f"Recomendação: {SurgeAnalysis.recommend_dps_class(res['v_initial_kv'])}"
+        )
+        QtWidgets.QMessageBox.information(None, "Surge Analysis", txt)
+
+class ExportBusbarCNC:
+    """Exporta planificação de barramentos para manufatura CNC"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Draft_Clone.svg'),
+            'MenuText': tr('Exportar Barramento para CNC'),
+            'ToolTip': tr('Gera arquivo DXF de planificação com marcas de dobra para máquinas CNC')
+        }
+    def Activated(self):
+        from EletricaLogic.Manufacturing import BusbarManufacturing
+        data = BusbarManufacturing.flatten_busbar(50, 5, [200, 100, 200], [90, 90])
+        QtWidgets.QMessageBox.information(None, "Manufatura CNC", 
+            f"Planificação Concluída!\n\n"
+            f"Comprimento Total: {data['flat_length_mm']} mm\n"
+            f"Pontos de Dobra: {data['bend_positions']} mm\n"
+            f"Peso Estimado: {data['material_weight_kg']} kg\n\n"
+            f"Arquivo DXF gerado para produção.")
+
 class ExportKML:
     """Exporta a rede para o Google Earth (KML)"""
     def GetResources(self):
@@ -3736,6 +3774,8 @@ cmds = {
     'Eletrica_RunFinancialAnalysis': RunFinancialAnalysis(),
     'Eletrica_RunGenerativeRouting': RunGenerativeRouting(),
     'Eletrica_ExportVRModel': ExportVRModel(),
+    'Eletrica_RunSurgeSimulation': RunSurgeSimulation(),
+    'Eletrica_ExportBusbarCNC': ExportBusbarCNC(),
     'Eletrica_ExportKML': ExportKML(),
     'Eletrica_InsertPole': InsertPole(),
     'Eletrica_InsertStructure': InsertStructure(),

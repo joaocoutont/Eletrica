@@ -113,21 +113,9 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         ]
         
         # 2. BIM MODELING: Inserção de Cargas e Equipamentos
-        toolbar_modeling = [
-            "Eletrica_InsertSocket", 
-            "Eletrica_InsertSpecialSocket",
-            "Eletrica_InsertLight", 
-            "Eletrica_InsertSwitch", 
-            "Eletrica_MergeSwitches", 
-            "Eletrica_InsertSmartDevice",
-            "Eletrica_DimensionMotorStarter",
-            "Eletrica_MotorWiringWizard",
-            "Eletrica_InsertAirConditioner",
-            "Eletrica_InsertPumpSet",
-            "Eletrica_LinkPumpSet",
-            "Eletrica_InsertBoreholePump",
-            "Eletrica_BIMifyEquipment"
-        ]
+        toolbar_mod_lighting = ["Eletrica_InsertLight", "Eletrica_InsertSwitch", "Eletrica_MergeSwitches", "Eletrica_InsertSmartDevice"]
+        toolbar_mod_loads    = ["Eletrica_InsertSocket", "Eletrica_InsertSpecialSocket", "Eletrica_InsertAirConditioner"]
+        toolbar_mod_motors   = ["Eletrica_DimensionMotorStarter", "Eletrica_MotorWiringWizard", "Eletrica_InsertPumpSet", "Eletrica_LinkPumpSet", "Eletrica_InsertBoreholePump", "Eletrica_BIMifyEquipment"]
         
         # 3. TELECOM & DATA: Cabeamento Estruturado e VDI
         toolbar_telecom = [
@@ -144,17 +132,8 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         ]
         
         # 4. ENGINEERING: Engenharia de Sistemas e Cálculos MT/BT
-        toolbar_eng = [
-            "Eletrica_ServiceEntranceWizard", 
-            "Eletrica_MTInstrumentationWizard",
-            "Eletrica_BusbarSizing",
-            "Eletrica_CheckSelectivity",
-            "Eletrica_PowerFactorCorrection",
-            "Eletrica_SetupEmergencyPower",
-            "Eletrica_LightingAnalysis",
-            "Eletrica_ArcFlashAnalysis",
-            "Eletrica_ConsolidateProject"
-        ]
+        toolbar_eng_cables = ["Eletrica_ServiceEntranceWizard", "Eletrica_SubstationWizard", "Eletrica_MTInstrumentationWizard", "Eletrica_BusbarSizing"]
+        toolbar_eng_analysis = ["Eletrica_CheckSelectivity", "Eletrica_PowerFactorCorrection", "Eletrica_SetupEmergencyPower", "Eletrica_LightingAnalysis", "Eletrica_ArcFlashAnalysis", "Eletrica_ConsolidateProject"]
         
         # 5. MANAGEMENT: Gestão de Painéis e Circuitos
         toolbar_mgmt = [
@@ -174,14 +153,9 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         ]
 
         # 7. OUTPUTS: Documentação e Custos
-        toolbar_doc = [
-            "Eletrica_PriceEditor",
-            "Eletrica_GenerateLoadSchedule", 
-            "Eletrica_GenerateCableSchedule", 
-            "Eletrica_ExportBOM",
-            "Eletrica_GenerateBudget", 
-            "Eletrica_GenerateUnifilar"
-        ]
+        toolbar_doc_reports = ["Eletrica_PriceEditor", "Eletrica_GenerateLoadSchedule", "Eletrica_GenerateCableSchedule"]
+        toolbar_doc_export  = ["Eletrica_ExportBOM", "Eletrica_GenerateBudget", "Eletrica_GenerateUnifilar"]
+        toolbar_doc_drawing = ["Eletrica_CreateRDUDrawing", "Eletrica_GenerateRDUMemorial"]
 
         toolbar_safety = [
             "Eletrica_InsertEmergencyLight",
@@ -206,25 +180,10 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         ]
         
         # 8. RDU: Redes de Distribuição Urbana e Rural
-        toolbar_rdu = [
-            "Eletrica_InsertPole",
-            "Eletrica_AutoPolePlacement",
-            "Eletrica_GISConverter",
-            "Eletrica_InsertStructure",
-            "Eletrica_InsertPoleTransformer",
-            "Eletrica_InsertDistributionEquipment",
-            "Eletrica_InsertGuyWire",
-            "Eletrica_InsertPublicLighting",
-            "Eletrica_InsertPoleGrounding",
-            "Eletrica_InsertFenceGrounding",
-            "Eletrica_InsertGuyGrounding",
-            "Eletrica_InsertNetworkSignaling",
-            "Eletrica_InsertAerialCable",
-            "Eletrica_AerialLineWizard",
-            "Eletrica_ExportKML",
-            "Eletrica_CreateRDUDrawing",
-            "Eletrica_GenerateRDUMemorial"
-        ]
+        toolbar_rdu_poles = ["Eletrica_InsertPole", "Eletrica_AutoPolePlacement", "Eletrica_GISConverter", "Eletrica_InsertStructure"]
+        toolbar_rdu_equip = ["Eletrica_InsertPoleTransformer", "Eletrica_InsertDistributionEquipment", "Eletrica_InsertGuyWire", "Eletrica_InsertPublicLighting"]
+        toolbar_rdu_lines = ["Eletrica_InsertAerialCable", "Eletrica_AerialLineWizard", "Eletrica_ExportKML"]
+        toolbar_rdu_ground = ["Eletrica_InsertPoleGrounding", "Eletrica_InsertFenceGrounding", "Eletrica_InsertGuyGrounding", "Eletrica_InsertNetworkSignaling"]
 
         # 9. Energia Solar Fotovoltaica (PV)
         toolbar_solar = [
@@ -292,31 +251,32 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_bim   = ["Eletrica_Tool_" + c for c in bim_cmds]
         
         # Montagem das Toolbars no FreeCAD
-        self.appendToolbar(tr("Configuração da Obra"), toolbar_setup)
-        self.appendToolbar(tr("Modelagem Elétrica"), toolbar_modeling)
-        self.appendToolbar(tr("Redes de Distribuição (RDU)"), toolbar_rdu)
-        self.appendToolbar(tr("Energia Solar (PV)"), toolbar_solar)
-        self.appendToolbar(tr("Subestação e MT"), toolbar_substation)
-        self.appendToolbar(tr("Sistemas Especiais (Incêndio/CFTV)"), toolbar_special_systems)
-        self.appendToolbar(tr("Telecom e Dados"), toolbar_telecom)
+        self.appendToolbar(tr("Setup"), toolbar_setup)
+        self.appendToolbar(tr("Iluminação"), toolbar_mod_lighting)
+        self.appendToolbar(tr("Tomadas"), toolbar_mod_loads)
+        self.appendToolbar(tr("Industrial/Motores"), toolbar_mod_motors)
         self.appendToolbar(tr("Infraestrutura"), toolbar_infra)
-        self.appendToolbar(tr("Engenharia e Cálculos"), toolbar_eng)
-        self.appendToolbar(tr("Gestão de Quadros"), toolbar_mgmt)
+        self.appendToolbar(tr("Engenharia - Dimensionamento"), toolbar_eng_cables)
+        self.appendToolbar(tr("Engenharia - Simulação"), toolbar_eng_analysis)
+        self.appendToolbar(tr("Paineis e Gestão"), toolbar_mgmt)
         self.appendToolbar(tr("Auditoria e BIM"), toolbar_audit)
-        self.appendToolbar(tr("Segurança e Incêndio"), toolbar_safety)
-        self.appendToolbar(tr("Automação e Controle"), toolbar_automation)
-        self.appendToolbar(tr("Aterramento e SPDA"), toolbar_earthing)
-        self.appendToolbar(tr("Documentação e Custos"), toolbar_doc)
-        self.appendToolbar(tr("Energia Crítica"), toolbar_critical)
-        self.appendToolbar(tr("Busway e Proteção"), toolbar_industrial_adv)
-        self.appendToolbar(tr("Mobilidade Elétrica"), ["Eletrica_InsertEVCharger"])
-        self.appendToolbar(tr("Ciclo de Vida BIM (4D-9D)"), toolbar_lifecycle)
-        self.appendToolbar(tr("Simulação e Diagramas"), toolbar_simulation)
-        self.appendToolbar(tr("Business Intelligence"), toolbar_bi)
-        self.appendToolbar(tr("IA e Inovação"), toolbar_innovation)
-        self.appendToolbar(tr("Desenho (Draft)"), toolbar_draft)
-        self.appendToolbar(tr("Precisão (Snaps)"), toolbar_snaps)
-        self.appendToolbar(tr("Referência BIM"), toolbar_bim)
+        self.appendToolbar(tr("Segurança/Incêndio"), toolbar_safety)
+        self.appendToolbar(tr("Automação"), toolbar_automation)
+        self.appendToolbar(tr("Aterramento/SPDA"), toolbar_earthing)
+        self.appendToolbar(tr("Relatórios"), toolbar_doc_reports)
+        self.appendToolbar(tr("Exportação/Orçamento"), toolbar_doc_export)
+        self.appendToolbar(tr("RDU - Postes"), toolbar_rdu_poles)
+        self.appendToolbar(tr("RDU - Equipamentos"), toolbar_rdu_equip)
+        self.appendToolbar(tr("RDU - Redes/GIS"), toolbar_rdu_lines)
+        self.appendToolbar(tr("RDU - Proteção"), toolbar_rdu_ground)
+        self.appendToolbar(tr("RDU - Doc"), toolbar_doc_drawing)
+        self.appendToolbar(tr("Solar (PV)"), toolbar_solar)
+        self.appendToolbar(tr("Subestação"), toolbar_substation)
+        self.appendToolbar(tr("Ciclo de Vida BIM"), toolbar_lifecycle)
+        self.appendToolbar(tr("Simulação Avançada"), toolbar_simulation)
+        self.appendToolbar(tr("BI e Inovação"), toolbar_bi + toolbar_innovation)
+        self.appendToolbar(tr("Draft"), toolbar_draft)
+        self.appendToolbar(tr("Snaps"), toolbar_snaps)
         
         # Menu Suspenso Consolidado
         self.appendMenu("Eletrica", toolbar_setup + toolbar_modeling + toolbar_rdu + toolbar_telecom + toolbar_infra + toolbar_eng + toolbar_mgmt + toolbar_doc)

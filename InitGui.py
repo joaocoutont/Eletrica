@@ -263,13 +263,32 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_RunSelectivityAudit"
         ]
 
-        # 14. Ciclo de Vida BIM (4D até 8D)
+        # 14. Ciclo de Vida BIM (4D até 9D)
         toolbar_lifecycle = [
             "Eletrica_GenerateBIM4D",            # 4D: Tempo
             "Eletrica_GenerateBIM5D",            # 5D: Custo
             "Eletrica_GenerateSustainabilityReport", # 6D: Sustentabilidade
             "Eletrica_GenerateMaintenancePlan",   # 7D: Facilidades
-            "Eletrica_GenerateBIM8D"              # 8D: Segurança
+            "Eletrica_GenerateBIM8D",             # 8D: Segurança
+            "Eletrica_GenerateCommissioningChecklist" # 9D: Comissionamento
+        ]
+
+        # 15. Engenharia de Simulação e Desenho
+        toolbar_simulation = [
+            "Eletrica_RunLoadFlowSimulation",
+            "Eletrica_GenerateSingleLineDiagram"
+        ]
+        
+        # 16. Business Intelligence e Finanças
+        toolbar_bi = [
+            "Eletrica_RunFinancialAnalysis",
+            "Eletrica_GenerateBIM5D"
+        ]
+
+        # 17. IA, Inovação e VR
+        toolbar_innovation = [
+            "Eletrica_RunGenerativeRouting",
+            "Eletrica_ExportVRModel"
         ]
         
         # Auxiliares
@@ -296,7 +315,10 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         self.appendToolbar(tr("Energia Crítica"), toolbar_critical)
         self.appendToolbar(tr("Busway e Proteção"), toolbar_industrial_adv)
         self.appendToolbar(tr("Mobilidade Elétrica"), ["Eletrica_InsertEVCharger"])
-        self.appendToolbar(tr("Ciclo de Vida BIM (4D-8D)"), toolbar_lifecycle)
+        self.appendToolbar(tr("Ciclo de Vida BIM (4D-9D)"), toolbar_lifecycle)
+        self.appendToolbar(tr("Simulação e Diagramas"), toolbar_simulation)
+        self.appendToolbar(tr("Business Intelligence"), toolbar_bi)
+        self.appendToolbar(tr("IA e Inovação"), toolbar_innovation)
         self.appendToolbar(tr("Desenho (Draft)"), toolbar_draft)
         self.appendToolbar(tr("Precisão (Snaps)"), toolbar_snaps)
         self.appendToolbar(tr("Referência BIM"), toolbar_bim)

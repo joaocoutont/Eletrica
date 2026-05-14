@@ -5,6 +5,20 @@ class SolarCalculator:
     """Cálculos de dimensionamento de sistemas fotovoltaicos."""
 
     @staticmethod
+    def get_hsp_by_location(location_name):
+        """Retorna a irradiação (HSP) média anual para capitais brasileiras."""
+        db = {
+            "ARACAJU": 5.2, "BELEM": 4.8, "BELO HORIZONTE": 5.1, "BOA VISTA": 5.3,
+            "BRASILIA": 5.4, "CAMPO GRANDE": 5.2, "CUIABA": 5.1, "CURITIBA": 4.2,
+            "FLORIANOPOLIS": 4.1, "FORTALEZA": 5.6, "GOIANIA": 5.3, "JOAO PESSOA": 5.4,
+            "MACEIO": 5.3, "MANAUS": 4.6, "NATAL": 5.6, "PALMAS": 5.4,
+            "PORTO ALEGRE": 4.3, "PORTO VELHO": 4.7, "RECIFE": 5.2, "RIO BRANCO": 4.5,
+            "RIO DE JANEIRO": 4.9, "SALVADOR": 5.1, "SAO LUIS": 5.2, "SAO PAULO": 4.4,
+            "TERESINA": 5.5, "VITORIA": 4.8
+        }
+        return db.get(location_name.upper(), 5.0)
+
+    @staticmethod
     def estimate_generation(installed_kwp, irradiation_kwh_m2_day=5.0, performance_ratio=0.75):
         """
         Estima a geração mensal de energia (kWh/mês).

@@ -2815,7 +2815,7 @@ class GISConverter:
     """Converte pontos ou vértices importados de GIS/QGIS em Postes Inteligentes"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Library.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Library.svg'),
             'MenuText': tr('Converter GIS para Postes'),
             'ToolTip': tr('Transforma pontos selecionados do QGIS em postes BIM do workbench')
         }
@@ -3036,7 +3036,7 @@ class GenerateSustainabilityReport:
     """Gera relatório de impacto ambiental e sustentabilidade do projeto"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
             'MenuText': tr('Relatório de Sustentabilidade'),
             'ToolTip': tr('Calcula impacto ambiental, economia de CO2 e árvores equivalentes')
         }
@@ -3161,7 +3161,7 @@ class GenerateMaintenancePlan:
     """Gera o Plano de Manutenção Preventiva (BIM 6D)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
             'MenuText': tr('Plano de Manutenção BIM 6D'),
             'ToolTip': tr('Gera cronograma automático de manutenção baseada nos equipamentos do projeto')
         }
@@ -3191,7 +3191,7 @@ class GenerateMaintenancePlan:
 class GenerateBIM4D:
     """Gera Cronograma de Execução (BIM 4D)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'), 'MenuText': tr('Cronograma de Obra (4D)'), 'ToolTip': tr('Gera estimativa de tempo para execução das etapas da obra') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'), 'MenuText': tr('Cronograma de Obra (4D)'), 'ToolTip': tr('Gera estimativa de tempo para execução das etapas da obra') }
     def Activated(self):
         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Cronograma 4D", "", "Markdown (*.md)")
         if not save_path: return
@@ -3210,7 +3210,7 @@ class GenerateBIM4D:
 class GenerateBIM5D:
     """Gera Orçamento Completo (BIM 5D)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'), 'MenuText': tr('Orçamento da Obra (5D)'), 'ToolTip': tr('Gera orçamento detalhado de materiais e mão de obra') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'), 'MenuText': tr('Orçamento da Obra (5D)'), 'ToolTip': tr('Gera orçamento detalhado de materiais e mão de obra') }
     def Activated(self):
         save_path, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Salvar Orçamento 5D", "", "Markdown (*.md)")
         if not save_path: return
@@ -3243,6 +3243,22 @@ class GenerateBIM8D:
             f.write("- Tapetes de borracha isolante para quadros\n")
         QtWidgets.QMessageBox.information(None, "BIM 8D", "Plano de Segurança 8D gerado com sucesso!")
 
+class InsertUPS:
+    """Insere sistemas de nobreak (UPS)"""
+    def GetResources(self):
+        return {
+            'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'),
+            'MenuText': tr('Nobreak (UPS)'),
+            'ToolTip': tr('Insere sistemas de nobreak industriais')
+        }
+    def Activated(self):
+        from EletricaLogic.Library import LibraryManager
+        lib = LibraryManager()
+        obj = lib.insert_component("UPS_Nobreak.FCStd")
+        if obj:
+            obj.addProperty("App::PropertyString", "TipoBIM", "Crítico").TipoBIM = "UPS"
+            FreeCADGui.runCommand("Draft_Move")
+
 class RunLoadFlowSimulation:
     """Executa simulação de fluxo de carga e estabilidade da rede"""
     def GetResources(self):
@@ -3260,7 +3276,7 @@ class GenerateSingleLineDiagram:
     """Gera diagrama unifilar automático via TechDraw"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Drawing.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Auditor.svg'),
             'MenuText': tr('Gerar Diagrama Unifilar'),
             'ToolTip': tr('Cria representação esquemática automática dos quadros e circuitos')
         }
@@ -3271,7 +3287,7 @@ class GenerateCommissioningChecklist:
     """Gera Checklist de Comissionamento (BIM 9D)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
             'MenuText': tr('Checklist de Comissionamento (9D)'),
             'ToolTip': tr('Gera lista de verificações técnicas para entrega da obra')
         }
@@ -3298,7 +3314,7 @@ class RunFinancialAnalysis:
     """Calcula viabilidade financeira (Payback, TIR, VPL)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
             'MenuText': tr('Viabilidade Financeira (ROI)'),
             'ToolTip': tr('Calcula Payback, TIR e VPL do projeto (Especialmente para Solar)')
         }
@@ -3323,7 +3339,7 @@ class RunGenerativeRouting:
     """IA de Roteamento Generativo"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Wiring.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Auditor.svg'),
             'MenuText': tr('IA de Roteamento Generativo'),
             'ToolTip': tr('Otimiza automaticamente o caminho dos cabos para reduzir custos e queda de tensão')
         }
@@ -3791,6 +3807,7 @@ cmds = {
     'Eletrica_SolarWizard': SolarWizard(),
     'Eletrica_InsertMTCubicle': InsertMTCubicle(),
     'Eletrica_InsertGeneratorDevice': InsertGeneratorDevice(),
+    'Eletrica_InsertUPS': InsertUPS(),
     'Eletrica_InsertBuswayDevice': InsertBuswayDevice(),
     'Eletrica_InsertEVCharger': InsertEVCharger(),
     'Eletrica_RunSelectivityAudit': RunSelectivityAudit(),

@@ -394,7 +394,7 @@ class OptimizePhases:
     """Otimiza a distribuição de cargas entre as fases R, S e T"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Dashboard.png'), # Usaremos o ícone do Dashboard temporariamente
+            'Pixmap': os.path.join(ICON_DIR, 'Dashboard.svg'), # Usaremos o ícone do Dashboard temporariamente
             'MenuText': tr('Otimizar Fases'),
             'ToolTip': tr('Balanceia automaticamente as cargas entre R, S e T')
         }
@@ -455,13 +455,13 @@ class InsertSocket:
 
 class InsertLight:
     def GetResources(self):
-        return {'Pixmap': os.path.join(ICON_DIR, 'Light.png'), 'MenuText': tr('Inserir Iluminação'), 'ToolTip': tr('Ponto de luz')}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Light.svg'), 'MenuText': tr('Inserir Iluminação'), 'ToolTip': tr('Ponto de luz')}
     def Activated(self):
         FreeCAD.Console.PrintMessage("Inserindo luz...\n")
 
 class InsertSwitch:
     def GetResources(self):
-        return {'Pixmap': os.path.join(ICON_DIR, 'Switch.png'), 'MenuText': tr('Inserir Interruptor'), 'ToolTip': tr('Simples/Paralelo')}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Switch.svg'), 'MenuText': tr('Inserir Interruptor'), 'ToolTip': tr('Simples/Paralelo')}
     def Activated(self):
         from EletricaLogic.Lighting import LightingManager
         cmd, ok = QtWidgets.QInputDialog.getText(None, tr("Comando"), tr("Letra (a, b...):"), text="a")
@@ -469,14 +469,14 @@ class InsertSwitch:
 
 class MergeSwitches:
     def GetResources(self):
-        return {'Pixmap': os.path.join(ICON_DIR, 'Merge.png'), 'MenuText': tr('Mesclar Placas'), 'ToolTip': tr('2 ou 3 teclas')}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Merge.svg'), 'MenuText': tr('Mesclar Placas'), 'ToolTip': tr('2 ou 3 teclas')}
     def Activated(self):
         from EletricaLogic.Lighting import LightingManager
         LightingManager.merge_switches(FreeCADGui.Selection.getSelection())
 
 class InsertSmartDevice:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'SmartHome.png'), 'MenuText': tr('Inserir Smart/IoT'), 'ToolTip': tr('Automação') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SmartHome.svg'), 'MenuText': tr('Inserir Smart/IoT'), 'ToolTip': tr('Automação') }
     def Activated(self):
         SmartHomeManager.insert_smart_device("Hub Zigbee")
 
@@ -794,7 +794,7 @@ class LinkPumpSet:
     """Aplica propriedades de Motobomba a um objeto 3D já existente (importado)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Budget.svg'),
             'MenuText': tr('Vincular Dados de Motobomba'),
             'ToolTip': tr('Transforma objeto selecionado em uma Motobomba inteligente')
         }
@@ -991,7 +991,7 @@ class ToggleVoltageDropHeatmap:
 
 class CreateConduit:
     def GetResources(self):
-        return {'Pixmap': os.path.join(ICON_DIR, 'Conduit.png'), 'MenuText': tr('Criar Eletroduto'), 'ToolTip': tr('Tubo 3D')}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Conduit.svg'), 'MenuText': tr('Criar Eletroduto'), 'ToolTip': tr('Tubo 3D')}
     def Activated(self):
         from EletricaLogic.Conduit import ConduitManager
         for obj in FreeCADGui.Selection.getSelection():
@@ -999,7 +999,7 @@ class CreateConduit:
 
 class CreateCableTray:
     def GetResources(self):
-        return {'Pixmap': os.path.join(ICON_DIR, 'Tray.png'), 'MenuText': 'Lançar Eletrocalha', 'ToolTip': 'Infra industrial'}
+        return {'Pixmap': os.path.join(ICON_DIR, 'Tray.svg'), 'MenuText': 'Lançar Eletrocalha', 'ToolTip': 'Infra industrial'}
     def Activated(self):
         from EletricaLogic.Conduit import ConduitManager
         FreeCADGui.runCommand("Draft_Wire")
@@ -1008,7 +1008,7 @@ class CreateCableTray:
 
 class CreateIndustrialConnection:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Industrial.png'), 'MenuText': tr('Infra Industrial'), 'ToolTip': tr('Conexões Pesadas') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Industrial.svg'), 'MenuText': tr('Infra Industrial'), 'ToolTip': tr('Conexões Pesadas') }
     def Activated(self):
         from EletricaLogic.Fittings import FittingManager
         for obj in FreeCADGui.Selection.getSelection():
@@ -1016,7 +1016,7 @@ class CreateIndustrialConnection:
 
 class Generate3DWiring:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Wiring3D.png'), 'MenuText': tr('Fiação 3D'), 'ToolTip': tr('Gera condutores nos eletrodutos') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Wiring3D.svg'), 'MenuText': tr('Fiação 3D'), 'ToolTip': tr('Gera condutores nos eletrodutos') }
     def Activated(self):
         from EletricaLogic.Wiring import WiringManager
         for obj in FreeCADGui.Selection.getSelection():
@@ -1026,7 +1026,7 @@ class Generate3DWiring:
 
 class ServiceEntranceWizard:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ServiceEntrance.png'), 'MenuText': tr('Assistente de Entrada'), 'ToolTip': tr('Cálculo de Demanda e Padrão') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ServiceEntrance.svg'), 'MenuText': tr('Assistente de Entrada'), 'ToolTip': tr('Cálculo de Demanda e Padrão') }
     def Activated(self):
         QtWidgets.QMessageBox.information(None, tr("Padrão"), tr("Assistente de Padrão de Entrada iniciado."))
 
@@ -1045,7 +1045,7 @@ class InsertBoreholePump:
 class SetupEmergencyPower:
     """Assistente de Dimensionamento de Grupo Motor Gerador (GMG)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Generator.png'), 'MenuText': tr('Dimensionar Gerador'), 'ToolTip': tr('Dimensiona GMG baseado em cargas essenciais') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Generator.svg'), 'MenuText': tr('Dimensionar Gerador'), 'ToolTip': tr('Dimensiona GMG baseado em cargas essenciais') }
 
     def Activated(self):
         doc = FreeCAD.ActiveDocument
@@ -1136,14 +1136,14 @@ class GenerateCableSchedule:
 
 class GenerateBudget:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'BudgetPro.png'), 'MenuText': tr('Gerar Orçamento (BOM)'), 'ToolTip': tr('Custos') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Budget.svg'), 'MenuText': tr('Gerar Orçamento (BOM)'), 'ToolTip': tr('Custos') }
     def Activated(self):
         from EletricaLogic.Budget import BudgetManager
         BudgetManager.generate_budget_report({})
 
 class GenerateUnifilar:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'UnifilarPro.png'), 'MenuText': tr('Diagrama Unifilar'), 'ToolTip': tr('Esquema') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Unifilar.svg'), 'MenuText': tr('Diagrama Unifilar'), 'ToolTip': tr('Esquema') }
     def Activated(self):
         from EletricaLogic.Diagrams import UnifilarGenerator
         import FreeCADGui
@@ -1160,14 +1160,14 @@ class GenerateUnifilar:
 
 class SyncTitleBlock:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'TitleBlock.png'), 'MenuText': tr('Sincronizar Selo'), 'ToolTip': tr('TechDraw') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Seal.svg'), 'MenuText': tr('Sincronizar Selo'), 'ToolTip': tr('TechDraw') }
     def Activated(self):
         from EletricaLogic.Diagrams import UnifilarGenerator
         UnifilarGenerator.sync_title_block(None)
 
 class RunProjectAudit:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Audit.png'), 'MenuText': tr('Auditoria Geral'), 'ToolTip': tr('Erros') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Auditor.svg'), 'MenuText': tr('Auditoria Geral'), 'ToolTip': tr('Erros') }
     def Activated(self):
         from EletricaLogic.Auditor import ProjectAuditor
         ProjectAuditor.run_full_audit()
@@ -1345,7 +1345,7 @@ class CheckSelectivity:
 class BusbarSizing:
     """Dimensiona barramentos de cobre ou alumínio para painéis CCM/QDC"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Busbar.png'), 'MenuText': 'Dimensionar Barramento', 'ToolTip': 'Cu / Al' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Busbar.svg'), 'MenuText': 'Dimensionar Barramento', 'ToolTip': 'Cu / Al' }
 
     def Activated(self):
         from EletricaLogic.Starters import BusbarCalculator
@@ -1392,7 +1392,7 @@ class BusbarSizing:
 class CCMCommandDiagram:
     """Gera diagrama de comando CCM em planilha FreeCAD (texto estruturado)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'CCMDiagram.png'), 'MenuText': 'Gerar Diagrama de Comando CCM', 'ToolTip': 'Gera diagrama de comando para motores cadastrados no projeto' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'CCMDiagram.svg'), 'MenuText': 'Gerar Diagrama de Comando CCM', 'ToolTip': 'Gera diagrama de comando para motores cadastrados no projeto' }
 
     def Activated(self):
         doc = FreeCAD.ActiveDocument
@@ -1518,7 +1518,7 @@ class InsertExitSign:
 class CableTrayAssistant:
     """Assistente de Eletrocalha Industrial com dimensionamento por cabo"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'TrayAssistant.png'), 'MenuText': 'Assistente de Leitos', 'ToolTip': 'Taxa de Ocupação em Bandejas' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'TrayAssistant.svg'), 'MenuText': 'Assistente de Leitos', 'ToolTip': 'Taxa de Ocupação em Bandejas' }
 
     def Activated(self):
         from EletricaLogic.Conduit import CableTrayCalculator
@@ -1605,14 +1605,14 @@ class CableTrayAssistant:
 
 class RunSafetyAudit:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.png'), 'MenuText': 'Segurança (NR-10)', 'ToolTip': 'Arco Elétrico' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.svg'), 'MenuText': 'Segurança (NR-10)', 'ToolTip': 'Arco Elétrico' }
     def Activated(self):
         from EletricaLogic.Safety import SafetyManager
         SafetyManager.apply_safety_to_panel(None)
 
 class GenerateProjectQR:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'QR_AR.png'), 'MenuText': 'Gerar QR Code AR', 'ToolTip': 'Realidade Aumentada' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'QR_AR.svg'), 'MenuText': 'Gerar QR Code AR', 'ToolTip': 'Realidade Aumentada' }
     def Activated(self):
         from EletricaLogic.AR import ARManager
         ARManager.generate_project_qr_code(None)
@@ -1896,14 +1896,14 @@ class ArcFlashAnalysis:
 
 class BIMifyEquipment:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'BIMify.png'), 'MenuText': 'BIMificar Objeto', 'ToolTip': 'Converte objeto em equipamento elétrico' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIMify.svg'), 'MenuText': 'BIMificar Objeto', 'ToolTip': 'Converte objeto em equipamento elétrico' }
     def Activated(self):
         from EletricaLogic.Equipment import EquipmentManager
         EquipmentManager.bimify_equipment(None, "Motor")
 
 class ExportDisciplineBIM:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'IFCExport.png'), 'MenuText': 'Exportar BIM', 'ToolTip': 'Gera IFC da disciplina' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'IFCExport.svg'), 'MenuText': 'Exportar BIM', 'ToolTip': 'Gera IFC da disciplina' }
     def Activated(self):
         from EletricaLogic.Exporter import DisciplineExporter
         DisciplineExporter.run_multi_export("Export")
@@ -1919,7 +1919,7 @@ class IntelligentAutoRoute:
     """Roteamento inteligente de infraestrutura com desvio de obstáculos (A*)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'GIS.svg'),
             'MenuText': tr('Roteamento Inteligente (A*)'),
             'ToolTip': tr('Conecta objetos selecionados desviando de paredes e colunas')
         }
@@ -1965,7 +1965,7 @@ class IntelligentAutoRoute:
 class AerialLineWizard:
     """Assistente de Dimensionamento de Linha Aérea de MT"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.png'), 'MenuText': 'Rede Aérea de Distribuição', 'ToolTip': 'Dimensiona linha aérea MT: condutor, postes, queda de tensão' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.svg'), 'MenuText': 'Rede Aérea de Distribuição', 'ToolTip': 'Dimensiona linha aérea MT: condutor, postes, queda de tensão' }
 
     def Activated(self):
         from EletricaLogic.AerialNetwork import AerialNetworkCalculator
@@ -2048,7 +2048,7 @@ class AutoPolePlacement:
     """Distribui postes automaticamente ao longo de um caminho (Draft Wire)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.svg'),
             'MenuText': tr('Locação Automática de Postes'),
             'ToolTip': tr('Distribui postes ao longo de uma linha respeitando o vão máximo')
         }
@@ -2205,7 +2205,7 @@ class InsertGroundingBox:
 class GenerateGroundingReport:
     """Gera relatório de conformidade NBR 15751 e exporta para Downloads"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingReport.png'), 'MenuText': tr('Relatório NBR 15751'), 'ToolTip': tr('Gera memória de cálculo de aterramento') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingReport.svg'), 'MenuText': tr('Relatório NBR 15751'), 'ToolTip': tr('Gera memória de cálculo de aterramento') }
 
     def Activated(self):
         from EletricaLogic.Protection import GroundingManager
@@ -2508,7 +2508,7 @@ class InsertStructure:
     """Insere estruturas de rede (N1, N2, CE1, etc.) em um poste selecionado"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.png'), # TODO: Icone específico
+            'Pixmap': os.path.join(ICON_DIR, 'Structure.svg'),
             'MenuText': tr('Inserir Estrutura'),
             'ToolTip': tr('Adiciona cruzetas e isoladores ao poste (N1, N2, CE1, etc)')
         }
@@ -2680,7 +2680,7 @@ class InsertGuyWire:
     """Insere estaiamento (cabo de aço, isolador e âncora) para equilíbrio de forças"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'GuyWire.svg'),
             'MenuText': tr('Inserir Estaiamento'),
             'ToolTip': tr('Adiciona estai de contra-poste ou estai de âncora')
         }
@@ -2735,7 +2735,7 @@ class InsertPoleGrounding:
     """Adiciona descida de terra e hastes na base do poste"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.svg'),
             'MenuText': tr('Aterramento de Poste'),
             'ToolTip': tr('Adiciona descida de cobre e malha de terra no pé do poste')
         }
@@ -2750,7 +2750,7 @@ class InsertFenceGrounding:
     """Insere aterramento de cercas rurais (NBR 15688 / Padrão Concessionária)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Grounding.svg'),
             'MenuText': tr('Aterramento de Cerca'),
             'ToolTip': tr('Aterra cercas que cruzam ou correm paralelas à rede MT')
         }
@@ -2765,7 +2765,7 @@ class InsertGuyGrounding:
     """Insere aterramento específico para cabos de estai"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Grounding.svg'),
             'MenuText': tr('Aterramento de Estai'),
             'ToolTip': tr('Aterra o cabo de aço do estai para segurança contra contatos acidentais')
         }
@@ -3096,7 +3096,7 @@ class InsertBuswayDevice:
     """Insere Barramentos Blindados e Caixas de Derivação (Busway)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Busway.svg'),
             'MenuText': tr('Barramento Blindado (Busway)'),
             'ToolTip': tr('Desenha barramentos blindados e insere caixas de derivação plug-in')
         }
@@ -3526,7 +3526,7 @@ class GenerateMaintenanceQR:
 class SubstationWizard:
     """Assistente de Subestação e Demanda Contratada"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Substation.png'), 'MenuText': tr('Assistente de Subestação'), 'ToolTip': tr('Dimensiona entrada e contrato de demanda') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'), 'MenuText': tr('Assistente de Subestação'), 'ToolTip': tr('Dimensiona entrada e contrato de demanda') }
 
     def Activated(self):
         from EletricaLogic.Circuits import CircuitManager
@@ -3595,7 +3595,7 @@ class SubstationWizard:
 class ConsolidateMultiDocument:
     """Agrega dados de todos os documentos elétricos abertos"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Consolidate.png'), 'MenuText': 'Consolidar Projeto (Multi-Arquivo)', 'ToolTip': 'Soma cargas e materiais de todos os documentos abertos' }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Consolidate.svg'), 'MenuText': 'Consolidar Projeto (Multi-Arquivo)', 'ToolTip': 'Soma cargas e materiais de todos os documentos abertos' }
 
     def Activated(self):
         from EletricaLogic.ProjectManager import MultiDocumentManager
@@ -3644,7 +3644,7 @@ class ConsolidateProject(ConsolidateMultiDocument):
 class ExportBOM:
     """Exporta Lista de Materiais (BOM) para Excel/CSV"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'BOM.png'), 'MenuText': tr('Exportar Lista de Materiais'), 'ToolTip': tr('Gera lista quantitativa de todos os componentes') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'), 'MenuText': tr('Exportar Lista de Materiais'), 'ToolTip': tr('Gera lista quantitativa de todos os componentes') }
     def Activated(self):
         from EletricaLogic.BOM import BOMManager
         BOMManager.export_bom_to_csv()
@@ -3652,7 +3652,7 @@ class ExportBOM:
 class GenerateGraphicLegend:
     """Gera legenda visual com símbolos e descrições no TechDraw"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Legend.png'), 'MenuText': tr('Gerar Legenda Gráfica'), 'ToolTip': tr('Cria folha TechDraw com símbolos usados') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Legend.svg'), 'MenuText': tr('Gerar Legenda Gráfica'), 'ToolTip': tr('Cria folha TechDraw com símbolos usados') }
     def Activated(self):
         from EletricaLogic.Legend import LegendManager
         LegendManager.generate_graphic_legend()
@@ -3660,7 +3660,7 @@ class GenerateGraphicLegend:
 class MTInstrumentationWizard:
     """Dimensionamento de Instrumentação MT (TC/TP)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Substation.png'), 'MenuText': tr('Dimensionar TC/TP'), 'ToolTip': tr('Dimensiona transformadores de instrumento para MT') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Substation.svg'), 'MenuText': tr('Dimensionar TC/TP'), 'ToolTip': tr('Dimensiona transformadores de instrumento para MT') }
     
     def Activated(self):
         from EletricaLogic.Substation import InstrumentationManager

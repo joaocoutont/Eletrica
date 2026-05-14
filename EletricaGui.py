@@ -69,6 +69,7 @@ cmds = {
     'Eletrica_RunSurgeSimulation': Engineering.RunSurgeSimulation(),
     'Eletrica_RunGenerativeRouting': Engineering.RunGenerativeRouting(),
     'Eletrica_LightingAnalysis': Engineering.LightingAnalysis(),
+    'Eletrica_MotorWiringWizard': Engineering.MotorWiringWizard(),
 
     # --- POTENCIA E INDUSTRIA (Industrial.py) ---
     'Eletrica_InsertMTCubicle': Industrial.InsertMTCubicle(),
@@ -76,6 +77,7 @@ cmds = {
     'Eletrica_InsertUPS': Industrial.InsertUPS(),
     'Eletrica_InsertQTA': Industrial.InsertQTA(),
     'Eletrica_CreatePanel': Industrial.CreatePanel(),
+    'Eletrica_CreatePanel_Alias': Industrial.CreatePanel(), # Alias
     'Eletrica_InsertCCM': Industrial.InsertCCM(),
     'Eletrica_InsertMotor': Industrial.InsertMotor(),
     'Eletrica_SetupMotorWizard': Industrial.SetupMotorWizard(),
@@ -86,7 +88,20 @@ cmds = {
     'Eletrica_InsertSoundDevice': Industrial.InsertSoundDevice(),
     'Eletrica_InsertSolarPanel': Industrial.InsertSolarPanel(),
     'Eletrica_InsertSolarInverter': Industrial.InsertSolarInverter(),
+    'Eletrica_SolarWizard': Industrial.SolarWizard(),
     'Eletrica_SolarAnalysis': Industrial.SolarAnalysis(),
+    'Eletrica_InsertPLC': Industrial.InsertPLC(),
+    'Eletrica_InsertHMI': Industrial.InsertHMI(),
+    'Eletrica_CCMCommandDiagram': Industrial.CCMCommandDiagram(),
+    'Eletrica_InsertEmergencyLight': Industrial.InsertEmergencyLight(),
+    'Eletrica_InsertExitSign': Industrial.InsertExitSign(),
+    'Eletrica_InsertGroundingRod': Industrial.InsertGroundingRod(),
+    'Eletrica_InsertGroundingMesh': Industrial.InsertGroundingMesh(),
+    'Eletrica_InsertBareCable': Industrial.InsertBareCable(),
+    'Eletrica_InsertBEP': Industrial.InsertBEP(),
+    'Eletrica_InsertGroundingBox': Industrial.InsertGroundingBox(),
+    'Eletrica_GenerateGroundingReport': Industrial.GenerateGroundingReport(),
+    'Eletrica_SPDAWizard': Industrial.SPDAWizard(),
 
     # --- AUDITORIA E BIM (Audit.py) ---
     'Eletrica_RunProjectAudit': Audit.RunProjectAudit(),

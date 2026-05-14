@@ -14,7 +14,7 @@ class InsertConduit:
 
 class InsertCableTray:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'CableTray.svg'), 'MenuText': tr('Lançar Eletrocalha'), 'ToolTip': tr('Lança eletrocalha, aramado ou leito de cabos') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Tray.svg'), 'MenuText': tr('Lançar Eletrocalha'), 'ToolTip': tr('Lança eletrocalha, aramado ou leito de cabos') }
     def Activated(self):
         pass
 
@@ -59,7 +59,7 @@ class InsertUndergroundDuct:
 
 class InsertTrench:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'CableTray.svg'), 'MenuText': tr('Lançar Valeta'), 'ToolTip': tr('Desenha valeta técnica para cabos') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Tray.svg'), 'MenuText': tr('Lançar Valeta'), 'ToolTip': tr('Desenha valeta técnica para cabos') }
     def Activated(self):
         pass
 

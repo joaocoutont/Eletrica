@@ -62,7 +62,7 @@ class InsertGuyWire:
 
 class InsertPublicLighting:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'PublicLighting.svg'), 'MenuText': tr('Iluminação Pública'), 'ToolTip': tr('Adiciona braços e luminárias IP ao poste') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Light.svg'), 'MenuText': tr('Iluminação Pública'), 'ToolTip': tr('Adiciona braços e luminárias IP ao poste') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         lib = LibraryManager()

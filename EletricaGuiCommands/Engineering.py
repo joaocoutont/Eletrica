@@ -69,7 +69,7 @@ class RunSelectivityAudit:
 
 class RunSurgeSimulation:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Shielding.svg'), 'MenuText': tr('Simulação de Surto'), 'ToolTip': tr('Verifica propagação de transientes e eficácia dos DPS') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SPDA.svg'), 'MenuText': tr('Simulação de Surto'), 'ToolTip': tr('Verifica propagação de transientes e eficácia dos DPS') }
     def Activated(self):
         pass
 
@@ -81,6 +81,12 @@ class RunGenerativeRouting:
 
 class LightingAnalysis:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Lighting.svg'), 'MenuText': tr('Análise Luminotécnica'), 'ToolTip': tr('Calcula iluminância média e uniformidade (Método dos Lúmens)') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'LightingAnalysis.svg'), 'MenuText': tr('Análise Luminotécnica'), 'ToolTip': tr('Calcula iluminância média e uniformidade (Método dos Lúmens)') }
+    def Activated(self):
+        pass
+
+class MotorWiringWizard:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.svg'), 'MenuText': tr('Assistente de Fiação de Motores'), 'ToolTip': tr('Dimensiona condutores e proteções para motores industriais') }
     def Activated(self):
         pass

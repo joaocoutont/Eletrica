@@ -106,29 +106,33 @@ class EletricaWorkbench (FreeCADGui.Workbench):
 
         # 1. SETUP: Configuração e Dados da Obra
         toolbar_setup = [
-            "Eletrica_StartNewProject", 
-            "Eletrica_ProjectProperties", 
-            "Eletrica_ToggleDashboard", 
-            "Eletrica_SyncTitleBlock"
+            "Eletrica_ProjectMetadata",
+            "Eletrica_SubstationWizard",
+            "Eletrica_ServiceEntranceWizard",
+            "Eletrica_CreatePanel"
         ]
         
         # 2. BIM MODELING: Inserção de Cargas e Equipamentos
         toolbar_mod_lighting = ["Eletrica_InsertLight", "Eletrica_InsertSwitch", "Eletrica_MergeSwitches", "Eletrica_InsertSmartDevice"]
         toolbar_mod_loads    = ["Eletrica_InsertSocket", "Eletrica_InsertSpecialSocket", "Eletrica_InsertAirConditioner"]
-        toolbar_mod_motors   = ["Eletrica_DimensionMotorStarter", "Eletrica_MotorWiringWizard", "Eletrica_InsertPumpSet", "Eletrica_LinkPumpSet", "Eletrica_InsertBoreholePump", "Eletrica_BIMifyEquipment"]
+        toolbar_mod_motors   = ["Eletrica_SetupMotorWizard", "Eletrica_MotorWiringWizard", "Eletrica_InsertPumpSet", "Eletrica_LinkPumpSet", "Eletrica_InsertBoreholePump", "Eletrica_BIMifyEquipment"]
         
         # 3. TELECOM & DATA: Cabeamento Estruturado e VDI
         toolbar_telecom = [
-            "Eletrica_InsertTelecomPoint",
-            "Eletrica_InsertVDIRack"
+            "Eletrica_InsertDataDevice",
+            "Eletrica_InsertAutomationDevice",
+            "Eletrica_InsertFireDevice",
+            "Eletrica_InsertSecurityDevice",
+            "Eletrica_InsertSoundDevice"
         ]
         
         # 4. INFRASTRUCTURE: Infra, Roteamento e Redes
         toolbar_infra = [
-            "Eletrica_CreateConduit", 
-            "Eletrica_CreateCableTray", 
-            "Eletrica_CableTrayAssistant",
-            "Eletrica_AerialLineWizard"
+            "Eletrica_InsertConduit",
+            "Eletrica_InsertCableTray",
+            "Eletrica_IntelligentAutoRoute",
+            "Eletrica_CheckConduitFill",
+            "Eletrica_InsertPullBox"
         ]
         
         # 4. ENGINEERING: Engenharia de Sistemas e Cálculos MT/BT
@@ -137,10 +141,10 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         
         # 5. MANAGEMENT: Gestão de Painéis e Circuitos
         toolbar_mgmt = [
-            "Eletrica_CreatePanel", 
-            "Eletrica_ConsolidateMultiDocument", 
-            "Eletrica_Generate3DWiring",
-            "Eletrica_CloneFloor"
+            "Eletrica_ConsolidateProject",
+            "Eletrica_UpdatePricing",
+            "Eletrica_CloneFloor",
+            "Eletrica_SyncTitleBlock"
         ]
         
         # 6. QUALITY & BIM: Auditoria e Exportação
@@ -154,7 +158,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         ]
 
         # 7. OUTPUTS: Documentação e Custos
-        toolbar_doc_reports = ["Eletrica_PriceEditor", "Eletrica_GenerateLoadSchedule", "Eletrica_GenerateCableSchedule"]
+        toolbar_doc_reports = ["Eletrica_UpdatePricing", "Eletrica_GenerateLoadSchedule", "Eletrica_GenerateCableSchedule"]
         toolbar_doc_export  = ["Eletrica_ExportBOM", "Eletrica_GenerateBudget", "Eletrica_GenerateUnifilar"]
         toolbar_doc_drawing = ["Eletrica_CreateRDUDrawing", "Eletrica_GenerateRDUMemorial"]
 

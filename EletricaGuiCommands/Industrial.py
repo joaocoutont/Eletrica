@@ -74,27 +74,87 @@ class InsertDataDevice:
     def Activated(self):
         pass
 
-class InsertAutomationDevice:
+class InsertPLC:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Automation.svg'), 'MenuText': tr('Sensor/Atuador Industrial'), 'ToolTip': tr('Insere PLC, HMI ou sensores industriais') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'PLC.svg'), 'MenuText': tr('Inserir CLP'), 'ToolTip': tr('Insere Controlador Lógico Programável') }
     def Activated(self):
         pass
 
-class InsertFireDevice:
+class InsertHMI:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Fire.svg'), 'MenuText': tr('Detector de Incêndio'), 'ToolTip': tr('Insere detector de fumaça/térmico ou acionador') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'HMI.svg'), 'MenuText': tr('Inserir IHM'), 'ToolTip': tr('Insere Interface Homem-Máquina') }
     def Activated(self):
         pass
 
-class InsertSecurityDevice:
+class CCMCommandDiagram:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Security.svg'), 'MenuText': tr('Câmera/Segurança'), 'ToolTip': tr('Insere CFTV, sensores de intrusão ou controle de acesso') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'CCMDiagram.svg'), 'MenuText': tr('Diagrama de Comando'), 'ToolTip': tr('Gera diagrama funcional da partida do CCM') }
     def Activated(self):
         pass
 
-class InsertSoundDevice:
+class InsertEmergencyLight:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Sound.svg'), 'MenuText': tr('Sonorização'), 'ToolTip': tr('Insere caixas de som e amplificadores') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'EmergencyLight.svg'), 'MenuText': tr('Luz de Emergência'), 'ToolTip': tr('Insere bloco autônomo de iluminação de emergência') }
+    def Activated(self):
+        pass
+
+class InsertExitSign:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExitSign.svg'), 'MenuText': tr('Sinalização de Saída'), 'ToolTip': tr('Insere placa de saída iluminada (S1/S2)') }
+    def Activated(self):
+        pass
+
+class InsertGroundingRod:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.svg'), 'MenuText': tr('Haste de Terra'), 'ToolTip': tr('Insere haste de aterramento (Alta Camada)') }
+    def Activated(self):
+        pass
+
+class InsertGroundingMesh:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingMesh.svg'), 'MenuText': tr('Malha de Terra'), 'ToolTip': tr('Desenha malha de aterramento equipotencial') }
+    def Activated(self):
+        pass
+
+class InsertBareCable:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BareCable.svg'), 'MenuText': tr('Cabo Nu'), 'ToolTip': tr('Lança condutor de proteção/equipotencialização nu') }
+    def Activated(self):
+        pass
+
+class InsertBEP:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BEP.svg'), 'MenuText': tr('Barramento de Equipotencialização (BEP)'), 'ToolTip': tr('Insere BEP ou BEL') }
+    def Activated(self):
+        pass
+
+class InsertGroundingBox:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingBox.svg'), 'MenuText': tr('Caixa de Inspeção'), 'ToolTip': tr('Insere caixa de inspeção do terra') }
+    def Activated(self):
+        pass
+
+class GenerateGroundingReport:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingReport.svg'), 'MenuText': tr('Relatório de Aterramento'), 'ToolTip': tr('Gera memória de cálculo da resistência de terra') }
+    def Activated(self):
+        pass
+
+class SPDAWizard:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SPDA.svg'), 'MenuText': tr('Assistente de SPDA'), 'ToolTip': tr('Dimensiona proteção contra descargas atmosféricas (Franklin/Gaiola)') }
+    def Activated(self):
+        pass
+
+class SolarWizard:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SolarWizard.svg'), 'MenuText': tr('Assistente Solar'), 'ToolTip': tr('Configura arranjos e strings fotovoltaicas') }
+    def Activated(self):
+        pass
+
+class SolarAnalysis:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Solar.svg'), 'MenuText': tr('Simulação Solar'), 'ToolTip': tr('Calcula geração anual baseada em dados NASA/METEONORM') }
     def Activated(self):
         pass
 
@@ -110,8 +170,32 @@ class InsertSolarInverter:
     def Activated(self):
         pass
 
-class SolarAnalysis:
+class InsertDataDevice:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Solar.svg'), 'MenuText': tr('Simulação Solar'), 'ToolTip': tr('Calcula geração anual baseada em dados NASA/METEONORM') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Telecom.svg'), 'MenuText': tr('Ponto de Dados/Telecom'), 'ToolTip': tr('Insere tomada RJ45, Rack ou Switch') }
+    def Activated(self):
+        pass
+
+class InsertAutomationDevice:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Automation.svg'), 'MenuText': tr('Sensor/Atuador Industrial'), 'ToolTip': tr('Insere PLC, HMI ou sensores industriais') }
+    def Activated(self):
+        pass
+
+class InsertFireDevice:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Fire.svg'), 'MenuText': tr('Detector de Incêndio'), 'ToolTip': tr('Insere detector de fumaça/térmico ou acionador') }
+    def Activated(self):
+        pass
+
+class InsertSecurityDevice:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Safety.svg'), 'MenuText': tr('Câmera/Segurança'), 'ToolTip': tr('Insere CFTV, sensores de intrusão ou controle de acesso') }
+    def Activated(self):
+        pass
+
+class InsertSoundDevice:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Telecom.svg'), 'MenuText': tr('Sonorização'), 'ToolTip': tr('Insere caixas de som e amplificadores') }
     def Activated(self):
         pass

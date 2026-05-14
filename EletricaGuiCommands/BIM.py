@@ -59,7 +59,7 @@ class InsertSmartDevice:
 
 class InsertAirConditioner:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'AirConditioner.svg'), 'MenuText': tr('Ar Condicionado'), 'ToolTip': tr('Insere unidade evaporadora/condensadora') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'AirConditioning.svg'), 'MenuText': tr('Ar Condicionado'), 'ToolTip': tr('Insere unidade evaporadora/condensadora') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         lib = LibraryManager()
@@ -77,13 +77,13 @@ class InsertPumpSet:
 
 class LinkPumpSet:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Link.svg'), 'MenuText': tr('Vincular Bomba'), 'ToolTip': tr('Associa bomba ao seu quadro de comando') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Library.svg'), 'MenuText': tr('Vincular Bomba'), 'ToolTip': tr('Associa bomba ao seu quadro de comando') }
     def Activated(self):
         pass
 
 class InsertBoreholePump:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'BoreholePump.svg'), 'MenuText': tr('Bomba de Poço Artasiano'), 'ToolTip': tr('Insere bomba submersa profunda') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Pump.svg'), 'MenuText': tr('Bomba de Poço Artasiano'), 'ToolTip': tr('Insere bomba submersa profunda') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         lib = LibraryManager()

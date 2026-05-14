@@ -54,6 +54,22 @@ class ProjectAuditor:
                     msg = f"Objeto [{obj.Label}] não vinculado a nenhum Quadro (QDC)."
                     errors.append(f"❌ {msg}")
                     ProjectAuditor._log_event(msg, "ERROR")
+                else:
+                    # Validação de Compatibilidade de Fases (Fase do Objeto vs Sistema do Quadro)
+                    quadro = obj.QuadroVinculado
+                    if hasattr(quadro, "Sistema") and hasattr(obj, "Fase"):
+                        q_sis = quadro.Sistema
+                        o_fase = obj.Fase
+                        if isinstance(o_fase, list): o_fase = o_fase[0]
+                        
+                        # Contagem de Fases
+                        q_count = 3 if "3F" in q_sis else (2 if "2F" in q_sis else 1)
+                        o_count = 3 if len(str(o_fase)) >= 3 or "," in str(o_fase) else (2 if len(str(o_fase)) == 2 else 1)
+                        
+                        if o_count > q_count:
+                            msg = f"Incompatibilidade: Objeto [{obj.Label}] é {o_count}F, mas o Quadro [{quadro.Label}] é apenas {q_count}F."
+                            errors.append(f"❌ {msg}")
+                            ProjectAuditor._log_event(msg, "ERROR")
 
         # 2. Coordenação de Proteção (Ib <= In <= Iz) - NBR 5410
         # Agrupar cargas por circuito para validar

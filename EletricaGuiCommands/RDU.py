@@ -110,7 +110,7 @@ class InsertAerialCable:
 
 class AerialLineWizard:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'AerialLine.svg'), 'MenuText': tr('Assistente de Redes'), 'ToolTip': tr('Wizard para cálculo mecânico e elétrico de redes aéreas') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'AerialNetwork.svg'), 'MenuText': tr('Assistente de Redes'), 'ToolTip': tr('Wizard para cálculo mecânico e elétrico de redes aéreas') }
     def Activated(self):
         pass
 

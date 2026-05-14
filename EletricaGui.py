@@ -74,10 +74,10 @@ cmds = {
     # --- POTENCIA E INDUSTRIA (Industrial.py) ---
     'Eletrica_InsertMTCubicle': Industrial.InsertMTCubicle(),
     'Eletrica_InsertGenerator': Industrial.InsertGenerator(),
+    'Eletrica_InsertGeneratorDevice': Industrial.InsertGenerator(), # Alias
     'Eletrica_InsertUPS': Industrial.InsertUPS(),
     'Eletrica_InsertQTA': Industrial.InsertQTA(),
     'Eletrica_CreatePanel': Industrial.CreatePanel(),
-    'Eletrica_CreatePanel_Alias': Industrial.CreatePanel(), # Alias
     'Eletrica_InsertCCM': Industrial.InsertCCM(),
     'Eletrica_InsertMotor': Industrial.InsertMotor(),
     'Eletrica_SetupMotorWizard': Industrial.SetupMotorWizard(),
@@ -118,12 +118,22 @@ cmds = {
     'Eletrica_CloneFloor': Audit.CloneFloor(),
     'Eletrica_SyncTitleBlock': Audit.SyncTitleBlock(),
     'Eletrica_GenerateTags': Audit.GenerateTags(),
+    'Eletrica_GenerateBIM4D': Audit.GenerateBIM4D(),
+    'Eletrica_GenerateBIM5D': Audit.GenerateBIM5D(),
+    'Eletrica_GenerateBIM6D': Audit.GenerateBIM6D(),
+    'Eletrica_GenerateBIM8D': Audit.GenerateBIM8D(),
+    'Eletrica_GenerateBIM9D': Audit.GenerateBIM9D(),
+    'Eletrica_GenerateCommissioningChecklist': Audit.GenerateCommissioningChecklist(),
+    'Eletrica_RunFinancialAnalysis': Audit.RunFinancialAnalysis(),
+    'Eletrica_ExportVRModel': Audit.ExportVRModel(),
+    'Eletrica_ExportBusbarCNC': Audit.ExportBusbarCNC(),
 
     # --- DOCUMENTACAO (Documentation.py) ---
     'Eletrica_GenerateLoadSchedule': Documentation.GenerateLoadSchedule(),
     'Eletrica_GenerateCableSchedule': Documentation.GenerateCableSchedule(),
     'Eletrica_GenerateBudget': Documentation.GenerateBudget(),
     'Eletrica_GenerateUnifilar': Documentation.GenerateUnifilar(),
+    'Eletrica_GenerateSingleLineDiagram': Documentation.GenerateUnifilar(), # Alias
     'Eletrica_ExportBOM': Documentation.ExportBOM(),
     'Eletrica_GenerateGraphicLegend': Documentation.GenerateGraphicLegend(),
     'Eletrica_GenerateMaintenancePlan': Documentation.GenerateMaintenancePlan(),

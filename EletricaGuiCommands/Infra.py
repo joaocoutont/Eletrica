@@ -32,7 +32,7 @@ class CheckConduitFill:
 
 class InsertPullBox:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Box.svg'), 'MenuText': tr('Caixa de Passagem'), 'ToolTip': tr('Insere caixa 4x2, 4x4 ou caixas de inspeção') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingBox.svg'), 'MenuText': tr('Caixa de Passagem'), 'ToolTip': tr('Insere caixa 4x2, 4x4 ou caixas de inspeção') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         lib = LibraryManager()
@@ -65,7 +65,7 @@ class InsertTrench:
 
 class InsertManhole:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Box.svg'), 'MenuText': tr('Poço de Visita'), 'ToolTip': tr('Insere PV para redes subterrâneas') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingBox.svg'), 'MenuText': tr('Poço de Visita'), 'ToolTip': tr('Insere PV para redes subterrâneas') }
     def Activated(self):
         pass
 

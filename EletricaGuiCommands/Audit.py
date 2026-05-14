@@ -124,8 +124,62 @@ class SyncTitleBlock:
     def Activated(self):
         pass
 
+class GenerateBIM4D:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM4D.svg'), 'MenuText': tr('BIM 4D (Planejamento)'), 'ToolTip': tr('Gera cronograma de execução integrado ao 3D') }
+    def Activated(self):
+        pass
+
+class GenerateBIM5D:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM5D.svg'), 'MenuText': tr('BIM 5D (Custos)'), 'ToolTip': tr('Analisa custos ao longo do tempo de execução') }
+    def Activated(self):
+        pass
+
+class GenerateBIM8D:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM8D.svg'), 'MenuText': tr('BIM 8D (Segurança)'), 'ToolTip': tr('Plano de segurança do trabalho integrado ao modelo') }
+    def Activated(self):
+        pass
+
+class GenerateCommissioningChecklist:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.svg'), 'MenuText': tr('Checklist de Comissionamento'), 'ToolTip': tr('Gera roteiro de testes para entrega da obra') }
+    def Activated(self):
+        pass
+
+class RunFinancialAnalysis:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Budget.svg'), 'MenuText': tr('Análise Financeira (ROI)'), 'ToolTip': tr('Calcula retorno de investimento e payback') }
+    def Activated(self):
+        pass
+
+class ExportVRModel:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GIS.svg'), 'MenuText': tr('Exportar para VR/AR'), 'ToolTip': tr('Gera modelo para realidade virtual (Oculus/Hololens)') }
+    def Activated(self):
+        pass
+
+class ExportBusbarCNC:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Busbar.svg'), 'MenuText': tr('Exportar CNC de Barras'), 'ToolTip': tr('Gera arquivo DXF/STEP para dobra de barras de cobre') }
+    def Activated(self):
+        pass
+
 class GenerateTags:
     def GetResources(self):
         return { 'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.svg'), 'MenuText': tr('Gerar Etiquetas 3D'), 'ToolTip': tr('Insere tags flutuantes no 3D com dados de circuitos') }
+    def Activated(self):
+        pass
+
+class GenerateBIM6D:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM6D.svg'), 'MenuText': tr('BIM 6D (Manutenção)'), 'ToolTip': tr('Gera plano de manutenção preventiva de ativos') }
+    def Activated(self):
+        pass
+
+class GenerateBIM9D:
+    def GetResources(self):
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BIM9D.svg'), 'MenuText': tr('BIM 9D (Construção Enxuta)'), 'ToolTip': tr('Otimiza processos de montagem em campo') }
     def Activated(self):
         pass

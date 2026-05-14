@@ -227,7 +227,7 @@ class ProjectProperties:
     """Configura os metadados do projeto elétrico com campos técnicos"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Report.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'IFCExport.svg'),
             'MenuText': tr('Propriedades Técnicas do Projeto'),
             'ToolTip': tr('Define Nome, Autor, Tensão e Concessionária')
         }
@@ -380,7 +380,7 @@ class ToggleDashboard:
 class CreatePanel:
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Panel.svg'),
             'MenuText': tr('Criar Painel (QDC / CCM)'),
             'ToolTip': tr('Cria um painel inteligente')
         }
@@ -498,7 +498,7 @@ class InsertSpecialSocket:
 
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'SpecialSocket.svg'),
             'MenuText': tr('Inserir TUE (Especial)'),
             'ToolTip': tr('Tomadas com potência definida por equipamento')
         }
@@ -555,7 +555,7 @@ class InsertAirConditioner:
     """Assistente para inserção de Ar Condicionado com conversão BTU -> Watts"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'AirConditioning.svg'),
             'MenuText': tr('Inserir Ar Condicionado'),
             'ToolTip': tr('Dimensiona e insere ar condicionado (Split/Janela)')
         }
@@ -688,7 +688,7 @@ class InsertPumpSet:
     """Assistente de Conjunto Motobomba (Hidráulica + Elétrica)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'PumpSet.svg'),
             'MenuText': tr('Inserir Conjunto Motobomba'),
             'ToolTip': tr('Dimensiona bomba pela vazão/altura e define motor')
         }
@@ -794,7 +794,7 @@ class LinkPumpSet:
     """Aplica propriedades de Motobomba a um objeto 3D já existente (importado)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'ExportBOM.svg'),
             'MenuText': tr('Vincular Dados de Motobomba'),
             'ToolTip': tr('Transforma objeto selecionado em uma Motobomba inteligente')
         }
@@ -903,7 +903,7 @@ class InsertTelecomPoint:
     """Insere pontos de cabeamento estruturado (Rede, TV, Tel)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Seal.svg'),
             'MenuText': tr('Inserir Ponto de Telecom'),
             'ToolTip': tr('Rede / TV / Telefone / CFTV')
         }
@@ -939,7 +939,7 @@ class InsertVDIRack:
     """Insere Racks de Telecomunicações (VDI)"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Rack.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'Rack.svg'),
             'MenuText': tr('Inserir Rack VDI'),
             'ToolTip': tr('VDI (Voz, Dados, Imagem)')
         }
@@ -1292,7 +1292,7 @@ class DimensionMotorStarter:
 class CheckSelectivity:
     """Realiza o estudo de seletividade e coordenação de proteção"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Selectivity.png'), 'MenuText': tr('Análise de Seletividade'), 'ToolTip': tr('Verifica coordenação entre disjuntores e concessionária') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Selectivity.svg'), 'MenuText': tr('Análise de Seletividade'), 'ToolTip': tr('Verifica coordenação entre disjuntores e concessionária') }
 
     def Activated(self):
         from EletricaLogic.Protection import ProtectionManager
@@ -1433,16 +1433,10 @@ class CCMCommandDiagram:
             f"{len(motors)} motor(es) processado(s).\nVeja a planilha 'Diagrama_Comando_CCM' no documento.")
 
 
-        dlg.exec_()
-
 class PowerFactorCorrection:
     """Assistente para correção de Fator de Potência e Reativos"""
     def GetResources(self):
-        return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
-            'MenuText': tr('Correção de Fator de Potência'),
-            'ToolTip': tr('Dimensiona banco de capacitores para o projeto')
-        }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'PowerFactor.svg'), 'MenuText': tr('Correção de Fator de Potência'), 'ToolTip': tr('Dimensiona banco de capacitores para o projeto') }
     def Activated(self):
         from EletricaLogic.PowerFactor import PowerFactorManager
         
@@ -1496,7 +1490,7 @@ class PowerFactorCorrection:
 class InsertEmergencyLight:
     """Insere luminária de emergência (Bloco Autônomo)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'EmergencyLight.png'), 'MenuText': tr('Luz de Emergência'), 'ToolTip': tr('Insere bloco autônomo de LED') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'EmergencyLight.svg'), 'MenuText': tr('Luz de Emergência'), 'ToolTip': tr('Insere bloco autônomo de LED') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         manager = LibraryManager()
@@ -1510,7 +1504,7 @@ class InsertEmergencyLight:
 class InsertExitSign:
     """Insere placa de sinalização de saída"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ExitSign.png'), 'MenuText': tr('Sinalização de Saída'), 'ToolTip': tr('Placa de Abandono') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ExitSign.svg'), 'MenuText': tr('Sinalização de Saída'), 'ToolTip': tr('Placa de Abandono') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         manager = LibraryManager()
@@ -1626,7 +1620,7 @@ class GenerateProjectQR:
 class InsertIndustrialSocket:
     """Insere tomada industrial Steck (3P+N+T ou similar)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'IndustrialSocket.png'), 'MenuText': tr('Tomada Industrial'), 'ToolTip': tr('Tomada Steck 16A/32A/63A') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'Socket.svg'), 'MenuText': tr('Tomada Industrial'), 'ToolTip': tr('Tomada Steck 16A/32A/63A') }
     def Activated(self):
         dlg = QtWidgets.QDialog()
         dlg.setWindowTitle("Tomada Industrial Steck")
@@ -1667,7 +1661,7 @@ class InsertIndustrialSocket:
 class InsertPLC:
     """Insere CLP ou Módulo de E/S no painel"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'PLC.png'), 'MenuText': tr('Inserir CLP/Remota'), 'ToolTip': tr('Controlador Lógico Programável') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'PLC.svg'), 'MenuText': tr('Inserir CLP/Remota'), 'ToolTip': tr('Controlador Lógico Programável') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         manager = LibraryManager()
@@ -1692,7 +1686,7 @@ class InsertPLC:
 class InsertHMI:
     """Insere Interface Homem-Máquina (IHM)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'HMI.png'), 'MenuText': tr('Inserir IHM'), 'ToolTip': tr('Interface Homem-Máquina') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'HMI.svg'), 'MenuText': tr('Inserir IHM'), 'ToolTip': tr('Interface Homem-Máquina') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         manager = LibraryManager()
@@ -1764,7 +1758,7 @@ class MotorWiringWizard:
 class LightingAnalysis:
     """Assistente de Cálculo Luminotécnico (Método dos Lúmens)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'LightingAnalysis.png'), 'MenuText': tr('Cálculo Luminotécnico'), 'ToolTip': tr('Dimensiona quantidade de luminárias') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'LightingAnalysis.svg'), 'MenuText': tr('Cálculo Luminotécnico'), 'ToolTip': tr('Dimensiona quantidade de luminárias') }
     
     def Activated(self):
         from EletricaLogic.Lighting import LightingExpert
@@ -1810,7 +1804,7 @@ class LightingAnalysis:
 class PriceEditor:
     """Editor de Preços Paramétricos do Projeto"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'PriceEditor.png'), 'MenuText': tr('Editar Preços'), 'ToolTip': tr('Configura valores unitários para orçamento') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'PriceEditor.svg'), 'MenuText': tr('Editar Preços'), 'ToolTip': tr('Configura valores unitários para orçamento') }
     
     def Activated(self):
         from EletricaLogic.Budget import BudgetManager
@@ -1851,13 +1845,14 @@ class PriceEditor:
 
         btn = QtWidgets.QPushButton("Salvar Banco de Preços")
         btn.clicked.connect(salvar)
+        layout.addWidget(table)
         layout.addWidget(btn)
         dlg.exec_()
 
 class ArcFlashAnalysis:
     """Gera etiquetas de segurança NR-10 / IEEE 1584"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'ArcFlash.png'), 'MenuText': tr('Análise Arc Flash'), 'ToolTip': tr('Calcula energia de arco e EPI necessário') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'ArcFlash.svg'), 'MenuText': tr('Análise Arc Flash'), 'ToolTip': tr('Calcula energia de arco e EPI necessário') }
     
     def Activated(self):
         from EletricaLogic.Protection import ArcFlashManager, ProtectionManager
@@ -2109,7 +2104,7 @@ class AutoPolePlacement:
 class InsertGroundingRod:
     """Insere haste de aterramento (High-bond ou similar)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.png'), 'MenuText': tr('Inserir Haste'), 'ToolTip': tr('Haste 5/8" x 2.4m') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingRod.svg'), 'MenuText': tr('Inserir Haste'), 'ToolTip': tr('Haste 5/8" x 2.4m') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         manager = LibraryManager()
@@ -2123,7 +2118,7 @@ class InsertGroundingRod:
 class InsertGroundingMesh:
     """Assistente para geração automática de malha de aterramento"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingMesh.png'), 'MenuText': tr('Gerar Malha Terra'), 'ToolTip': tr('Gera grade de cabo nu') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingMesh.svg'), 'MenuText': tr('Gerar Malha Terra'), 'ToolTip': tr('Gera grade de cabo nu') }
     
     def Activated(self):
         dlg = QtWidgets.QDialog()
@@ -2171,7 +2166,7 @@ class InsertGroundingMesh:
 class InsertBareCable:
     """Traça condutor de cobre nu"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'BareCable.png'), 'MenuText': tr('Cabo de Cobre Nu'), 'ToolTip': tr('Condutor para aterramento/malha') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BareCable.svg'), 'MenuText': tr('Cabo de Cobre Nu'), 'ToolTip': tr('Condutor para aterramento/malha') }
     def Activated(self):
         FreeCADGui.runCommand("Draft_Wire")
         obj = FreeCAD.ActiveDocument.ActiveObject
@@ -2182,7 +2177,7 @@ class InsertBareCable:
 class InsertBEP:
     """Insere Barramento de Equipotencialização Principal (BEP)"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'BEP.png'), 'MenuText': tr('Barramento BEP'), 'ToolTip': tr('Equipotencialização Principal') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'BEP.svg'), 'MenuText': tr('Barramento BEP'), 'ToolTip': tr('Equipotencialização Principal') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         manager = LibraryManager()
@@ -2195,7 +2190,7 @@ class InsertBEP:
 class InsertGroundingBox:
     """Insere Caixa de Inspeção para Aterramento/SPDA"""
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingBox.png'), 'MenuText': tr('Caixa de Inspeção'), 'ToolTip': tr('Caixa de solo para aterramento') }
+        return { 'Pixmap': os.path.join(ICON_DIR, 'GroundingBox.svg'), 'MenuText': tr('Caixa de Inspeção'), 'ToolTip': tr('Caixa de solo para aterramento') }
     def Activated(self):
         from EletricaLogic.Library import LibraryManager
         manager = LibraryManager()
@@ -2469,7 +2464,7 @@ class InsertPole:
     """Insere um poste (Concreto ou Madeira) com seleção de carga"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Pole.svg'),
             'MenuText': tr('Inserir Poste'),
             'ToolTip': tr('Insere poste CP ou MA com carga definida')
         }
@@ -2609,7 +2604,7 @@ class InsertAerialCable:
     """Lança cabos aéreos entre estruturas"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'Pole.svg'),
             'MenuText': tr('Lançar Cabo Aéreo'),
             'ToolTip': tr('Cria condutores (CA, CAA ou Compacto) entre postes')
         }
@@ -3509,7 +3504,7 @@ class GenerateMaintenanceQR:
     """Gera QR Codes de Manutenção para os equipamentos selecionados"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'QRMaintenance.png'),
+            'Pixmap': os.path.join(ICON_DIR, 'QRMaintenance.svg'),
             'MenuText': tr('Gerar QR Codes de Manutenção'),
             'ToolTip': tr('Cria fichas técnicas e QRs para gestão de ativos (BIM 7D)')
         }
@@ -3622,7 +3617,7 @@ class RunProjectAudit:
     """Executa a auditoria completa de normas e segurança"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.svg'),
             'MenuText': tr('Auditoria de Projeto'),
             'ToolTip': tr('Verifica erros de norma, queda de tensão e colisões')
         }
@@ -3634,7 +3629,7 @@ class GenerateTags:
     """Gera etiquetas de identificação no 3D"""
     def GetResources(self):
         return {
-            'Pixmap': os.path.join(ICON_DIR, 'Generic_Tool.svg'),
+            'Pixmap': os.path.join(ICON_DIR, 'SafetyNR10.svg'),
             'MenuText': tr('Gerar Etiquetas 3D'),
             'ToolTip': tr('Cria etiquetas de circuito e bitola sobre os componentes')
         }

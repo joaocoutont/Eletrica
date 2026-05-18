@@ -9,17 +9,17 @@ class SmartHomeManager:
     # Biblioteca de dispositivos suportados (Expandida)
     IOT_DEVICES = {
         # Automação Geral
-        "Sensor_Presenca": {"Protocolo": "Zigbee", "Consumo": 0.05, "Icon": "Presence.png"},
-        "Interruptor_Smart": {"Protocolo": "WiFi", "Consumo": 0.5, "Icon": "SmartSwitch.png"},
-        "Atuador_KNX": {"Protocolo": "KNX", "Consumo": 1.2, "Icon": "KNX.png"},
-        "Termostato_Smart": {"Protocolo": "WiFi", "Consumo": 2.0, "Icon": "Temp.png"},
+        "Sensor_Presenca": {"Protocolo": "Zigbee", "Consumo": 0.05, "Icon": "Automation.svg"},
+        "Interruptor_Smart": {"Protocolo": "WiFi", "Consumo": 0.5, "Icon": "SmartHome.svg"},
+        "Atuador_KNX": {"Protocolo": "KNX", "Consumo": 1.2, "Icon": "Automation.svg"},
+        "Termostato_Smart": {"Protocolo": "WiFi", "Consumo": 2.0, "Icon": "Automation.svg"},
         
         # Segurança (Fase 6)
-        "Camera_IP": {"Protocolo": "WiFi/PoE", "Consumo": 5.0, "Icon": "CCTV.png"},
-        "Sensor_Porta": {"Protocolo": "Zigbee", "Consumo": 0.02, "Icon": "Door.png"},
-        "Sensor_Quebra_Vidro": {"Protocolo": "Zigbee", "Consumo": 0.03, "Icon": "Glass.png"},
-        "Sirene_Smart": {"Protocolo": "Zigbee", "Consumo": 1.5, "Icon": "Siren.png"},
-        "Fechadura_Eletronica": {"Protocolo": "Zigbee/BT", "Consumo": 0.1, "Icon": "Lock.png"},
+        "Camera_IP": {"Protocolo": "WiFi/PoE", "Consumo": 5.0, "Icon": "Camera.svg"},
+        "Sensor_Porta": {"Protocolo": "Zigbee", "Consumo": 0.02, "Icon": "Safety.svg"},
+        "Sensor_Quebra_Vidro": {"Protocolo": "Zigbee", "Consumo": 0.03, "Icon": "Safety.svg"},
+        "Sirene_Smart": {"Protocolo": "Zigbee", "Consumo": 1.5, "Icon": "Safety.svg"},
+        "Fechadura_Eletronica": {"Protocolo": "Zigbee/BT", "Consumo": 0.1, "Icon": "Safety.svg"},
     }
 
     @staticmethod

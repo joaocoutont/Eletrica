@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ícone BIM 8D (Segurança do Trabalho - Capacete) -->
+  <path d="M 32 8 C 12 8 8 32 8 32 L 8 42 L 56 42 L 56 32 C 56 32 52 8 32 8 Z" fill="#f1c40f" stroke="#2c3e50" stroke-width="2"/>
+  <rect x="4" y="42" width="56" height="8" rx="2" fill="#f39c12" stroke="#2c3e50" stroke-width="2"/>
+  <text x="32" y="32" font-family="Arial" font-size="14" font-weight="bold" fill="#2c3e50" text-anchor="middle">8D</text>
+  <path d="M 28 42 L 28 52 M 36 42 L 36 52" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
+</svg>

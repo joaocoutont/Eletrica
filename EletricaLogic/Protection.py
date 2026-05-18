@@ -9,11 +9,15 @@ class ProtectionManager:
     def calculate_short_circuit_at_point(distance_m, wire_section_mm2):
         """Calcula a Icc presumida em um ponto baseado na rede da concessionária."""
         doc = FreeCAD.ActiveDocument
+        if not doc:
+            return 10.0
         settings = doc.getObject("Configuracoes_Eletrica")
         if not settings: return 10.0 # Fallback
         
-        icc_at_delivery = settings.Icc_Concessionaria * 1000 # Amperes
-        voltage = float(settings.Tensao.replace("V", ""))
+        from EletricaLogic.Settings import ProjectSettings
+        meta = doc.getObject("Eletrica_ProjectData")
+        icc_at_delivery = getattr(settings, "Icc_Concessionaria", getattr(meta, "Icc_Concessionaria", 10.0)) * 1000
+        voltage = ProjectSettings.parse_voltage(getattr(settings, "TensaoPadrao", getattr(meta, "Voltage", "220V")))
         
         # Resistividade (Cobre)
         rho = 0.0172
@@ -56,6 +60,9 @@ class ProtectionManager:
     def generate_protection_report():
         """Gera um relatório HTML de coordenação de proteção."""
         doc = FreeCAD.ActiveDocument
+        if not doc:
+            return ""
+
         panels = [obj for obj in doc.Objects if hasattr(obj, "TipoBIM") and obj.TipoBIM in ["QDC", "CCM", "Quadro"]]
         
         report = "<h2>Estudo de Seletividade e Proteção</h2>"

@@ -74,9 +74,16 @@ class ConduitManager:
             if not hasattr(tray, prop):
                 tray.addProperty(ptype, prop, grp_name, desc)
 
+        tray_type_map = {
+            "Escada": "Escada (Ladder)",
+            "Ladder": "Escada (Ladder)",
+            "Arame": "Arame (Wire Mesh)",
+            "Wire Mesh": "Arame (Wire Mesh)",
+        }
+
         tray.TipoBIM         = "Eletrocalha"
         tray.TipoEletrocalha = ["Perfurada", "Fechada", "Escada (Ladder)", "Arame (Wire Mesh)"]
-        tray.TipoEletrocalha = tray_type
+        tray.TipoEletrocalha = tray_type_map.get(tray_type, tray_type)
         tray.MaterialCalha   = material
         tray.LarguraMM       = float(width)
         tray.AlturaMM        = float(height)
@@ -171,6 +178,9 @@ class CableTrayCalculator:
         Verifica a taxa de ocupacao de todos os eletrodutos do projeto.
         """
         doc = FreeCAD.ActiveDocument
+        if not doc:
+            return []
+
         from EletricaLogic.Calculator import ElectricalCalculator
         
         results = []

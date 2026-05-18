@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <path d="M32 10L10 50h44z" fill="#f1c40f" stroke="#2c3e50" stroke-width="2"/>
-  <rect x="30" y="24" width="4" height="12" fill="#2c3e50"/>
-  <circle cx="32" cy="42" r="2.5" fill="#2c3e50"/>
+  <!-- Ícone Sinalização de Rede (Placa de Perigo/Aviso) -->
+  <rect x="8" y="12" width="48" height="36" rx="2" fill="#e74c3c" stroke="#2c3e50" stroke-width="2"/>
+  <path d="M 32 18 L 46 42 L 18 42 Z" fill="#ffffff"/>
+  <path d="M 32 26 L 32 36 M 32 39 L 32 40" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>
+  <rect x="28" y="48" width="8" height="12" fill="#bdc3c7" stroke="#2c3e50" stroke-width="1.5"/>
 </svg>

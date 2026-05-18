@@ -4,6 +4,18 @@ import ImportGui
 import csv
 import os
 
+def _is_library_matrix(obj):
+    role = getattr(obj, "BIMRole", "")
+    if role in ["SocketMatrix", "LibraryMatrix", "FamilyMatrix"]:
+        return True
+    try:
+        if bool(getattr(obj, "IsLibraryMatrix", False)):
+            return True
+    except Exception:
+        pass
+    name = f"{getattr(obj, 'Name', '')} {getattr(obj, 'Label', '')}"
+    return "Matriz_" in name or "Matrix_" in name
+
 class DisciplineExporter:
     @staticmethod
     def export_by_discipline(discipline, file_path):
@@ -11,14 +23,19 @@ class DisciplineExporter:
         Exporta apenas os objetos pertencentes a uma disciplina especifica.
         """
         doc = FreeCAD.ActiveDocument
+        if not doc:
+            return 0
+
         export_list = []
         
         # Filtros baseados nas propriedades dos objetos
         for obj in doc.Objects:
+            if _is_library_matrix(obj):
+                continue
             is_match = False
             
             if discipline == "Elétrica":
-                valid_types = ["QDC", "CCM", "CCA", "Tomada", "Luminaria", "Eletroduto", "Motobomba", "ArCondicionado", "Telecom", "Rack", "TUE"]
+                valid_types = ["QDC", "CCM", "CCA", "Quadro", "Tomada", "Luminaria", "Eletroduto", "Eletrocalha", "Motobomba", "ArCondicionado", "Telecom", "Rack", "TUE"]
                 if hasattr(obj, "TipoBIM") and obj.TipoBIM in valid_types:
                     is_match = True
             elif discipline == "SPDA":

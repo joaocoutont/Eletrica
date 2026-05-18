@@ -1,0 +1,13 @@
+name = "Generico"
+site = true
+building = false
+levels = false
+spaces = false
+groups = ["Zonas", "Equipamentos", "Redes", "Cargas"]
+
+[electrical]
+panels = ["QD-01"]
+circuits = ["C-01 Geral"]
+
+[automation]
+

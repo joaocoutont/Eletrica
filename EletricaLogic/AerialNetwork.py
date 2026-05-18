@@ -58,16 +58,16 @@ BT_CONDUCTORS = [
 ]
 
 # Cabos Protegidos (Rede Compacta / Spacer Cable) - Alumínio XLPE 90°C
-# Formato: (secao_mm2, nome_comercial, capacidade_A, resistencia_ohm_km, peso_kg_km)
+# Formato: (secao_mm2, nome_comercial, capacidade_A, resistencia_ohm_km, diametro_ext_mm, peso_kg_km)
 COMPACT_CONDUCTORS = [
-    (35,   "Compacto-35",  165,  0.83,  190),
-    (50,   "Compacto-50",  205,  0.59,  250),
-    (70,   "Compacto-70",  255,  0.42,  330),
-    (95,   "Compacto-95",  305,  0.31,  440),
-    (120,  "Compacto-120", 350,  0.25,  540),
-    (150,  "Compacto-150", 395,  0.20,  660),
-    (185,  "Compacto-185", 450,  0.16,  810),
-    (240,  "Compacto-240", 520,  0.12,  1050),
+    (35,   "Compacto-35",  165,  0.83,  13.5,  190),
+    (50,   "Compacto-50",  205,  0.59,  15.0,  250),
+    (70,   "Compacto-70",  255,  0.42,  16.5,  330),
+    (95,   "Compacto-95",  305,  0.31,  18.5,  440),
+    (120,  "Compacto-120", 350,  0.25,  20.5,  540),
+    (150,  "Compacto-150", 395,  0.20,  22.5,  660),
+    (185,  "Compacto-185", 450,  0.16,  25.0,  810),
+    (240,  "Compacto-240", 520,  0.12,  28.5, 1050),
 ]
 
 # Vãos típicos por classe de poste (metros)
@@ -112,7 +112,10 @@ class AerialNetworkCalculator:
         else: table = AERIAL_CONDUCTORS
         
         for item in table:
-            sec, nome, cap, res, diam, weight = item[0], item[1], item[2], item[3], item[4], item[5]
+            if len(item) >= 6:
+                sec, nome, cap, res, diam, weight = item[0], item[1], item[2], item[3], item[4], item[5]
+            else:
+                sec, nome, cap, res, diam, weight = item[0], item[1], item[2], item[3], 0.0, item[4]
             if cap >= current_a:
                 return {
                     "secao_mm2": sec, 
@@ -129,8 +132,8 @@ class AerialNetworkCalculator:
             "nome": last[1], 
             "capacidade_a": last[2], 
             "resist_ohm_km": last[3],
-            "diameter_mm": last[4],
-            "weight_kg_km": last[5]
+            "diameter_mm": last[4] if len(last) >= 6 else 0.0,
+            "weight_kg_km": last[5] if len(last) >= 6 else last[4]
         }
 
     @staticmethod
@@ -313,20 +316,19 @@ STRUCTURE_KITS = {
         "Parafuso Cabeça Quadrada": 1
     }
 }
-    @staticmethod
-    def get_fuse_link(power_kva, voltage_kv=13.8):
-        """Sugere o elo fusível (Tipo K ou H) para proteção do transformador"""
-        # Tabela baseada em padrões de concessionária (CPFL/Equatorial/Enel)
-        # Formato: {kva: "Elo"}
-        table_13_8 = {
-            5: "1H", 10: "2H", 15: "3H", 30: "5K", 45: "6K", 75: "10K", 
-            112.5: "15K", 150: "20K", 300: "40K"
-        }
-        table_34_5 = {
-            15: "1H", 30: "2H", 45: "3H", 75: "6K", 112.5: "10K", 150: "15K"
-        }
-        
-        if voltage_kv < 20:
-            return table_13_8.get(power_kva, "Verificar Tabela")
-        else:
-            return table_34_5.get(power_kva, "Verificar Tabela")
+
+
+def get_fuse_link(power_kva, voltage_kv=13.8):
+    """Sugere o elo fusivel (Tipo K ou H) para protecao do transformador."""
+    table_13_8 = {
+        5: "1H", 10: "2H", 15: "3H", 30: "5K", 45: "6K", 75: "10K",
+        112.5: "15K", 150: "20K", 300: "40K"
+    }
+    table_34_5 = {
+        15: "1H", 30: "2H", 45: "3H", 75: "6K", 112.5: "10K", 150: "15K"
+    }
+    table = table_13_8 if voltage_kv < 20 else table_34_5
+    return table.get(power_kva, "Verificar Tabela")
+
+
+AerialNetworkCalculator.get_fuse_link = staticmethod(get_fuse_link)

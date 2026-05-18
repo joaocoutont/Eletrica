@@ -1,0 +1,99 @@
+# Catalogo leve de familias da bancada Eletrica.
+# Este arquivo guarda metadados BIM sem abrir os arquivos .FCStd.
+schema_version = 1
+library_root = "Library/3D"
+
+[[family]]
+id = "tomada_simples_10a"
+name = "Tomada Simples 10A"
+category = "Tomada"
+discipline = "Eletrica"
+ifc_class = "IfcFlowTerminal"
+source_3d = "Tomadas/Tomada_Simples_10A.FCStd"
+source_2d = ""
+modules = "1 Modulo"
+amperage = "10A"
+voltage = "127V"
+power = 100
+height_type = "Media (1100mm)"
+mounting_height = 1100
+manufacturer = ""
+model = ""
+catalog_code = ""
+description = "Tomada padrao da biblioteca Eletrica."
+
+[[family]]
+id = "tomada_simples_20a"
+name = "Tomada Simples 20A"
+category = "Tomada"
+discipline = "Eletrica"
+ifc_class = "IfcFlowTerminal"
+source_3d = "Tomadas/Tomada_Simples_20A.FCStd"
+source_2d = ""
+modules = "1 Modulo"
+amperage = "20A"
+voltage = "127V"
+power = 600
+height_type = "Media (1100mm)"
+mounting_height = 1100
+manufacturer = ""
+model = ""
+catalog_code = ""
+description = "Tomada 20A padrao da biblioteca Eletrica."
+
+[[family]]
+id = "tomada_dupla_10a_10a"
+name = "Tomada Dupla 10A + 10A"
+category = "Tomada"
+discipline = "Eletrica"
+ifc_class = "IfcFlowTerminal"
+source_3d = "Tomadas/Tomada_Dupla_10A_10A.FCStd"
+source_2d = ""
+modules = "2 Modulos"
+amperage = "10A"
+voltage = "127V"
+power = 200
+height_type = "Media (1100mm)"
+mounting_height = 1100
+manufacturer = ""
+model = ""
+catalog_code = ""
+description = "Tomada dupla 10A padrao da biblioteca Eletrica."
+
+[[family]]
+id = "tomada_dupla_20a"
+name = "Tomada Dupla 20A"
+category = "Tomada"
+discipline = "Eletrica"
+ifc_class = "IfcFlowTerminal"
+source_3d = "Tomadas/Tomada_Dupla_20A.FCStd"
+source_2d = ""
+modules = "2 Modulos"
+amperage = "20A"
+voltage = "127V"
+power = 1200
+height_type = "Media (1100mm)"
+mounting_height = 1100
+manufacturer = ""
+model = ""
+catalog_code = ""
+description = "Tomada dupla 20A padrao da biblioteca Eletrica."
+
+[[family]]
+id = "cm_1"
+name = "CM-1"
+category = "Equipamento"
+discipline = "Eletrica"
+ifc_class = "IfcDistributionElement"
+source_3d = "Entrada_Servico/CM-1.FCStd"
+source_2d = ""
+modules = "1 Modulo"
+amperage = "10A"
+voltage = "127V"
+power = 100
+height_type = "Media (1100mm)"
+mounting_height = 1100
+manufacturer = ""
+model = ""
+catalog_code = ""
+description = ""

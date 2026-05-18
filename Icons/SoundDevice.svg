@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ícone de Alto-falante (Sonorização) -->
+  <path d="M 12 24 L 12 40 L 24 40 L 40 52 L 40 12 L 24 24 Z" fill="#ecf0f1" stroke="#2c3e50" stroke-width="2"/>
+  <path d="M 46 22 C 52 28 52 36 46 42" fill="none" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 52 14 C 62 24 62 40 52 50" fill="none" stroke="#2c3e50" stroke-width="3" stroke-linecap="round"/>
+</svg>

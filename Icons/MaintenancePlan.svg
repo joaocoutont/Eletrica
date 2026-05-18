@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Prancha/Documento do Plano -->
+  <rect x="12" y="6" width="40" height="52" rx="3" fill="#ecf0f1" stroke="#2c3e50" stroke-width="2"/>
+  <line x1="20" y1="18" x2="44" y2="18" stroke="#bdc3c7" stroke-width="3"/>
+  <line x1="20" y1="28" x2="44" y2="28" stroke="#bdc3c7" stroke-width="3"/>
+  <line x1="20" y1="38" x2="36" y2="38" stroke="#bdc3c7" stroke-width="3"/>
+  
+  <!-- Ícone de Manutenção (Chave de Boca) -->
+  <circle cx="44" cy="48" r="10" fill="#3498db" stroke="#2c3e50" stroke-width="2"/>
+  <path d="M 38 42 L 50 54 M 50 42 L 38 54" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="44" cy="48" r="2.5" fill="#2c3e50"/>
+</svg>

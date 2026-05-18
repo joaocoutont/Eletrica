@@ -144,7 +144,8 @@ class ProjectAuditor:
         from EletricaLogic.Wiring import WiringManager
         circuit_lengths = WiringManager.calculate_circuit_lengths()
         meta = doc.getObject("Eletrica_ProjectData")
-        v_nom = float(getattr(meta, "Voltage", "127/220V").split("/")[0].replace("V", "")) if meta else 127.0
+        from EletricaLogic.Settings import ProjectSettings
+        v_nom = ProjectSettings.parse_voltage(getattr(meta, "Voltage", "127/220V"), 127.0) if meta else 127.0
         max_drop = float(getattr(meta, "MaxVoltageDrop", "4%").replace("%", "")) if meta else 4.0
         
         for c_name, data in circuits.items():
@@ -203,4 +204,3 @@ class ProjectAuditor:
         msg_box.exec_()
         
         return {"Errors": errors, "Warnings": warnings}
-

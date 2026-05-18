@@ -1,17 +1,28 @@
 # Hub Central da Interface Grafica - Elite Industrial Suite
 import FreeCAD
 import FreeCADGui
+import traceback
 from EletricaLogic.i18n import tr
 
 # Importando Modulos Modularizados
 from EletricaGuiCommands import BIM, RDU, Engineering, Infra, Audit, Documentation, Industrial
+try:
+    from EletricaGuiCommands import ProjectSetup
+except Exception as e:
+    ProjectSetup = None
+    FreeCAD.Console.PrintError(f"Eletrica: falha ao carregar comandos de preparacao BIM: {e}\n")
+try:
+    from EletricaGuiCommands import FamilyManager
+except Exception as e:
+    FamilyManager = None
+    FreeCAD.Console.PrintError(f"Eletrica: falha ao carregar gerenciador de familias: {e}\n")
 
 # Dicionario de Mapeamento de Comandos
-# Chave: Nome interno no FreeCAD | Valor: Instancia da classe de comando
 cmds = {
     # --- MODELAGEM BIM (BIM.py) ---
     'Eletrica_InsertSocket': BIM.InsertSocket(),
     'Eletrica_InsertSpecialSocket': BIM.InsertSpecialSocket(),
+    'Eletrica_InsertModularSet': BIM.InsertModularSet(),
     'Eletrica_InsertLight': BIM.InsertLight(),
     'Eletrica_InsertSwitch': BIM.InsertSwitch(),
     'Eletrica_MergeSwitches': BIM.MergeSwitches(),
@@ -22,6 +33,7 @@ cmds = {
     'Eletrica_InsertBoreholePump': BIM.InsertBoreholePump(),
     'Eletrica_BIMifyEquipment': BIM.BIMifyEquipment(),
     'Eletrica_InsertEVCharger': BIM.InsertEVCharger(),
+    'Eletrica_InsertServiceEntrance': BIM.InsertServiceEntrance(),
 
     # --- INFRAESTRUTURA (Infra.py) ---
     'Eletrica_InsertConduit': Infra.InsertConduit(),
@@ -74,7 +86,6 @@ cmds = {
     # --- POTENCIA E INDUSTRIA (Industrial.py) ---
     'Eletrica_InsertMTCubicle': Industrial.InsertMTCubicle(),
     'Eletrica_InsertGenerator': Industrial.InsertGenerator(),
-    'Eletrica_InsertGeneratorDevice': Industrial.InsertGenerator(), # Alias
     'Eletrica_InsertUPS': Industrial.InsertUPS(),
     'Eletrica_InsertQTA': Industrial.InsertQTA(),
     'Eletrica_CreatePanel': Industrial.CreatePanel(),
@@ -139,8 +150,113 @@ cmds = {
     'Eletrica_GenerateMaintenancePlan': Documentation.GenerateMaintenancePlan(),
     'Eletrica_UpdatePricing': Documentation.UpdatePricing(),
     'Eletrica_GenerateSustainabilityReport': Documentation.GenerateSustainabilityReport(),
+    'Eletrica_GlobalSettings': Documentation.GlobalSettings(),
 }
 
-# Registrar Comandos no FreeCAD
+if ProjectSetup:
+    cmds.update({
+        'Eletrica_PrepareFromCAD': ProjectSetup.PrepareFromCAD(),
+        'Eletrica_PrepareFromIFC': ProjectSetup.PrepareFromIFC(),
+        'Eletrica_PrepareFromFreeCAD': ProjectSetup.PrepareFromFreeCAD(),
+        'Eletrica_ManagePanelsCircuits': ProjectSetup.ManagePanelsCircuits(),
+        'Eletrica_RecalculateCircuitLoads': ProjectSetup.RecalculateCircuitLoads(),
+        'Eletrica_ValidateElectricalProject': ProjectSetup.ValidateElectricalProject(),
+        'Eletrica_ExportPointSchedule': ProjectSetup.ExportPointSchedule(),
+        'Eletrica_BatchEditPoints': ProjectSetup.BatchEditPoints(),
+        'Eletrica_ToggleSystemVisibility': ProjectSetup.ToggleSystemVisibility(),
+        'Eletrica_CreatePreliminaryRoutes': ProjectSetup.CreatePreliminaryRoutes(),
+        'Eletrica_GenerateSymbolLegend': ProjectSetup.GenerateSymbolLegend(),
+        'Eletrica_GenerateElectricalReport': ProjectSetup.GenerateElectricalReport(),
+        'Eletrica_EditProjectTemplates': ProjectSetup.EditProjectTemplates(),
+        'Eletrica_VisualValidation': ProjectSetup.VisualValidation(),
+        'Eletrica_CreateSpaceOrSector': ProjectSetup.CreateSpaceOrSector(),
+    })
+
+if FamilyManager:
+    cmds.update({
+        'Eletrica_ManageFamilies': FamilyManager.ManageFamilies(),
+    })
+
+def command_wrapper(name, obj, original_activated):
+    """Encapsula o comando para adicionar robustez, log e transacoes."""
+    def activated_robust(*args, **kwargs):
+        def sync_checkable_state():
+            try:
+                from GeometryScripts.bim_placement_core import BIMPlacementEngine
+                if name in BIMPlacementEngine.CHECKABLE_PLACEMENT_COMMANDS and BIMPlacementEngine.active_engine is None:
+                    BIMPlacementEngine.clear_checkable_actions()
+            except Exception:
+                pass
+
+        doc = FreeCAD.ActiveDocument
+        if not doc and not getattr(obj, "AllowNoDocument", False):
+            FreeCAD.Console.PrintWarning(tr("Nenhum documento ativo.") + "\n")
+            sync_checkable_state()
+            return
+
+        # Feedback na barra de status
+        res = obj.GetResources()
+        label = res.get('MenuText', name)
+        FreeCADGui.getMainWindow().statusBar().showMessage(tr("Executando: ") + label + "...")
+        
+        # Iniciar Transação (Undo)
+        if doc:
+            doc.openTransaction(label)
+        
+        try:
+            original_activated(*args, **kwargs)
+            if doc:
+                doc.commitTransaction()
+            FreeCAD.Console.PrintLog(f"Eletrica: {name} executado com sucesso.\n")
+        except Exception as e:
+            if doc:
+                doc.abortTransaction()
+            sync_checkable_state()
+            error_msg = f"Erro em {name}: {str(e)}"
+            FreeCAD.Console.PrintError(error_msg + "\n")
+            traceback.print_exc()
+            from PySide import QtWidgets
+            QtWidgets.QMessageBox.critical(None, "Eletrica Error", error_msg)
+        finally:
+            sync_checkable_state()
+            FreeCADGui.getMainWindow().statusBar().showMessage(tr("Pronto."), 5000)
+            
+    return activated_robust
+
+def is_active_standard(self):
+    """Verifica documento ativo e requisitos de selecao."""
+    doc = FreeCAD.ActiveDocument
+    if doc is None and not getattr(self, "AllowNoDocument", False):
+        return False
+        
+    # Verificacao opcional de selecao (Requirement: RequiredSelection)
+    if hasattr(self, "RequiredSelection"):
+        sel = FreeCADGui.Selection.getSelection()
+        if not sel: return False
+        
+        req = self.RequiredSelection
+        if isinstance(req, str): req = [req]
+        
+        # Verifica se pelo menos um objeto selecionado atende ao requisito
+        match = False
+        for o in sel:
+            if hasattr(o, "TipoBIM") and o.TipoBIM in req:
+                match = True
+                break
+        return match
+        
+    return True
+
+# Registrar Comandos no FreeCAD com injeção de robustez
+import types
 for name, obj in cmds.items():
+    # 1. Envolver o método Activated
+    if hasattr(obj, "Activated"):
+        original = obj.Activated
+        obj.Activated = command_wrapper(name, obj, original)
+        
+    # 2. Injetar IsActive inteligente
+    if not hasattr(obj, "IsActive"):
+        obj.IsActive = types.MethodType(is_active_standard, obj)
+        
     FreeCADGui.addCommand(name, obj)

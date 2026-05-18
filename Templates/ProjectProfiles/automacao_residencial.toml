@@ -1,0 +1,38 @@
+name = "Automacao Residencial"
+site = true
+building = true
+levels = true
+spaces = true
+groups = [
+  "Central Automacao",
+  "Iluminacao Automatizada",
+  "Cortinas e Persianas",
+  "Climatizacao",
+  "Audio e Video",
+  "CFTV",
+  "Controle de Acesso",
+  "Rede Dados WiFi",
+  "Sensores",
+  "Atuadores"
+]
+
+[electrical]
+panels = ["QDA-01 Automacao", "QDC-01 Dados"]
+circuits = [
+  "AUT-01 Central Automacao",
+  "IL-01 Iluminacao Automatizada",
+  "CT-01 Cortinas",
+  "CL-01 Climatizacao",
+  "AV-01 Audio Video",
+  "CFTV-01 Cameras",
+  "AC-01 Controle Acesso",
+  "DADOS-01 Rede"
+]
+
+[automation]
+AutomationScope = "Residencial inteligente"
+ControlVoltage = "24Vcc / rede local"
+Protocol = "KNX / Zigbee / Wi-Fi / Ethernet"
+NetworkType = "Automacao residencial"
+SafetyCategory = "Residencial"
+

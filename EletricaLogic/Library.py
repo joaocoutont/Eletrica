@@ -4,8 +4,12 @@ import FreeCAD
 
 class LibraryManager:
     def __init__(self, path_3d=None, path_2d=None):
-        self.path_3d = path_3d or r"D:\Objetos 3D\Curso FRECAD ELETRICO\HRC_Nova_Biblioteca_3D"
-        self.path_2d = path_2d or r"D:\Objetos 3D\Curso FRECAD ELETRICO\Biblioteca 2D"
+        # Tenta carregar dos parametros do FreeCAD
+        param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Eletrica")
+        default_base = os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica", "Library")
+        
+        self.path_3d = path_3d or param.GetString("Path3D", os.path.join(default_base, "3D"))
+        self.path_2d = path_2d or param.GetString("Path2D", os.path.join(default_base, "2D"))
 
     def get_active_level_height(self):
         """Tenta encontrar a altura do nivel (BuildingPart) ativo no Workbench BIM"""
@@ -63,7 +67,7 @@ class LibraryManager:
                 from EletricaLogic.Settings import ProjectSettings
                 link.addProperty("App::PropertyEnumeration", "Tensao", "Eletrica", "Tensao de operacao")
                 link.Tensao = ["127V", "220V", "380V"]
-                link.Tensao = ProjectSettings.get_voltage() # Pega o padrao do projeto
+                link.Tensao = ProjectSettings.format_voltage(ProjectSettings.get_voltage())
                 
             if not hasattr(link, "QuadroVinculado"):
                 link.addProperty("App::PropertyLink", "QuadroVinculado", "Eletrica", "Quadro de distribuicao que alimenta este item")

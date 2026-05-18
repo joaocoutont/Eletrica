@@ -1,0 +1,13 @@
+name = "Saneamento"
+site = true
+building = false
+levels = false
+spaces = false
+groups = ["Captacao", "Elevatorias", "ETA / ETE", "Reservatorios", "Bombas e Motores"]
+
+[electrical]
+panels = ["QGBT", "CCM-Bombas", "QD-Instrumentacao"]
+circuits = ["B-01 Bomba", "B-02 Bomba Reserva", "I-01 Instrumentacao", "C-01 Comando"]
+
+[automation]
+

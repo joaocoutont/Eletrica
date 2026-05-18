@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Placa/Espelho Externo -->
+  <rect x="4" y="4" width="56" height="56" rx="6" fill="#f5f5f5" stroke="#2c3e50" stroke-width="1.5"/>
+  <rect x="10" y="10" width="44" height="44" rx="4" fill="#ffffff" stroke="#bdc3c7" stroke-width="0.5"/>
+  
+  <!-- Rebaixo Sextavado Característico do Padrão Brasileiro (NBR 14136) -->
+  <path d="M 12 32 L 20 18 L 44 18 L 52 32 L 44 46 L 20 46 Z" fill="#e0e0e0" stroke="#95a5a6" stroke-width="1.5"/>
+  
+  <!-- Os Três Pinos (Fase, Neutro e Terra Central) -->
+  <!-- Fase e Neutro -->
+  <circle cx="21" cy="32" r="4" fill="#2c3e50" stroke="#000" stroke-width="0.5"/>
+  <circle cx="43" cy="32" r="4" fill="#2c3e50" stroke="#000" stroke-width="0.5"/>
+  <!-- Terra (O pino do meio é levemente deslocado para baixo no padrão) -->
+  <circle cx="32" cy="39" r="4" fill="#2c3e50" stroke="#000" stroke-width="0.5"/>
+  
+  <!-- Detalhe de profundidade nos furos -->
+  <circle cx="21" cy="32" r="1.5" fill="#1a252f"/>
+  <circle cx="43" cy="32" r="1.5" fill="#1a252f"/>
+  <circle cx="32" cy="39" r="1.5" fill="#1a252f"/>
+</svg>

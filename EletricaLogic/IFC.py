@@ -62,6 +62,18 @@ EXTRA_PSET_MAP = {
     "DataManutencao": "Pset_Asset",
 }
 
+def _is_library_matrix(obj):
+    role = getattr(obj, "BIMRole", "")
+    if role in ["SocketMatrix", "LibraryMatrix", "FamilyMatrix"]:
+        return True
+    try:
+        if bool(getattr(obj, "IsLibraryMatrix", False)):
+            return True
+    except Exception:
+        pass
+    name = f"{getattr(obj, 'Name', '')} {getattr(obj, 'Label', '')}"
+    return "Matriz_" in name or "Matrix_" in name
+
 
 class IFCExportManager:
     """Prepara objetos elétricos para exportação IFC4 com Property Sets padrão."""
@@ -78,6 +90,8 @@ class IFCExportManager:
 
         mapped = 0
         for obj in doc.Objects:
+            if _is_library_matrix(obj):
+                continue
             tipo = getattr(obj, "TipoBIM", None)
             if not tipo:
                 # Tenta inferir se for um objeto elétrico

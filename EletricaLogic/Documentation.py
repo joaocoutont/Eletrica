@@ -47,6 +47,9 @@ class TechDrawManager:
         Adiciona uma vista de topo (planta baixa) à página informada.
         """
         doc = FreeCAD.ActiveDocument
+        if not doc or not page:
+            return None
+
         view = doc.addObject('TechDraw::DrawViewPart', 'Planta_Baixa')
         view.Source = [o for o in doc.Objects if hasattr(o, "Shape")]
         view.Direction = (0, 0, 1) # Vista de topo

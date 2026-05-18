@@ -74,6 +74,8 @@ class CableScheduleManager:
         """Exporta a lista para uma planilha interna do FreeCAD"""
         import Spreadsheet
         doc = FreeCAD.ActiveDocument
+        if not doc:
+            return None
         
         sheet = doc.getObject("Lista_de_Cabos") or doc.addObject("Spreadsheet::Sheet", "Lista_de_Cabos")
         data = CableScheduleManager.generate_cable_schedule()
@@ -82,5 +84,5 @@ class CableScheduleManager:
             for col_idx, value in enumerate(row_data):
                 sheet.set(chr(65 + col_idx) + str(row_idx + 1), str(value))
         
-        FreeCAD.ActiveDocument.recompute()
+        doc.recompute()
         return sheet.Name

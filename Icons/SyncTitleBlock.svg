@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ícone Sincronizar Selo (Folha com setas de atualização) -->
+  <rect x="8" y="12" width="48" height="40" rx="2" fill="#ecf0f1" stroke="#2c3e50" stroke-width="2"/>
+  <rect x="40" y="36" width="12" height="12" fill="#bdc3c7" stroke="#2c3e50" stroke-width="1"/>
+  <!-- Setas de Sincronização Circular -->
+  <path d="M 32 18 A 10 10 0 0 1 40 32" fill="none" stroke="#3498db" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 32 18 A 10 10 0 0 0 24 32" fill="none" stroke="#3498db" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 36 18 L 32 18 L 32 22 M 28 32 L 32 32 L 32 28" fill="none" stroke="#3498db" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -12,7 +12,8 @@ class MaintenanceManager:
         if not obj: return None
         
         doc = FreeCAD.ActiveDocument
-        output_dir = os.path.join(os.path.dirname(doc.FileName or os.path.expanduser("~")), "Manutencao")
+        base_dir = os.path.dirname(doc.FileName) if doc and doc.FileName else os.path.expanduser("~")
+        output_dir = os.path.join(base_dir, "Manutencao")
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
             

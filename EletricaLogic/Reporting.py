@@ -1,6 +1,7 @@
 # Gerador de Relatorios Tecnicos e Memoria de Calculo
 import FreeCAD
 import os
+from datetime import date
 from EletricaLogic.Settings import ProjectSettings
 from EletricaLogic.Calculator import ElectricalCalculator
 
@@ -35,7 +36,7 @@ class ReportManager:
         md = []
         md.append(f"# MEMORIAL DESCRITIVO ELÉTRICO")
         md.append(f"**Projeto:** {getattr(meta, 'ProjectName', doc.Name)}")
-        md.append(f"**Data:** 12/05/2026")
+        md.append(f"**Data:** {date.today().strftime('%d/%m/%Y')}")
         md.append(f"**Responsável Técnico:** {getattr(meta, 'DesignerName', 'Não Informado')}")
         md.append(f"**Registro (CREA/ART):** {getattr(meta, 'CREA', '-')}")
         

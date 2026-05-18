@@ -217,6 +217,136 @@ Acesse a aba **Ciclo de Vida** para gerar os relatórios avançados de gestão:
 2.  Envie o arquivo para o smartphone da equipe de campo. Eles poderão ver a posição exata dos postes usando o GPS, facilitando a locação real no terreno.
 
 ---
+## 14. Preparacao BIM por CAD, IFC ou FreeCAD
+
+Os comandos **Preparar Projeto por CAD**, **Preparar Projeto por IFC** e **Preparar Projeto FreeCAD** iniciam a estrutura BIM eletrica do documento ativo. Eles ficam habilitados somente apos a criacao ou abertura de um documento FreeCAD.
+
+### 14.1 Assistente de Preparacao
+
+O assistente permite configurar:
+
+- arquivo de referencia CAD, IFC ou FreeCAD;
+- tipo de projeto;
+- norma e escopo;
+- ponto base, deslocamento, rotacao e coordenadas compartilhadas;
+- conferencia de escala CAD;
+- deteccao de superficies e offset de insercao;
+- criacao de niveis, espacos, quadros e circuitos padrao.
+
+Tipos de projeto disponiveis:
+
+- Predial / Hospitalar;
+- Industrial;
+- Automacao Residencial;
+- Automacao Industrial;
+- Saneamento;
+- Rede Urbana;
+- Rede Rural;
+- Subestacao / MT;
+- Generico.
+
+### 14.2 Templates TOML
+
+Os perfis do assistente ficam em:
+
+```text
+Templates/ProjectProfiles
+```
+
+Cada arquivo TOML define:
+
+- nome do perfil;
+- uso de Site, Edificacao, Niveis e Espacos;
+- grupos de projeto;
+- quadros padrao;
+- circuitos padrao;
+- propriedades de automacao, quando aplicavel.
+
+Use o comando **Editar Templates** para abrir e alterar esses arquivos dentro da bancada.
+
+## 15. Quadros, Circuitos e Pontos
+
+O comando **Gerenciar Quadros/Circuitos** lista, cria e recalcula quadros e circuitos BIM. Circuitos possuem propriedades como:
+
+- numero do circuito;
+- quadro vinculado;
+- tensao;
+- potencia conectada;
+- quantidade de pontos;
+- corrente preliminar;
+- corrente de projeto;
+- disjuntor sugerido;
+- secao de cabo sugerida.
+
+O comando **Recalcular Cargas** soma as cargas dos pontos vinculados aos circuitos. Ao inserir uma tomada, esse recalculo tambem e executado automaticamente.
+
+## 16. Insercao de Tomadas BIM
+
+O painel **Inserir Tomada BIM** permite selecionar:
+
+- familia da tomada;
+- nivel;
+- altura;
+- quadro;
+- circuito;
+- tipo de uso;
+- ambiente/setor.
+
+A ferramenta lembra o ultimo quadro, circuito e ambiente/setor usados, acelerando o lancamento de varios pontos do mesmo circuito.
+
+O comando **Gerenciar Familias** permite editar a biblioteca padrao antes do projeto. As familias ficam indexadas em `Library/FamilyCatalog/families.toml`, entao a bancada le os metadados BIM sem abrir todos os arquivos 3D. Ao inserir uma tomada, somente a instancia criada recebe as propriedades necessarias para circuito, quadro, nivel, relatorio e IFC.
+
+### 16.1 Matriz em cache para tomadas
+
+Para melhorar a performance, a tomada BIM usa uma matriz oculta de biblioteca:
+
+- a matriz e criada uma vez por familia/configuracao e fica oculta;
+- a matriz aparece como `BIMRole = SocketMatrix` e `IsLibraryMatrix = True`;
+- a tomada inserida no projeto e a instancia real, com `BIMRole = Socket` e `IsLibraryMatrix = False`;
+- a tomada visivel usa `GeometrySourceMode = CachedShapeFromMatrix`;
+- circuito, quadro, potencia, nivel, ambiente/setor e dados IFC ficam na instancia real;
+- matrizes nao entram no recalculo de cargas, validacao, tabela de pontos, BOM, relatorios ou exportacao;
+- tomada baixa, media e alta usam matrizes separadas quando a simbologia/altura mudar.
+
+Na pratica, selecione e edite a tomada inserida normalmente. Nao use a matriz oculta para alterar circuito ou quadro.
+
+### 16.2 Pastas da biblioteca de tomadas e conjuntos
+
+Coloque modelos `.FCStd` de tomadas em:
+
+```text
+Library/3D/Tomadas
+```
+
+Coloque modelos `.FCStd` de placas com tomada + interruptor, tomadas combinadas ou outros conjuntos em:
+
+```text
+Library/3D/Conjuntos_Modulares
+```
+
+Se quiser manter simbolos 2D separados para esses conjuntos, use:
+
+```text
+Library/2D/Conjuntos_Modulares
+```
+
+Depois de copiar arquivos manualmente, use **Gerenciar Familias** e, quando necessario, **Regerar Catalogo** para atualizar o `families.toml`.
+
+## 17. Auditoria, Documentacao e Visualizacao
+
+Comandos recentes:
+
+- **Validar Eletrica BIM**: verifica pontos sem quadro, pontos sem circuito, circuitos sem quadro e circuitos sem carga.
+- **Validacao Visual**: colore pontos com problemas de vinculo.
+- **Filtrar Sistemas**: mostra todos os pontos ou apenas um tipo de circuito.
+- **Exportar Tabela de Pontos**: gera CSV com ponto, nivel, ambiente/setor, quadro, circuito, potencia e alturas.
+- **Relatorio HTML**: gera resumo navegavel com alertas, circuitos e pontos.
+- **Gerar Legenda**: cria uma legenda dos sistemas usados.
+- **Editar Pontos em Lote**: altera quadro, circuito, ambiente/setor, potencia e altura dos pontos selecionados.
+- **Criar Ambiente/Setor**: cria ambientes ou setores usados na associacao dos pontos.
+- **Rotas Preliminares**: gera rotas simples por circuito a partir dos pontos vinculados.
+
+---
 *Elite Industrial Suite - Potencializando a Engenharia Brasileira.*
 2.  **Aplicação Automática**: Clique em **Aplicar Proteções** para que o sistema configure as propriedades de segurança em todos os quadros do projeto.
 

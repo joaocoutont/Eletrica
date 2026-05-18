@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo da Caixa -->
+  <rect x="8" y="8" width="48" height="48" rx="4" fill="#2C3E50" stroke="#34495E" stroke-width="2"/>
+  
+  <!-- Tampa Central -->
+  <circle cx="32" cy="32" r="16" fill="#3498DB" stroke="white" stroke-width="2"/>
+  
+  <!-- Parafusos da Tampa -->
+  <circle cx="32" cy="19" r="2" fill="white"/>
+  <circle cx="32" cy="45" r="2" fill="white"/>
+  <circle cx="19" cy="32" r="2" fill="white"/>
+  <circle cx="45" cy="32" r="2" fill="white"/>
+  
+  <!-- Entradas de Eletroduto (Simuladas) -->
+  <rect x="2" y="28" width="6" height="8" rx="1" fill="#7F8C8D"/>
+  <rect x="56" y="28" width="6" height="8" rx="1" fill="#7F8C8D"/>
+  <rect x="28" y="2" width="8" height="6" rx="1" fill="#7F8C8D"/>
+  <rect x="28" y="56" width="8" height="6" rx="1" fill="#7F8C8D"/>
+</svg>

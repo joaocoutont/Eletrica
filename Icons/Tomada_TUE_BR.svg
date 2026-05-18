@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Placa/Espelho Externo (Vermelho para TUE/20A) -->
+  <rect x="4" y="4" width="56" height="56" rx="6" fill="#e74c3c" stroke="#c0392b" stroke-width="1.5"/>
+  <rect x="10" y="10" width="44" height="44" rx="4" fill="#ffffff" stroke="#bdc3c7" stroke-width="0.5"/>
+  
+  <!-- Rebaixo Sextavado Característico -->
+  <path d="M 12 32 L 20 18 L 44 18 L 52 32 L 44 46 L 20 46 Z" fill="#e0e0e0" stroke="#95a5a6" stroke-width="1.5"/>
+  
+  <!-- Os Três Pinos -->
+  <circle cx="21" cy="32" r="4.5" fill="#2c3e50"/> <!-- Maior para indicar 20A -->
+  <circle cx="43" cy="32" r="4.5" fill="#2c3e50"/>
+  <circle cx="32" cy="39" r="4.5" fill="#2c3e50"/>
+</svg>

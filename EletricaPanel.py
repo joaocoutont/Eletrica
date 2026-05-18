@@ -167,3 +167,26 @@ def toggle_dashboard():
     else:
         db = EletricaDashboard()
         mw.addDockWidget(QtCore.Qt.RightDockWidgetArea, db)
+
+
+class ToggleDashboardCommand:
+    """Comando para exibir ou ocultar o Dashboard do projeto"""
+    def Activated(self):
+        try:
+            toggle_dashboard()
+        except Exception as e:
+            import FreeCAD
+            FreeCAD.Console.PrintError(f"Erro ao alternar Dashboard: {e}\n")
+
+    def GetResources(self):
+        import os
+        import FreeCAD
+        DIR = os.path.normpath(os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica"))
+        icon_path = os.path.join(DIR, "Icons", "Dashboard.svg")
+        if not os.path.exists(icon_path):
+            icon_path = os.path.join(DIR, "Icons", "Raio.svg") # fallback
+        return {
+            'Pixmap': icon_path,
+            'MenuText': 'Exibir Dashboard Eletrica',
+            'ToolTip': 'Liga/Desliga o painel lateral de métricas do projeto'
+        }

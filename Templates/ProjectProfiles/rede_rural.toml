@@ -1,0 +1,13 @@
+name = "Rede Rural"
+site = true
+building = false
+levels = false
+spaces = false
+groups = ["Alimentadores Rurais", "Trechos", "Postes", "Transformadores", "Chaves", "Ramais Rurais"]
+
+[electrical]
+panels = ["Alimentador-Rural-01"]
+circuits = ["MT-01 Tronco Rural", "RM-01 Ramal Rural", "TR-01 Transformador"]
+
+[automation]
+

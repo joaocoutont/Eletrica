@@ -103,9 +103,9 @@ class HeatmapManager:
             elif hasattr(obj, "TensaoSecundaria"): # Caso seja a subestação
                 v_str = obj.TensaoSecundaria
 
-            try:
-                v_val = float(str(v_str).replace("V", "").replace("kV", "000").replace("k", "000"))
-            except:
+            from EletricaLogic.Settings import ProjectSettings
+            v_val = ProjectSettings.parse_voltage(v_str, 0.0)
+            if v_val <= 0:
                 continue
 
             # Mapeamento Estético de Cores

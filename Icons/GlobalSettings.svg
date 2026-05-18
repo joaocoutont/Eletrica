@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ícone Configurações Globais (Engrenagem com Sliders) -->
+  <path d="M 32 22 A 10 10 0 1 0 32 42 A 10 10 0 1 0 32 22 Z" fill="none" stroke="#2c3e50" stroke-width="4"/>
+  <path d="M 32 10 L 32 16 M 32 48 L 32 54 M 10 32 L 16 32 M 48 32 L 54 32 M 16.5 16.5 L 20.7 20.7 M 43.3 43.3 L 47.5 47.5 M 16.5 47.5 L 20.7 43.3 M 43.3 20.7 L 47.5 16.5" stroke="#2c3e50" stroke-width="5" stroke-linecap="round"/>
+  
+  <!-- Sliders de ajuste -->
+  <rect x="8" y="52" width="16" height="4" rx="2" fill="#3498db"/>
+  <circle cx="12" cy="54" r="3" fill="#ffffff" stroke="#2c3e50" stroke-width="1"/>
+  
+  <rect x="40" y="10" width="16" height="4" rx="2" fill="#e67e22"/>
+  <circle cx="52" cy="12" r="3" fill="#ffffff" stroke="#2c3e50" stroke-width="1"/>
+</svg>

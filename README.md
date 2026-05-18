@@ -51,4 +51,78 @@ O **Elite Industrial Suite** é um workbench profissional para o FreeCAD voltado
 - Cronogramas e Orçamentos BIM.
 
 ---
+## Preparacao BIM do Projeto Eletrico
+
+A bancada possui comandos dedicados para iniciar projetos eletricos a partir de diferentes bases:
+
+- **Preparar Projeto por CAD**: importa ou vincula planta 2D, permite conferir escala, associar a nivel/setor e travar a referencia.
+- **Preparar Projeto por IFC**: usa a estrutura BIM existente do arquivo, incluindo Site, Building, Storey/Niveis e Spaces quando disponiveis.
+- **Preparar Projeto FreeCAD**: usa desenhos, grupos e objetos nativos do FreeCAD como base de organizacao.
+
+O assistente permite escolher perfis como Predial/Hospitalar, Industrial, Automacao Residencial, Automacao Industrial, Saneamento, Rede Urbana, Rede Rural, Subestacao/MT e Generico.
+
+Os perfis sao editaveis em TOML na pasta:
+
+```text
+Templates/ProjectProfiles
+```
+
+Cada perfil define grupos BIM, quadros, circuitos e parametros de automacao. Se os templates TOML nao forem encontrados ou estiverem invalidos, a bancada usa perfis internos como fallback.
+
+## Biblioteca de Familias
+
+O comando **Gerenciar Familias** edita o catalogo leve em:
+
+```text
+Library/FamilyCatalog/families.toml
+```
+
+Esse TOML guarda nome, categoria, classe IFC, arquivo 3D, potencia, tensao, amperagem, modulos e altura padrao. A bancada carrega esse indice sem abrir os arquivos `.FCStd`, melhorando a performance. Use **Regerar Catalogo** apenas quando adicionar arquivos manualmente na pasta da biblioteca.
+
+Arquivos 3D ficam, por padrao, em:
+
+```text
+Library/3D/Tomadas
+Library/3D/Conjuntos_Modulares
+```
+
+Representacoes 2D opcionais para conjuntos modulares podem ficar em:
+
+```text
+Library/2D/Conjuntos_Modulares
+```
+
+## Tomadas com Matriz em Cache
+
+A ferramenta **Inserir Tomada BIM** usa uma matriz oculta de biblioteca para melhorar a performance em projetos grandes. A primeira tomada de uma mesma familia/configuracao carrega a geometria na matriz; as proximas tomadas copiam essa forma ja carregada, sem reabrir o arquivo `.FCStd`.
+
+- A matriz recebe `BIMRole = SocketMatrix` e `IsLibraryMatrix = True`.
+- A tomada real inserida recebe `BIMRole = Socket` e `IsLibraryMatrix = False`.
+- A tomada visivel usa `GeometrySourceMode = CachedShapeFromMatrix`.
+- Circuito, quadro, potencia, nivel, ambiente e IFC ficam na instancia real, nao na matriz.
+- Recalculo de cargas, validacao, tabela de pontos, relatorios, BOM e exportacao ignoram matrizes de biblioteca.
+- A chave da matriz considera arquivo da familia, modulos, amperagem e altura, evitando mistura entre tomada baixa, media e alta.
+
+## Quadros, Circuitos e Pontos
+
+Os quadros e circuitos preparados pelo assistente sao objetos BIM com propriedades eletricas. A ferramenta de tomada permite escolher nivel, ambiente/setor, quadro, circuito, tipo de uso e altura de instalacao.
+
+As tomadas criadas sao vinculadas ao quadro/circuito selecionado e alimentam validacoes, cargas preliminares, tabela de pontos e relatorios.
+
+## Gestao, Validacao e Documentacao
+
+Comandos adicionados:
+
+- Gerenciar Quadros/Circuitos.
+- Recalcular Cargas.
+- Validar Eletrica BIM.
+- Validacao Visual.
+- Editar Pontos em Lote.
+- Exportar Tabela de Pontos.
+- Relatorio HTML.
+- Gerar Legenda.
+- Criar Ambiente/Setor.
+- Rotas Preliminares.
+
+---
 *Elite Industrial Suite - Desenvolvido para a Engenharia do Futuro.*

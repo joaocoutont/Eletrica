@@ -122,9 +122,18 @@ class ElectricalCalculator:
             4.0: 4.3,
             6.0: 5.0,
             10.0: 6.2,
-            16.0: 7.5
+            16.0: 7.5,
+            25.0: 9.5,
+            35.0: 11.0,
+            50.0: 13.0,
+            70.0: 15.0,
+            95.0: 17.5,
+            120.0: 19.5,
+            150.0: 22.0,
+            185.0: 24.5,
+            240.0: 28.0
         }
-        d = diameters.get(section, 3.7)
+        d = diameters.get(section, 3.7 if section < 1.5 else 28.0 if section > 240.0 else section**0.5 * 2) # Fallback calculado
         return (math.pi * (d**2)) / 4.0
 
     @staticmethod
@@ -146,9 +155,13 @@ class ElectricalCalculator:
             25: 20.5,
             32: 27.0,
             40: 34.0,
-            50: 43.0
+            50: 43.0,
+            60: 53.0,
+            75: 66.0,
+            85: 76.0,
+            110: 100.0
         }
-        d = internal_diameters.get(nominal_diameter, 16.0)
+        d = internal_diameters.get(nominal_diameter, nominal_diameter * 0.85) # Fallback conservador
         return (math.pi * (d**2)) / 4.0
 
     @staticmethod
@@ -222,4 +235,3 @@ class ElectricalCalculator:
             msg += "⚠️ NÃO SELETIVO: Risco de queda simultânea (Blackout)."
             
         return is_selective, msg
-

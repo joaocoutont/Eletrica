@@ -1,0 +1,13 @@
+name = "Subestacao / MT"
+site = true
+building = false
+levels = false
+spaces = false
+groups = ["Patio MT", "Cubiculos", "Transformadores", "Protecao", "Aterramento", "Barramentos"]
+
+[electrical]
+panels = ["SE-01", "Cubiculo-MT-01", "QGBT"]
+circuits = ["MT-01 Entrada", "TR-01 Transformador", "BT-01 Saida QGBT", "PR-01 Protecao"]
+
+[automation]
+

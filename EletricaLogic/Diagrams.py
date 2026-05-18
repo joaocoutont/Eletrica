@@ -135,7 +135,8 @@ class UnifilarGenerator:
         # 1. Linha de Chegada (Entrada)
         entry_line = Draft.make_line(FreeCAD.Vector(0, 100, 0), FreeCAD.Vector(0, 80, 0))
         group.addObject(entry_line)
-        Draft.make_text("ENTRADA MT", placement=FreeCAD.Vector(-15, 105, 0))
+        entry_text = Draft.make_text("ENTRADA MT", placement=FreeCAD.Vector(-15, 105, 0))
+        group.addObject(entry_text)
         
         # 2. Símbolo de Para-raios (Zeta)
         arrester_line = Draft.make_line(FreeCAD.Vector(0, 80, 0), FreeCAD.Vector(0, 70, 0))
@@ -143,7 +144,8 @@ class UnifilarGenerator:
         # Símbolo simplificado (um pequeno ground)
         gnd = Draft.make_line(FreeCAD.Vector(-5, 65, 0), FreeCAD.Vector(5, 65, 0))
         group.addObject(gnd)
-        Draft.make_text("P.R.", placement=FreeCAD.Vector(8, 70, 0))
+        pr_text = Draft.make_text("P.R.", placement=FreeCAD.Vector(8, 70, 0))
+        group.addObject(pr_text)
 
         # 3. Chave Fusível
         fuse_line = Draft.make_line(FreeCAD.Vector(0, 70, 0), FreeCAD.Vector(0, 50, 0))
@@ -151,7 +153,8 @@ class UnifilarGenerator:
         # Círculo do fusível
         fuse_circle = Draft.make_circle(2.0, placement=FreeCAD.Vector(0, 60, 0))
         group.addObject(fuse_circle)
-        Draft.make_text("CH. FUSÍVEL", placement=FreeCAD.Vector(8, 55, 0))
+        fuse_text = Draft.make_text("CH. FUSIVEL", placement=FreeCAD.Vector(8, 55, 0))
+        group.addObject(fuse_text)
 
         # 4. Transformador (Dois círculos entrelaçados)
         trafo_y = 30
@@ -160,7 +163,8 @@ class UnifilarGenerator:
         group.addObject(c1); group.addObject(c2)
         
         trafo_info = f"{getattr(substation_obj, 'PotenciaKVA', 75)}kVA\n{getattr(substation_obj, 'TensaoPrimaria', '13.8kV')}"
-        Draft.make_text(trafo_info, placement=FreeCAD.Vector(15, trafo_y, 0))
+        trafo_text = Draft.make_text(trafo_info, placement=FreeCAD.Vector(15, trafo_y, 0))
+        group.addObject(trafo_text)
 
         # 5. Saída BT (Barramento)
         bt_line = Draft.make_line(FreeCAD.Vector(0, trafo_y - 12, 0), FreeCAD.Vector(0, 0, 0))
@@ -169,7 +173,8 @@ class UnifilarGenerator:
         bus_bt = Draft.make_line(FreeCAD.Vector(-30, 0, 0), FreeCAD.Vector(30, 0, 0))
         bus_bt.ViewObject.LineWidth = 3.0
         group.addObject(bus_bt)
-        Draft.make_text("BARRAMENTO BT", placement=FreeCAD.Vector(-20, -10, 0))
+        bus_text = Draft.make_text("BARRAMENTO BT", placement=FreeCAD.Vector(-20, -10, 0))
+        group.addObject(bus_text)
 
         # 6. Configurar Página e Vista
         page = doc.getObject("Folha_Diagramas_Unifilares") or doc.addObject("TechDraw::DrawPage", "Folha_Diagramas_Unifilares")

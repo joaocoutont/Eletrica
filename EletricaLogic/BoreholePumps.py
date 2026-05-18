@@ -34,6 +34,9 @@ class BoreholePumpManager:
     def insert_ebara_pump(model, cv, depth):
         """Insere a bomba Ebara no projeto BIM"""
         doc = FreeCAD.ActiveDocument
+        if not doc:
+            doc = FreeCAD.newDocument("ProjetoEletrico")
+
         obj = doc.addObject("App::FeaturePython", f"Bomba_Ebara_{cv}CV")
         obj.Label = f"Bomba_Poco_Ebara_{cv}CV_{depth}m"
         
@@ -47,6 +50,5 @@ class BoreholePumpManager:
         obj.addProperty("App::PropertyFloat", "CaboNecessario_mm2", "Dimensionamento").CaboNecessario_mm2 = gauge
         obj.addProperty("App::PropertyFloat", "QuedaTensaoCalculada", "Dimensionamento").QuedaTensaoCalculada = drop
         
-        FreeCAD.ActiveDocument.recompute()
+        doc.recompute()
         return obj
- Broadway

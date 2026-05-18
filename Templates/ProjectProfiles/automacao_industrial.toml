@@ -1,0 +1,35 @@
+name = "Automacao Industrial"
+site = true
+building = false
+levels = false
+spaces = false
+groups = [
+  "PLCs",
+  "IHMs",
+  "Remotas IO",
+  "Instrumentacao",
+  "Sensores",
+  "Atuadores",
+  "Redes Industriais",
+  "Painel Controle",
+  "Seguranca Maquina"
+]
+
+[electrical]
+panels = ["QTA-01 Automacao", "PLC-01", "IHM-01", "RIO-01"]
+circuits = [
+  "INST-01 Instrumentacao",
+  "COM-01 Comando",
+  "ETH-01 Rede Industrial",
+  "SEG-01 Seguranca",
+  "IO-01 Remotas IO",
+  "AT-01 Atuadores"
+]
+
+[automation]
+AutomationScope = "Controle industrial e instrumentacao"
+ControlVoltage = "24Vcc"
+Protocol = "Profinet / Modbus TCP / EtherNet-IP"
+NetworkType = "Ethernet industrial"
+SafetyCategory = "NR-12 / seguranca de maquina"
+

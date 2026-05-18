@@ -38,6 +38,44 @@ except:
 class EletricaWorkbench (FreeCADGui.Workbench):
     """Bancada de Engenharia Elétrica para FreeCAD 1.1"""
     
+    class ExternalToolProxy:
+        """Proxy para ferramentas de outras bancadas (BIM, Draft)"""
+        def __init__(self, cmd_name):
+            self.cmd_name = cmd_name
+            self.dir = os.path.normpath(os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica"))
+
+        def Activated(self):
+            import FreeCADGui
+            try:
+                FreeCADGui.runCommand(self.cmd_name)
+            except:
+                try:
+                    FreeCADGui.activateWorkbench("BIMWorkbench")
+                    FreeCADGui.activateWorkbench("EletricaWorkbench")
+                    FreeCADGui.runCommand(self.cmd_name)
+                except:
+                    FreeCAD.Console.PrintError("Falha ao abrir ferramenta: " + self.cmd_name + "\n")
+
+        def IsActive(self):
+            import FreeCAD
+            return FreeCAD.ActiveDocument is not None
+
+        def GetResources(self):
+            try:
+                from EletricaLogic.i18n import tr
+            except:
+                tr = lambda x: x
+                
+            # Usar o nome do comando como ícone.
+            icon = self.cmd_name
+            # Nome oficial do ícone no FreeCAD 1.1 para o Explorador IFC
+            if icon == "BIM_IfcExplorer":
+                icon = "IFC"
+
+            return {'MenuText': tr(self.cmd_name.replace("Arch_", "").replace("BIM_", "").replace("Draft_", "")), 
+                    'Pixmap': icon,
+                    'ToolTip': tr("Ferramenta Externa: ") + self.cmd_name}
+
     DIR = os.path.normpath(os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica"))
     
     MenuText = "Eletrica"
@@ -52,42 +90,14 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         "Este método organiza a interface conforme o fluxo de confecção do projeto"
         import EletricaGui
         import EletricaPanel
+        import GeometryScripts.junction_box_gui # Carrega o comando de Caixas
+        import GeometryScripts.socket_gui       # Carrega o comando de Tomadas
+        try:
+            from EletricaLogic.i18n import tr
+        except:
+            tr = lambda x: x
 
-        class ExternalToolProxy:
-            """Proxy para ferramentas de outras bancadas (BIM, Draft)"""
-            def __init__(self, cmd_name):
-                self.cmd_name = cmd_name
-                self.dir = os.path.normpath(os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica"))
 
-            def Activated(self):
-                import FreeCADGui
-                try:
-                    FreeCADGui.runCommand(self.cmd_name)
-                except:
-                    try:
-                        FreeCADGui.activateWorkbench("BIMWorkbench")
-                        FreeCADGui.activateWorkbench("EletricaWorkbench")
-                        FreeCADGui.runCommand(self.cmd_name)
-                    except:
-                        FreeCAD.Console.PrintError("Falha ao abrir ferramenta: " + self.cmd_name + "\n")
-
-            def GetResources(self):
-                # Usar o nome do comando como ícone.
-                icon = self.cmd_name
-                # Nome oficial do ícone no FreeCAD 1.1 para o Explorador IFC
-                if icon == "BIM_IfcExplorer":
-                    icon = "IFC"
-
-                return {'MenuText': tr(self.cmd_name.replace("Arch_", "").replace("BIM_", "").replace("Draft_", "")), 
-                        'Pixmap': icon,
-                        'ToolTip': tr("Ferramenta Externa: ") + self.cmd_name}
-
-        def tr(text):
-            try:
-                from EletricaLogic.i18n import tr as real_tr
-                return real_tr(text)
-            except:
-                return text
         
         # Proxies de ferramentas externas
         draft_cmds = ["Draft_Line", "Draft_Wire", "Draft_Circle", "Draft_Arc", 
@@ -100,30 +110,51 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         bim_cmds = ["Arch_Site", "Arch_Building", "Arch_BuildingPart", "Arch_Reference", "BIM_IfcExplorer"]
 
         for cmd in draft_cmds + snap_cmds + bim_cmds:
-            FreeCADGui.addCommand("Eletrica_Tool_" + cmd, ExternalToolProxy(cmd))
+            FreeCADGui.addCommand("Eletrica_Tool_" + cmd, self.ExternalToolProxy(cmd))
+
+        # Registrar o comando do Dashboard importado dinamicamente para evitar conflitos de escopo global no FreeCAD
+        try:
+            from EletricaPanel import ToggleDashboardCommand
+        except Exception as e:
+            FreeCAD.Console.PrintWarning(f"Não foi possível importar ToggleDashboardCommand do EletricaPanel: {str(e)}. Usando stub de fallback.\n")
+            class ToggleDashboardCommand:
+                def Activated(self):
+                    FreeCAD.Console.PrintError("Painel do Dashboard não disponível.\n")
+                def GetResources(self):
+                    return {
+                        'MenuText': 'Exibir Dashboard Elétrica',
+                        'ToolTip': 'Painel indisponível temporariamente',
+                        'Pixmap': 'Dashboard'
+                    }
+
+        FreeCADGui.addCommand("Eletrica_ToggleDashboard", ToggleDashboardCommand())
 
         # --- REORGANIZAÇÃO POR FLUXO DE PROJETO ---
 
         # 1. SETUP: Configuração e Dados da Obra
         toolbar_setup = [
+            "Eletrica_PrepareFromCAD",
+            "Eletrica_PrepareFromIFC",
+            "Eletrica_PrepareFromFreeCAD",
+            "Eletrica_ManageFamilies",
+            "Eletrica_EditProjectTemplates",
             "Eletrica_ProjectMetadata",
-            "Eletrica_SubstationWizard",
             "Eletrica_ServiceEntranceWizard",
-            "Eletrica_CreatePanel"
+            "Eletrica_InsertServiceEntrance",
+            "Eletrica_CreatePanel",
+            "Eletrica_GlobalSettings",
+            "Eletrica_ToggleDashboard"
         ]
         
         # 2. BIM MODELING: Inserção de Cargas e Equipamentos
         toolbar_mod_lighting = ["Eletrica_InsertLight", "Eletrica_InsertSwitch", "Eletrica_MergeSwitches", "Eletrica_InsertSmartDevice"]
-        toolbar_mod_loads    = ["Eletrica_InsertSocket", "Eletrica_InsertSpecialSocket", "Eletrica_InsertAirConditioner"]
+        toolbar_mod_loads    = ["Eletrica_InsertSocket", "Eletrica_InsertSpecialSocket", "Eletrica_InsertModularSet", "Eletrica_InsertAirConditioner"]
         toolbar_mod_motors   = ["Eletrica_SetupMotorWizard", "Eletrica_MotorWiringWizard", "Eletrica_InsertPumpSet", "Eletrica_LinkPumpSet", "Eletrica_InsertBoreholePump", "Eletrica_BIMifyEquipment"]
         
         # 3. TELECOM & DATA: Cabeamento Estruturado e VDI
         toolbar_telecom = [
             "Eletrica_InsertDataDevice",
-            "Eletrica_InsertAutomationDevice",
-            "Eletrica_InsertFireDevice",
-            "Eletrica_InsertSecurityDevice",
-            "Eletrica_InsertSoundDevice"
+            "Eletrica_InsertAutomationDevice"
         ]
         
         # 4. INFRASTRUCTURE: Infra, Roteamento e Redes
@@ -131,16 +162,22 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_InsertConduit",
             "Eletrica_InsertCableTray",
             "Eletrica_IntelligentAutoRoute",
+            "Eletrica_CreatePreliminaryRoutes",
             "Eletrica_CheckConduitFill",
-            "Eletrica_InsertPullBox"
+            "Eletrica_InsertPullBox",
+            "Eletrica_JunctionBox"
         ]
         
         # 4. ENGINEERING: Engenharia de Sistemas e Cálculos MT/BT
-        toolbar_eng_cables = ["Eletrica_ServiceEntranceWizard", "Eletrica_SubstationWizard", "Eletrica_MTInstrumentationWizard", "Eletrica_BusbarSizing"]
-        toolbar_eng_analysis = ["Eletrica_CheckSelectivity", "Eletrica_PowerFactorCorrection", "Eletrica_SetupEmergencyPower", "Eletrica_LightingAnalysis", "Eletrica_ArcFlashAnalysis", "Eletrica_ConsolidateProject"]
+        toolbar_eng_cables = ["Eletrica_MTInstrumentationWizard", "Eletrica_BusbarSizing"]
+        toolbar_eng_analysis = ["Eletrica_CheckSelectivity", "Eletrica_PowerFactorCorrection", "Eletrica_SetupEmergencyPower", "Eletrica_LightingAnalysis", "Eletrica_ArcFlashAnalysis"]
         
         # 5. MANAGEMENT: Gestão de Painéis e Circuitos
         toolbar_mgmt = [
+            "Eletrica_ManagePanelsCircuits",
+            "Eletrica_RecalculateCircuitLoads",
+            "Eletrica_BatchEditPoints",
+            "Eletrica_CreateSpaceOrSector",
             "Eletrica_ConsolidateProject",
             "Eletrica_UpdatePricing",
             "Eletrica_CloneFloor",
@@ -150,6 +187,9 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         # 6. QUALITY & BIM: Auditoria e Exportação
         toolbar_audit = [
             "Eletrica_RunProjectAudit",
+            "Eletrica_ValidateElectricalProject",
+            "Eletrica_VisualValidation",
+            "Eletrica_ToggleSystemVisibility",
             "Eletrica_ToggleVoltageLevelHeatmap",
             "Eletrica_ToggleVoltageDropHeatmap",
             "Eletrica_GenerateTags",
@@ -158,7 +198,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         ]
 
         # 7. OUTPUTS: Documentação e Custos
-        toolbar_doc_reports = ["Eletrica_UpdatePricing", "Eletrica_GenerateLoadSchedule", "Eletrica_GenerateCableSchedule"]
+        toolbar_doc_reports = ["Eletrica_GenerateLoadSchedule", "Eletrica_GenerateCableSchedule", "Eletrica_ExportPointSchedule", "Eletrica_GenerateElectricalReport", "Eletrica_GenerateSymbolLegend"]
         toolbar_doc_export  = ["Eletrica_ExportBOM", "Eletrica_GenerateBudget", "Eletrica_GenerateUnifilar"]
         toolbar_doc_drawing = ["Eletrica_CreateRDUDrawing", "Eletrica_GenerateRDUMemorial"]
 
@@ -211,7 +251,7 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         
         # 12. Energia Crítica e de Emergência
         toolbar_critical = [
-            "Eletrica_InsertGeneratorDevice",
+            "Eletrica_InsertGenerator",
             "Eletrica_InsertUPS"
         ]
 
@@ -255,10 +295,13 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         toolbar_snaps = ["Eletrica_Tool_" + c for c in snap_cmds]
         toolbar_bim   = ["Eletrica_Tool_" + c for c in bim_cmds]
         
-        # 18. DISPOSIÇÃO SUPREMA: SISTEMA DE 4 FASES (LINEAR WORKFLOW)
+        # --- FUNÇÃO DE DEDUPLICAÇÃO ---
+        def deduplicate(l):
+            seen = set()
+            return [x for x in l if not (x in seen or seen.add(x))]
         
-        # FASE I: ARQUITETURA & CARGAS (BIM) - O Início
-        toolbar_phase_1 = (
+        # FASE I: CONCEPÇÃO & BIM (Cargas e Iluminação)
+        toolbar_phase_1 = deduplicate(
             toolbar_setup + 
             toolbar_mod_lighting + 
             toolbar_mod_loads + 
@@ -267,57 +310,95 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             toolbar_special_systems
         )
 
-        # FASE II: INFRAESTRUTURA & REDES (HEAVY DUTY) - O Meio
-        toolbar_phase_2 = (
+        # FASE II: INFRAESTRUTURA & REDES (Físico)
+        toolbar_phase_2 = deduplicate(
             toolbar_infra + 
-            toolbar_mod_motors + 
-            toolbar_industrial_adv + 
+            toolbar_earthing +        # Aterramento movido para Infra
             toolbar_rdu_poles + 
             toolbar_rdu_equip + 
-            toolbar_rdu_lines
-        )
-
-        # FASE III: ENGENHARIA, SOLAR & ANÁLISE - A Inteligência
-        toolbar_phase_3 = (
-            toolbar_eng_cables + 
-            toolbar_eng_analysis + 
-            toolbar_simulation + 
-            toolbar_solar + 
-            toolbar_substation + 
-            toolbar_critical + 
-            toolbar_earthing + 
-            toolbar_safety
-        )
-
-        # FASE IV: CICLO DE VIDA BIM & ENTREGA - O Resultado
-        toolbar_phase_4 = (
-            toolbar_mgmt + 
-            toolbar_audit + 
-            toolbar_lifecycle + 
-            toolbar_bi + 
-            toolbar_innovation + 
-            toolbar_doc_reports + 
-            toolbar_doc_export + 
-            toolbar_doc_drawing + 
+            toolbar_rdu_lines +
             toolbar_rdu_ground
         )
 
-        # Montagem das 4 Barras de Fluxo no FreeCAD
-        self.appendToolbar(tr("Fase I: Arquitetura & BIM"), toolbar_phase_1)
+        # FASE III: ENGENHARIA & MT (Cálculos e Sistemas)
+        toolbar_phase_3 = deduplicate(
+            toolbar_eng_cables + 
+            toolbar_eng_analysis + 
+            toolbar_mod_motors + 
+            toolbar_industrial_adv + 
+            toolbar_simulation + 
+            toolbar_solar + 
+            toolbar_substation + 
+            toolbar_critical
+        )
+
+        # FASE IV: AUDITORIA & BIM 9D (Qualidade e Gestão)
+        toolbar_phase_4 = deduplicate(
+            toolbar_audit + 
+            toolbar_mgmt + 
+            toolbar_lifecycle + 
+            toolbar_bi + 
+            toolbar_innovation +
+            toolbar_safety
+        )
+
+        # FASE V: DOCUMENTAÇÃO & ENTREGA (Finalização)
+        toolbar_phase_5 = deduplicate(
+            toolbar_doc_reports + 
+            toolbar_doc_export + 
+            toolbar_doc_drawing
+        )
+
+        # Montagem das 5 Barras de Fluxo no FreeCAD
+        self.appendToolbar(tr("Fase I: Concepção & BIM"), toolbar_phase_1)
         self.appendToolbar(tr("Fase II: Infra & Redes"), toolbar_phase_2)
-        self.appendToolbar(tr("Fase III: Engenharia & Solar"), toolbar_phase_3)
-        self.appendToolbar(tr("Fase IV: BIM Lifecycle & Doc"), toolbar_phase_4)
+        self.appendToolbar(tr("Fase III: Engenharia & MT"), toolbar_phase_3)
+        self.appendToolbar(tr("Fase IV: Auditoria & Lifecycle"), toolbar_phase_4)
+        self.appendToolbar(tr("Fase V: Documentação & Entrega"), toolbar_phase_5)
         
         # Auxiliares (Draft/Snaps)
-        self.appendToolbar(tr("Auxiliares (Draft/Snaps)"), toolbar_draft + toolbar_snaps)
+        self.appendToolbar(tr("Auxiliares (Draft/Snaps)"), deduplicate(toolbar_draft + toolbar_snaps))
         
-        # Menu Suspenso Consolidado
-        self.appendMenu("Eletrica", toolbar_setup + toolbar_mod_lighting + toolbar_mod_loads + toolbar_mod_motors + toolbar_rdu_poles + toolbar_rdu_equip + toolbar_telecom + toolbar_infra + toolbar_eng_cables + toolbar_eng_analysis + toolbar_mgmt + toolbar_doc_reports + toolbar_doc_export)
+        # Menu Suspenso Organizado por Submenus (Hierárquico)
+        self.appendMenu([tr("Eletrica"), tr("Fase I: Concepção & BIM")], toolbar_phase_1)
+        self.appendMenu([tr("Eletrica"), tr("Fase II: Infra & Redes")], toolbar_phase_2)
+        self.appendMenu([tr("Eletrica"), tr("Fase III: Engenharia & MT")], toolbar_phase_3)
+        self.appendMenu([tr("Eletrica"), tr("Fase IV: Auditoria & Lifecycle")], toolbar_phase_4)
+        self.appendMenu([tr("Eletrica"), tr("Fase V: Documentação & Entrega")], toolbar_phase_5)
+
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            BIMPlacementEngine.clear_checkable_actions()
+        except Exception:
+            pass
+
 
     def Activated(self):
-        return
+        import FreeCADGui
+        try:
+            from EletricaLogic.i18n import tr
+        except:
+            tr = lambda x: x
+            
+        FreeCADGui.getMainWindow().statusBar().showMessage(tr("Bancada Eletrica Ativada - Pronto para projetar conforme NBR 5410"))
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is None:
+                BIMPlacementEngine.clear_checkable_actions()
+        except Exception:
+            pass
+        
+        # O painel lateral (Dashboard) agora inicia desabilitado/ocultado por padrão conforme solicitação do usuário.
+        # Ele pode ser ativado a qualquer momento clicando no botão "Exibir Dashboard Eletrica" na barra de ferramentas SETUP ou no menu.
+        pass
 
     def Deactivated(self):
-        return
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                BIMPlacementEngine.active_engine.stop()
+        except Exception as e:
+            import FreeCAD
+            FreeCAD.Console.PrintError(f"Erro ao desativar bancada Eletrica: {str(e)}\n")
 
 FreeCADGui.addWorkbench(EletricaWorkbench())

@@ -25,4 +25,26 @@ Este documento descreve os próximos passos e as metas de desenvolvimento para a
 - [x] Exportação direta para formatos de manufatura de barramentos (CNC/Dobra).
 
 ---
+## Versao 3.1 (Preparacao BIM Eletrica) - [IMPLEMENTADA]
+- [x] Assistentes de preparacao por CAD, IFC e FreeCAD.
+- [x] Perfis adaptativos: predial, industrial, saneamento, redes urbana/rural, subestacao/MT, automacao residencial e automacao industrial.
+- [x] Templates editaveis em TOML em `Templates/ProjectProfiles`.
+- [x] Criacao de Site, Edificacao, Niveis, Espacos, Zonas e Setores quando aplicavel.
+- [x] Configuracao de ponto base, coordenadas compartilhadas, rotacao/norte e escala CAD.
+- [x] Quadros e circuitos como objetos BIM com propriedades eletricas.
+- [x] Vinculo de tomadas a quadro, circuito, nivel e ambiente/setor.
+- [x] Recalculo preliminar de cargas por circuito.
+- [x] Validacao BIM eletrica basica e validacao visual.
+- [x] Exportacao de tabela de pontos CSV e relatorio HTML.
+- [x] Legenda automatica e rotas preliminares por circuito.
+
+## Proximas Melhorias Sugeridas
+- [ ] Editor visual completo de quadros e circuitos com propriedades detalhadas.
+- [ ] Regras normativas configuraveis por perfil TOML.
+- [ ] Roteamento MEP avancado com caixas automaticas e conectores.
+- [ ] Dimensionamento completo de queda de tensao por comprimento real.
+- [ ] Integracao IFC aprimorada com Psets eletricos exportaveis.
+- [ ] Biblioteca de simbolos 2D/3D por sistema.
+
+---
 *Elite Industrial Suite - Evoluindo a Engenharia Digital.*

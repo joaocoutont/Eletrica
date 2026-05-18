@@ -1,0 +1,13 @@
+name = "Predial / Hospitalar"
+site = true
+building = true
+levels = true
+spaces = true
+groups = ["Ambientes", "Leitos / Areas Criticas", "Shafts", "Prumadas"]
+
+[electrical]
+panels = ["QD-Terreo", "QD-Nivel-01"]
+circuits = ["C-01 TUG", "C-02 TUE", "C-03 Iluminacao", "C-04 Emergencia"]
+
+[automation]
+

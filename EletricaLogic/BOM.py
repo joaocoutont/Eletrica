@@ -3,6 +3,18 @@ import FreeCAD
 import Spreadsheet
 from EletricaLogic.Wiring import WiringManager
 
+def _is_library_matrix(obj):
+    role = getattr(obj, "BIMRole", "")
+    if role in ["SocketMatrix", "LibraryMatrix", "FamilyMatrix"]:
+        return True
+    try:
+        if bool(getattr(obj, "IsLibraryMatrix", False)):
+            return True
+    except Exception:
+        pass
+    name = f"{getattr(obj, 'Name', '')} {getattr(obj, 'Label', '')}"
+    return "Matriz_" in name or "Matrix_" in name
+
 class BOMManager:
     @staticmethod
     def get_raw_bom_data():
@@ -16,6 +28,8 @@ class BOMManager:
         
         data = {}
         for obj in doc.Objects:
+            if _is_library_matrix(obj):
+                continue
             # 1. Componentes discretos (Tomadas, Luzes, Motores, etc.)
             if hasattr(obj, "Potencia") and not obj.Label.startswith("Simbolo_"):
                 # Agrupa por prefixo (ex: Tomada_Cozinha -> Tomada)
@@ -28,8 +42,10 @@ class BOMManager:
                 length = obj.Shape.Length / 1000.0 # metros
                 data[diam] = data.get(diam, 0.0) + length
                 
-            if hasattr(obj, "TrayWidth") and hasattr(obj, "Shape"):
-                tray = f"Eletrocalha {obj.TrayWidth}x{obj.TrayHeight}mm"
+            if (hasattr(obj, "TrayWidth") or hasattr(obj, "LarguraMM")) and hasattr(obj, "Shape"):
+                width = getattr(obj, "TrayWidth", getattr(obj, "LarguraMM", 0))
+                height = getattr(obj, "TrayHeight", getattr(obj, "AlturaMM", 0))
+                tray = f"Eletrocalha {width:g}x{height:g}mm"
                 length = obj.Shape.Length / 1000.0
                 data[tray] = data.get(tray, 0.0) + length
 
@@ -46,6 +62,8 @@ class BOMManager:
         materials = {} # {Nome: Quantidade/Comprimento}
         
         for obj in doc.Objects:
+            if _is_library_matrix(obj):
+                continue
             # 1. Contagem de Componentes (Tomadas, Luzes, etc)
             if hasattr(obj, "Potencia") and not obj.Label.startswith("Simbolo_"):
                 name = obj.Label.split('_')[0] # Pega o tipo base
@@ -91,6 +109,9 @@ class BOMManager:
         """Exporta o BOM para a pasta Downloads"""
         import os, csv
         doc = FreeCAD.ActiveDocument
+        if not doc:
+            return None
+
         data = BOMManager.get_raw_bom_data()
         
         path = os.path.join(os.path.expanduser("~"), "Downloads", f"BOM_{doc.Label}.csv")
@@ -101,6 +122,17 @@ class BOMManager:
                 unit = "m" if "Eletroduto" in item or "Cabo" in item else "pç"
                 writer.writerow([item, f"{qty:.2f}", unit])
         
-        from PySide import QtWidgets
+        try:
+            from PySide import QtWidgets
+        except ImportError:
+            try:
+                from PySide2 import QtWidgets
+            except ImportError:
+                from PySide6 import QtWidgets
         QtWidgets.QMessageBox.information(None, "BOM", f"Lista de Materiais exportada para:\n{path}")
-        os.startfile(os.path.dirname(path))
+        if hasattr(os, "startfile"):
+            try:
+                os.startfile(os.path.dirname(path))
+            except OSError:
+                pass
+        return path

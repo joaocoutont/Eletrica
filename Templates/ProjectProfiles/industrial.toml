@@ -1,0 +1,13 @@
+name = "Industrial"
+site = true
+building = false
+levels = false
+spaces = false
+groups = ["Setor Producao", "Setor Utilidades", "Subestacoes", "CCMs", "Maquinas"]
+
+[electrical]
+panels = ["QGBT", "CCM-01", "QD-Utilidades"]
+circuits = ["AL-01 Alimentador", "M-01 Motores", "IL-01 Iluminacao", "TM-01 Tomadas Manutencao"]
+
+[automation]
+

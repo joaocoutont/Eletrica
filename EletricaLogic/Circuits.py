@@ -77,10 +77,12 @@ class CircuitManager:
             power_va = data["power_va"]
             
             # Usar ElectricalCalculator com auto-detecção de tensão/fases se None
-            v_val = float(data["tensao"].replace("V", "")) if data["tensao"] else None
+            v_val = ProjectSettings.parse_voltage(data["tensao"], None) if data["tensao"] else None
             num_f = data["fases"]
+            actual_v = v_val if v_val else ProjectSettings.get_voltage()
+            actual_phases = num_f or 1
             
-            current_nominal = ElectricalCalculator.calculate_current(power_va, voltage=v_val, phases=num_f)
+            current_nominal = ElectricalCalculator.calculate_current(power_va, voltage=actual_v, phases=actual_phases)
             
             # Aplicar fator de agrupamento
             num_in_conduit = grouping_per_circuit.get(c_name, 1)
@@ -106,7 +108,7 @@ class CircuitManager:
             pf = getattr(meta, "PowerFactor", 0.92)
             
             # Recalcular corrente nominal com o Fator de Potencia real
-            current_nominal = ElectricalCalculator.calculate_current(data["power"], data["voltage"], data["phases"], cos_phi=pf)
+            current_nominal = ElectricalCalculator.calculate_current(power_va, actual_v, actual_phases, cos_phi=pf)
             current_corrected = current_nominal / fca if fca > 0 else current_nominal
 
             wire = ElectricalCalculator.get_standard_wire_gauge(current_corrected, method=install_method, insulation=ins, material=mat, ambient_temp=temp)
@@ -125,10 +127,9 @@ class CircuitManager:
             
             # Calculo de Queda de Tensao
             drop_percent = 0.0
-            actual_v = v_val if v_val else ProjectSettings.get_voltage()
             if length_m > 0 and wire > 0:
                 drop_percent = ElectricalCalculator.calculate_voltage_drop(
-                    current_nominal, length_m, wire, actual_v, phases=num_f or 1)
+                    current_nominal, length_m, wire, actual_v, phases=actual_phases)
                 
                 # Armazenar nos objetos para o Heatmap
                 for obj in data["objects"]:
@@ -146,8 +147,8 @@ class CircuitManager:
                 # Extrair potência numérica do string (ex: "112.5 kVA" -> 112.5)
                 s_trafo_str = getattr(meta, "TrafoPower", "112.5 kVA")
                 try:
-                    s_trafo = float(s_trafo_str.split()[0])
-                except:
+                    s_trafo = float(str(s_trafo_str).split()[0])
+                except Exception:
                     s_trafo = 112.5
 
                 icc_ka = ElectricalCalculator.calculate_short_circuit(

@@ -1,0 +1,13 @@
+name = "Rede Urbana"
+site = true
+building = false
+levels = false
+spaces = false
+groups = ["Alimentadores MT", "Rede BT", "Postes", "Transformadores", "Iluminacao Publica", "Ramais"]
+
+[electrical]
+panels = ["Alimentador-MT-01"]
+circuits = ["MT-01 Alimentador", "BT-01 Rede BT", "IP-01 Iluminacao Publica"]
+
+[automation]
+

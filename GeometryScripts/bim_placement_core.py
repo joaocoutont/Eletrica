@@ -556,9 +556,17 @@ class BIMPlacementEngine:
                             self.cmd.rotation = self.last_snap_rot
                             if hasattr(self.panel, 'sync_ui'): self.panel.sync_ui()
                         
-                        existing_names = {obj.Name for obj in App.ActiveDocument.Objects}
+                        active_doc = App.ActiveDocument
+                        if active_doc is None:
+                            active_doc = App.newDocument("Projeto_Eletrico")
+                        existing_names = {obj.Name for obj in active_doc.Objects}
                         self.placement_func(target_point, is_ghost=False)
-                        new_objects = [obj for obj in App.ActiveDocument.Objects if obj.Name not in existing_names]
+                        try:
+                            if App.ActiveDocument is None:
+                                App.setActiveDocument(active_doc.Name)
+                        except Exception:
+                            pass
+                        new_objects = [obj for obj in active_doc.Objects if obj.Name not in existing_names]
                         for new_obj in new_objects:
                             # Síncrono imediato para evitar corrida de cliques rápidos
                             if getattr(new_obj, "ViewObject", None) is not None:

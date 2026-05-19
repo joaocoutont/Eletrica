@@ -39,13 +39,21 @@ class AutoRouter:
         if not hasattr(obj_start, "Placement") or not hasattr(obj_end, "Placement"):
             return None
             
-        p1 = obj_start.Placement.Base
-        p2 = obj_end.Placement.Base
+        try:
+            from EletricaLogic.Routing import AutoRouter as RoutingRouter
+            p1 = RoutingRouter.get_best_connection_point(obj_start, obj_end.Placement.Base)
+            p2 = RoutingRouter.get_best_connection_point(obj_end, p1)
+        except Exception:
+            p1 = obj_start.Placement.Base
+            p2 = obj_end.Placement.Base
         
         nodes = AutoRouter.route_orthogonal(p1, p2)
         
         # Aqui chamaria a lógica do Conduit.py para criar o objeto real
         from EletricaLogic.Conduit import ConduitManager
-        conduit = ConduitManager.create_conduit_from_points(nodes)
+        try:
+            conduit = ConduitManager.create_conduit(nodes, label=f"Eletroduto_{obj_start.Label}_to_{obj_end.Label}")
+        except Exception:
+            conduit = None
         
         return conduit

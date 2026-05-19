@@ -27,6 +27,15 @@ DEFAULT_SOCKET_FAMILIES = [
         "amperage": "10A",
         "voltage": "127V",
         "power": 100.0,
+        "apparent_power_va": 100.0,
+        "active_power_w": 100.0,
+        "power_factor": 1.0,
+        "demand_factor": 1.0,
+        "phase": "R",
+        "load_classification": "TUG",
+        "socket_application": "Predial",
+        "ip_rating": "IP20",
+        "electrical_standard": "NBR 5410",
         "height_type": "Media (1100mm)",
         "mounting_height": 1100.0,
         "manufacturer": "",
@@ -46,6 +55,15 @@ DEFAULT_SOCKET_FAMILIES = [
         "amperage": "20A",
         "voltage": "127V",
         "power": 600.0,
+        "apparent_power_va": 600.0,
+        "active_power_w": 600.0,
+        "power_factor": 1.0,
+        "demand_factor": 1.0,
+        "phase": "R",
+        "load_classification": "TUG",
+        "socket_application": "Predial",
+        "ip_rating": "IP20",
+        "electrical_standard": "NBR 5410",
         "height_type": "Media (1100mm)",
         "mounting_height": 1100.0,
         "manufacturer": "",
@@ -65,6 +83,15 @@ DEFAULT_SOCKET_FAMILIES = [
         "amperage": "10A",
         "voltage": "127V",
         "power": 200.0,
+        "apparent_power_va": 200.0,
+        "active_power_w": 200.0,
+        "power_factor": 1.0,
+        "demand_factor": 1.0,
+        "phase": "R",
+        "load_classification": "TUG",
+        "socket_application": "Predial",
+        "ip_rating": "IP20",
+        "electrical_standard": "NBR 5410",
         "height_type": "Media (1100mm)",
         "mounting_height": 1100.0,
         "manufacturer": "",
@@ -84,6 +111,15 @@ DEFAULT_SOCKET_FAMILIES = [
         "amperage": "20A",
         "voltage": "127V",
         "power": 1200.0,
+        "apparent_power_va": 1200.0,
+        "active_power_w": 1200.0,
+        "power_factor": 1.0,
+        "demand_factor": 1.0,
+        "phase": "R",
+        "load_classification": "TUG",
+        "socket_application": "Predial",
+        "ip_rating": "IP20",
+        "electrical_standard": "NBR 5410",
         "height_type": "Media (1100mm)",
         "mounting_height": 1100.0,
         "manufacturer": "",
@@ -193,6 +229,15 @@ def _toml_dump(data):
             "amperage",
             "voltage",
             "power",
+            "apparent_power_va",
+            "active_power_w",
+            "power_factor",
+            "demand_factor",
+            "phase",
+            "load_classification",
+            "socket_application",
+            "ip_rating",
+            "electrical_standard",
             "height_type",
             "mounting_height",
             "manufacturer",
@@ -247,9 +292,17 @@ def infer_family_from_source(source):
     base = os.path.splitext(os.path.basename(source))[0]
     text = base.lower()
     category = "Tomada" if "tomada" in text else "Equipamento"
-    modules = "2 Modulos" if "dupla" in text or "_2" in text else "1 Modulo"
+    if "tripla" in text or "_3" in text:
+        modules = "3 Modulos"
+    elif "dupla" in text or "_2" in text:
+        modules = "2 Modulos"
+    else:
+        modules = "1 Modulo"
     amperage = "20A" if "20a" in text else "10A"
-    power = 1200.0 if amperage == "20A" and modules.startswith("2") else 600.0 if amperage == "20A" else 200.0 if modules.startswith("2") else 100.0
+    module_count = 3 if modules.startswith("3") else 2 if modules.startswith("2") else 1
+    unit_power = 600.0 if amperage == "20A" else 100.0
+    power = unit_power * module_count
+    power_factor = 1.0
     return {
         "id": _slug(base),
         "name": base.replace("_", " "),
@@ -262,6 +315,15 @@ def infer_family_from_source(source):
         "amperage": amperage,
         "voltage": "127V",
         "power": power,
+        "apparent_power_va": power,
+        "active_power_w": power * power_factor,
+        "power_factor": power_factor,
+        "demand_factor": 1.0,
+        "phase": "R",
+        "load_classification": "TUG" if category == "Tomada" else "Geral",
+        "socket_application": "Predial" if category == "Tomada" else "",
+        "ip_rating": "IP20" if category == "Tomada" else "",
+        "electrical_standard": "NBR 5410",
         "height_type": "Media (1100mm)",
         "mounting_height": 1100.0,
         "manufacturer": "",

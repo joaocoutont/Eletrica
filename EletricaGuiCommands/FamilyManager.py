@@ -87,6 +87,31 @@ class FamilyManagerDialog(QtWidgets.QDialog if QtWidgets else object):
         self.power_spin.setRange(0.0, 100000000.0)
         self.power_spin.setDecimals(2)
         self.power_spin.setSuffix(" VA")
+        self.active_power_spin = QtWidgets.QDoubleSpinBox()
+        self.active_power_spin.setRange(0.0, 100000000.0)
+        self.active_power_spin.setDecimals(2)
+        self.active_power_spin.setSuffix(" W")
+        self.power_factor_spin = QtWidgets.QDoubleSpinBox()
+        self.power_factor_spin.setRange(0.0, 1.0)
+        self.power_factor_spin.setDecimals(3)
+        self.power_factor_spin.setSingleStep(0.05)
+        self.power_factor_spin.setValue(1.0)
+        self.demand_factor_spin = QtWidgets.QDoubleSpinBox()
+        self.demand_factor_spin.setRange(0.0, 1.0)
+        self.demand_factor_spin.setDecimals(3)
+        self.demand_factor_spin.setSingleStep(0.05)
+        self.demand_factor_spin.setValue(1.0)
+        self.phase_combo = QtWidgets.QComboBox()
+        self.phase_combo.setEditable(True)
+        self.phase_combo.addItems(["R", "S", "T", "RS", "RT", "ST", "RST", "F+N+PE", "2F+PE", "3F+PE"])
+        self.load_class_combo = QtWidgets.QComboBox()
+        self.load_class_combo.setEditable(True)
+        self.load_class_combo.addItems(["TUG", "TUE", "UPS", "Industrial", "Hospitalar", "Automacao", "Geral"])
+        self.application_combo = QtWidgets.QComboBox()
+        self.application_combo.setEditable(True)
+        self.application_combo.addItems(["Predial", "Residencial", "Comercial", "Hospitalar", "Industrial", "Saneamento", "Urbano", "Rural"])
+        self.ip_edit = QtWidgets.QLineEdit("IP20")
+        self.standard_edit = QtWidgets.QLineEdit("NBR 5410")
         self.height_combo = QtWidgets.QComboBox()
         self.height_combo.setEditable(True)
         self.height_combo.addItems(["Baixa (300mm)", "Media (1100mm)", "Alta (2200mm)", "Especial"])
@@ -111,6 +136,14 @@ class FamilyManagerDialog(QtWidgets.QDialog if QtWidgets else object):
         form.addRow(tr("Amperagem:"), self.amperage_combo)
         form.addRow(tr("Tensao:"), self.voltage_combo)
         form.addRow(tr("Potencia padrao:"), self.power_spin)
+        form.addRow(tr("Potencia ativa:"), self.active_power_spin)
+        form.addRow(tr("Fator de potencia:"), self.power_factor_spin)
+        form.addRow(tr("Fator de demanda:"), self.demand_factor_spin)
+        form.addRow(tr("Fase:"), self.phase_combo)
+        form.addRow(tr("Classificacao da carga:"), self.load_class_combo)
+        form.addRow(tr("Aplicacao:"), self.application_combo)
+        form.addRow(tr("Grau IP:"), self.ip_edit)
+        form.addRow(tr("Norma:"), self.standard_edit)
         form.addRow(tr("Altura padrao:"), self.height_combo)
         form.addRow(tr("Altura de montagem:"), self.mounting_spin)
         form.addRow(tr("Fabricante:"), self.manufacturer_edit)
@@ -162,6 +195,11 @@ class FamilyManagerDialog(QtWidgets.QDialog if QtWidgets else object):
             edit.clear()
         self.description_edit.clear()
         self.power_spin.setValue(0.0)
+        self.active_power_spin.setValue(0.0)
+        self.power_factor_spin.setValue(1.0)
+        self.demand_factor_spin.setValue(1.0)
+        self.ip_edit.setText("IP20")
+        self.standard_edit.setText("NBR 5410")
         self.mounting_spin.setValue(1100.0)
 
     def set_combo_text(self, combo, value):
@@ -188,6 +226,14 @@ class FamilyManagerDialog(QtWidgets.QDialog if QtWidgets else object):
         self.set_combo_text(self.amperage_combo, family.get("amperage", "10A"))
         self.set_combo_text(self.voltage_combo, family.get("voltage", "127V"))
         self.power_spin.setValue(float(family.get("power", 0.0) or 0.0))
+        self.active_power_spin.setValue(float(family.get("active_power_w", family.get("power", 0.0)) or 0.0))
+        self.power_factor_spin.setValue(float(family.get("power_factor", 1.0) or 1.0))
+        self.demand_factor_spin.setValue(float(family.get("demand_factor", 1.0) or 1.0))
+        self.set_combo_text(self.phase_combo, family.get("phase", "R"))
+        self.set_combo_text(self.load_class_combo, family.get("load_classification", "TUG"))
+        self.set_combo_text(self.application_combo, family.get("socket_application", "Predial"))
+        self.ip_edit.setText(str(family.get("ip_rating", "IP20")))
+        self.standard_edit.setText(str(family.get("electrical_standard", "NBR 5410")))
         self.set_combo_text(self.height_combo, family.get("height_type", "Media (1100mm)"))
         self.mounting_spin.setValue(float(family.get("mounting_height", 1100.0) or 1100.0))
         self.manufacturer_edit.setText(str(family.get("manufacturer", "")))
@@ -211,6 +257,15 @@ class FamilyManagerDialog(QtWidgets.QDialog if QtWidgets else object):
             "amperage": self.amperage_combo.currentText().strip(),
             "voltage": self.voltage_combo.currentText().strip(),
             "power": float(self.power_spin.value()),
+            "apparent_power_va": float(self.power_spin.value()),
+            "active_power_w": float(self.active_power_spin.value()),
+            "power_factor": float(self.power_factor_spin.value()),
+            "demand_factor": float(self.demand_factor_spin.value()),
+            "phase": self.phase_combo.currentText().strip(),
+            "load_classification": self.load_class_combo.currentText().strip(),
+            "socket_application": self.application_combo.currentText().strip(),
+            "ip_rating": self.ip_edit.text().strip(),
+            "electrical_standard": self.standard_edit.text().strip(),
             "height_type": self.height_combo.currentText().strip(),
             "mounting_height": float(self.mounting_spin.value()),
             "manufacturer": self.manufacturer_edit.text().strip(),
@@ -233,6 +288,15 @@ class FamilyManagerDialog(QtWidgets.QDialog if QtWidgets else object):
             "amperage": "10A",
             "voltage": "127V",
             "power": 100.0,
+            "apparent_power_va": 100.0,
+            "active_power_w": 100.0,
+            "power_factor": 1.0,
+            "demand_factor": 1.0,
+            "phase": "R",
+            "load_classification": "TUG",
+            "socket_application": "Predial",
+            "ip_rating": "IP20",
+            "electrical_standard": "NBR 5410",
             "height_type": "Media (1100mm)",
             "mounting_height": 1100.0,
             "manufacturer": "",

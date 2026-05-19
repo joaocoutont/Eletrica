@@ -38,6 +38,10 @@ class DisciplineExporter:
                 valid_types = ["QDC", "CCM", "CCA", "Quadro", "Tomada", "Luminaria", "Eletroduto", "Eletrocalha", "Motobomba", "ArCondicionado", "Telecom", "Rack", "TUE"]
                 if hasattr(obj, "TipoBIM") and obj.TipoBIM in valid_types:
                     is_match = True
+                if getattr(obj, "BIMRole", "") in ["Socket", "ModularSet", "PanelBoard", "Circuit"]:
+                    is_match = True
+                if hasattr(obj, "ApparentPowerVA") or hasattr(obj, "CircuitNumber"):
+                    is_match = True
             elif discipline == "SPDA":
                 if "SPDA" in obj.Label or (hasattr(obj, "TipoBIM") and "SPDA" in str(obj.TipoBIM)):
                     is_match = True

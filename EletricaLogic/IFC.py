@@ -7,6 +7,7 @@ except ImportError:
 # Mapeamento de tipo BIM para IFC Entity + Pset Principal
 IFC_TYPE_MAP = {
     "Tomada":      ("IfcOutlet",                    "Pset_ElectricalDeviceCommon"),
+    "Socket":      ("IfcOutlet",                    "Pset_ElectricalDeviceCommon"),
     "Tomada TUE":  ("IfcElectricAppliance",         "Pset_ElectricalDeviceCommon"),
     "TUE":         ("IfcElectricAppliance",         "Pset_ElectricalDeviceCommon"),
     "Luminaria":   ("IfcLightFixture",              "Pset_LightFixtureTypeCommon"),
@@ -25,6 +26,28 @@ IFC_TYPE_MAP = {
 
 # Mapeamento de propriedades internas → Pset IFC (Prop, Tipo, Descrição)
 PROP_MAP = {
+    "Power":             ("NominalPower",         "App::PropertyFloat",  "Potência aparente/nominal legada"),
+    "ApparentPowerVA":   ("ApparentPowerVA",      "App::PropertyFloat",  "Potência aparente em VA"),
+    "ActivePowerW":      ("ActivePowerW",         "App::PropertyFloat",  "Potência ativa em W"),
+    "PowerFactor":       ("PowerFactor",          "App::PropertyFloat",  "Fator de potência"),
+    "DemandFactor":      ("DemandFactor",         "App::PropertyFloat",  "Fator de demanda"),
+    "LoadClassification":("LoadClassification",   "App::PropertyString", "Classificação da carga"),
+    "Voltage":           ("NominalVoltage",       "App::PropertyString", "Tensão nominal"),
+    "Amperage":          ("RatedCurrent",         "App::PropertyString", "Corrente nominal da tomada"),
+    "Phase":             ("Phases",               "App::PropertyString", "Fases de alimentação"),
+    "CircuitNumber":     ("CircuitNumber",        "App::PropertyString", "Número do circuito"),
+    "PanelBoard":        ("PanelBoard",           "App::PropertyString", "Quadro de distribuição"),
+    "SpaceOrSector":     ("SpaceOrSector",        "App::PropertyString", "Ambiente ou setor"),
+    "ModuleCount":       ("ModuleCount",          "App::PropertyInteger","Quantidade de módulos"),
+    "SocketType":        ("SocketType",           "App::PropertyString", "Tipo da tomada"),
+    "SocketApplication": ("SocketApplication",    "App::PropertyString", "Aplicação da tomada"),
+    "IP_Rating":         ("IngressProtection",    "App::PropertyString", "Grau de proteção IP"),
+    "ElectricalStandard":("ElectricalStandard",   "App::PropertyString", "Norma aplicada"),
+    "FamilyName":        ("FamilyName",           "App::PropertyString", "Família BIM"),
+    "ReferenceLevel":    ("ReferenceLevel",       "App::PropertyString", "Nível BIM de referência"),
+    "FinalElevation":    ("FinalElevation",       "App::PropertyFloat",  "Elevação final do ponto"),
+    "SymbolPlaneName":   ("SymbolPlaneName",      "App::PropertyString", "Plano de simbologia"),
+    "SymbolFinalElevation": ("SymbolFinalElevation", "App::PropertyFloat", "Elevação final da simbologia"),
     "Potencia":          ("NominalPower",         "App::PropertyFloat",  "Potência Ativa"),
     "PotenciaAcumulada": ("TotalInstalledLoad",   "App::PropertyFloat",  "Carga Total Instalada"),
     "Tensao":            ("NominalVoltage",       "App::PropertyString", "Tensão Nominal"),
@@ -60,6 +83,24 @@ EXTRA_PSET_MAP = {
     "NumeroSerie":    "Pset_Asset",
     "DataInstalacao": "Pset_Asset",
     "DataManutencao": "Pset_Asset",
+    "ApparentPowerVA": "Eletrica_LoadData",
+    "ActivePowerW": "Eletrica_LoadData",
+    "PowerFactor": "Eletrica_LoadData",
+    "DemandFactor": "Eletrica_LoadData",
+    "LoadClassification": "Eletrica_LoadData",
+    "CircuitNumber": "Eletrica_CircuitData",
+    "PanelBoard": "Eletrica_CircuitData",
+    "SpaceOrSector": "Eletrica_CircuitData",
+    "ModuleCount": "Eletrica_DeviceData",
+    "SocketType": "Eletrica_DeviceData",
+    "SocketApplication": "Eletrica_DeviceData",
+    "IP_Rating": "Eletrica_DeviceData",
+    "ElectricalStandard": "Eletrica_DeviceData",
+    "FamilyName": "Eletrica_DeviceData",
+    "ReferenceLevel": "Eletrica_PlacementData",
+    "FinalElevation": "Eletrica_PlacementData",
+    "SymbolPlaneName": "Eletrica_SymbolData",
+    "SymbolFinalElevation": "Eletrica_SymbolData",
 }
 
 def _is_library_matrix(obj):
@@ -73,6 +114,56 @@ def _is_library_matrix(obj):
         pass
     name = f"{getattr(obj, 'Name', '')} {getattr(obj, 'Label', '')}"
     return "Matriz_" in name or "Matrix_" in name
+
+
+def _plain_value(value):
+    return value.Value if hasattr(value, "Value") else value
+
+
+def _infer_tipo_bim(obj):
+    tipo = getattr(obj, "TipoBIM", None)
+    if tipo:
+        return str(tipo)
+    role = getattr(obj, "BIMRole", "")
+    if role == "Socket":
+        return "Tomada"
+    if role == "ModularSet":
+        return "Tomada"
+    if hasattr(obj, "ApparentPowerVA") or hasattr(obj, "CircuitNumber") or hasattr(obj, "PanelBoard"):
+        return "Tomada"
+    if hasattr(obj, "Potencia"):
+        return "Tomada"
+    if hasattr(obj, "PotenciaAcumulada"):
+        return "Quadro"
+    return None
+
+
+def _ensure_export_property(obj, prop_type, name, group, desc, value):
+    try:
+        if not hasattr(obj, name):
+            obj.addProperty(prop_type, name, group, desc)
+        if prop_type == "App::PropertyFloat":
+            value = float(_plain_value(value))
+        elif prop_type == "App::PropertyInteger":
+            value = int(_plain_value(value))
+        else:
+            value = str(_plain_value(value))
+        setattr(obj, name, value)
+    except Exception:
+        try:
+            setattr(obj, name, str(_plain_value(value)))
+        except Exception:
+            pass
+
+
+def _set_ifc_class(obj, ifc_entity):
+    for name, group in [("IfcType", "IFC"), ("IFC_Class", "BIM_Classificacao")]:
+        try:
+            if not hasattr(obj, name):
+                obj.addProperty("App::PropertyString", name, group, "Classe IFC")
+            setattr(obj, name, ifc_entity)
+        except Exception:
+            pass
 
 
 class IFCExportManager:
@@ -92,29 +183,21 @@ class IFCExportManager:
         for obj in doc.Objects:
             if _is_library_matrix(obj):
                 continue
-            tipo = getattr(obj, "TipoBIM", None)
+            tipo = _infer_tipo_bim(obj)
             if not tipo:
-                # Tenta inferir se for um objeto elétrico
-                if hasattr(obj, "Potencia"):
-                    tipo = "Tomada"
-                elif hasattr(obj, "PotenciaAcumulada"):
-                    tipo = "Quadro"
-                else:
-                    continue
+                continue
 
             ifc_entity, pset_name = IFC_TYPE_MAP.get(tipo, (None, None))
             if not ifc_entity:
                 continue
 
             # Definir entidade IFC para o exportador do FreeCAD
-            if hasattr(obj, "IfcType"):
-                obj.IfcType = ifc_entity
-            else:
-                # Alguns objetos Arch/BIM já possuem, outros precisam adicionar
+            _set_ifc_class(obj, ifc_entity)
+            if not hasattr(obj, "TipoBIM"):
                 try:
-                    obj.addProperty("App::PropertyEnumeration", "IfcType", "BIM", "Tipo IFC")
-                    obj.IfcType = ifc_entity
-                except:
+                    obj.addProperty("App::PropertyString", "TipoBIM", "BIM_Classificacao", "Tipo BIM elétrico")
+                    obj.TipoBIM = tipo
+                except Exception:
                     pass
 
             # Mapear propriedades para o Pset
@@ -133,19 +216,7 @@ class IFCExportManager:
                     elif not hasattr(obj, pset_full_name):
                         obj.addProperty(prop_type, pset_full_name, pset_name, desc)
                     
-                    try:
-                        # Trata conversão de tipos (ex: "220V" -> 220.0 se for Float)
-                        if prop_type == "App::PropertyFloat" and isinstance(value, str):
-                            numeric_val = float(value.replace("V", "").replace("A", "").strip())
-                            setattr(obj, pset_full_name, numeric_val)
-                        else:
-                            setattr(obj, pset_full_name, value)
-                    except Exception:
-                        # Fallback para string se a conversão falhar
-                        try:
-                            setattr(obj, pset_full_name, str(value))
-                        except:
-                            pass
+                    _ensure_export_property(obj, prop_type, pset_full_name, EXTRA_PSET_MAP.get(int_prop, pset_name), desc, value)
 
             mapped += 1
 
@@ -210,3 +281,35 @@ class IFCExportManager:
                 setattr(site_obj, ifc_prop, getattr(meta, meta_prop))
         
         FreeCAD.Console.PrintMessage("IFC4: Metadados globais do projeto sincronizados para exportação.\n")
+
+
+class IFCManager:
+    """Comandos de exportação IFC da bancada Eletrica."""
+
+    @staticmethod
+    def export_electrical_discipline(file_path=None):
+        doc = FreeCAD.ActiveDocument if FreeCAD else None
+        if not doc:
+            return 0
+
+        if not file_path:
+            try:
+                import FreeCADGui
+                from PySide import QtGui
+                default_name = f"{doc.Name}_Eletrica.ifc"
+                file_path, _ = QtGui.QFileDialog.getSaveFileName(
+                    FreeCADGui.getMainWindow(),
+                    "Exportar disciplina eletrica BIM",
+                    default_name,
+                    "IFC (*.ifc)",
+                )
+            except Exception:
+                file_path = ""
+        if not file_path:
+            return 0
+        if not file_path.lower().endswith(".ifc"):
+            file_path += ".ifc"
+
+        IFCExportManager.prepare_for_ifc()
+        from EletricaLogic.Exporter import DisciplineExporter
+        return DisciplineExporter.export_by_discipline("Elétrica", file_path)

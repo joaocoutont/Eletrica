@@ -17,6 +17,76 @@ class AutoRouter:
     GRID_STEP = 100  # 10 cm
 
     @staticmethod
+    def get_best_connection_point(obj, target_point=None):
+        """
+        Retorna o ponto de conexão global mais adequado de um objeto.
+        Se target_point for fornecido, escolhe o snap mais próximo dele.
+        Caso contrário, ou se não houver snaps, retorna Placement.Base.
+        """
+        local_pts = []
+        
+        # 1. Tenta obter pontos de snap do Proxy (caso seja uma Caixa ou outro FeaturePython)
+        if hasattr(obj, "Proxy") and obj.Proxy and hasattr(obj.Proxy, "getSnapPoints"):
+            try:
+                local_pts = obj.Proxy.getSnapPoints(obj)
+            except Exception:
+                pass
+                
+        # 2. Se for uma tomada instanciada (Part::Feature), busca da sua tomada matriz
+        if not local_pts and hasattr(obj, "LibraryMatrixObject") and obj.LibraryMatrixObject:
+            try:
+                doc = obj.Document
+                matriz = doc.getObject(obj.LibraryMatrixObject)
+                if matriz and hasattr(matriz, "Proxy") and matriz.Proxy and hasattr(matriz.Proxy, "getSnapPoints"):
+                    local_pts = matriz.Proxy.getSnapPoints(matriz)
+            except Exception:
+                pass
+                
+        # 3. Fallback genérico: o objeto implementa getSnapPoints diretamente
+        #    (sem Proxy). Chamado SEM argumento extra — assinatura: def getSnapPoints(self)
+        if not local_pts:
+            for attr in ["getSnapPoints", "get_snap_points"]:
+                method = getattr(obj, attr, None)
+                if callable(method):
+                    try:
+                        local_pts = method()  # sem obj — é bound method
+                        break
+                    except Exception:
+                        pass
+                        
+        if not local_pts:
+            return obj.Placement.Base
+            
+        # 4. Transforma os pontos locais de snap para coordenadas globais
+        global_pts = []
+        for pt in local_pts:
+            try:
+                global_pts.append(obj.Placement.multVec(pt))
+            except Exception:
+                try:
+                    m = obj.Placement.toMatrix()
+                    global_pts.append(m.multiply(pt))
+                except Exception:
+                    pass
+                    
+        if not global_pts:
+            return obj.Placement.Base
+            
+        # 5. Seleciona o ponto global mais próximo do ponto de destino
+        if target_point is not None:
+            try:
+                if hasattr(target_point, 'x'):
+                    target_vec = target_point
+                else:
+                    target_vec = FreeCAD.Vector(*target_point)
+                best_pt = min(global_pts, key=lambda pt: (pt - target_vec).Length)
+                return best_pt
+            except Exception:
+                pass
+                
+        return global_pts[0]
+
+    @staticmethod
     def _is_blocked(point_s, obstacles_bbox):
         """Verifica se um ponto (snapado) colide com alguma bounding box de obstáculo."""
         px, py, pz = point_s
@@ -142,8 +212,8 @@ class AutoRouter:
         obstacles = [obj for obj in doc.Objects if any(s in obj.Label for s in ["Wall", "Parede", "Viga", "Coluna", "Pilar"])]
         
         for i in range(len(objects) - 1):
-            p1 = objects[i].Placement.Base
-            p2 = objects[i + 1].Placement.Base
+            p1 = AutoRouter.get_best_connection_point(objects[i], objects[i + 1].Placement.Base)
+            p2 = AutoRouter.get_best_connection_point(objects[i + 1], p1)
             path = AutoRouter.route_astar(p1, p2, obstacles=obstacles, ceiling_z=ceiling_z)
             ConduitManager.create_conduit(path, label=f"Elet_Smart_{objects[i].Label}")
         
@@ -155,8 +225,8 @@ class AutoRouter:
         if len(objects) < 2:
             return
         for i in range(len(objects) - 1):
-            p1 = objects[i].Placement.Base
-            p2 = objects[i + 1].Placement.Base
+            p1 = AutoRouter.get_best_connection_point(objects[i], objects[i + 1].Placement.Base)
+            p2 = AutoRouter.get_best_connection_point(objects[i + 1], p1)
             path = AutoRouter.route_astar(p1, p2, ceiling_z=ceiling_z)
             ConduitManager.create_conduit(path, diameter=diameter,
                                           label=f"Eletroduto_{objects[i].Label}_to_{objects[i+1].Label}")
@@ -175,10 +245,13 @@ class AutoRouter:
         for dev in device_objs:
             p_dev = dev.Placement.Base
             nearest = min(lights, key=lambda l: (l.Placement.Base - p_dev).Length)
-            path = AutoRouter.route_astar(p_dev, nearest.Placement.Base, ceiling_z=ceiling_z)
+            p1 = AutoRouter.get_best_connection_point(dev, nearest.Placement.Base)
+            p2 = AutoRouter.get_best_connection_point(nearest, p1)
+            path = AutoRouter.route_astar(p1, p2, ceiling_z=ceiling_z)
             ConduitManager.create_conduit(path, label=f"Elet_{dev.Label}_to_{nearest.Label}")
 
         doc.recompute()
+
     @staticmethod
     def connect_with_cable_tray(objects, ceiling_z=3500.0, width=200, height=100):
         """Conecta objetos em sequência usando eletrocalhas industriais via A*."""
@@ -188,8 +261,8 @@ class AutoRouter:
         obstacles = [obj for obj in doc.Objects if any(s in obj.Label for s in ["Wall", "Parede", "Viga", "Coluna", "Pilar"])]
         
         for i in range(len(objects) - 1):
-            p1 = objects[i].Placement.Base
-            p2 = objects[i + 1].Placement.Base
+            p1 = AutoRouter.get_best_connection_point(objects[i], objects[i + 1].Placement.Base)
+            p2 = AutoRouter.get_best_connection_point(objects[i + 1], p1)
             path = AutoRouter.route_astar(p1, p2, obstacles=obstacles, ceiling_z=ceiling_z)
             ConduitManager.create_cable_tray(path, width=width, height=height, 
                                             label=f"Leito_{objects[i].Label}")

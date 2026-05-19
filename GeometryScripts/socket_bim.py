@@ -5,20 +5,33 @@ import os
 
 # Cache global para evitar abrir o arquivo da biblioteca repetidamente (Performance)
 _SHAPE_CACHE = {}
+_SHAPE_CACHE_ALIGNMENT = "fcstd_full_shape_transform_v17"
+_SOCKET_3D_ARROW_ALIGNMENT_DEG = 180.0
+
+def _float_value(value, default=0.0):
+    try:
+        if hasattr(value, "Value"):
+            return float(value.Value)
+        return float(value)
+    except Exception:
+        return default
 
 def make_socket_plan_symbol(height_type, modules="1 Módulo", amperage="10A"):
     """Cria a simbologia 2D de planta usada pela tomada real e pelo fantasma."""
     try:
         s = 150.0
         h_tri = s * math.sqrt(3) / 2
-        y_offset = 40.0
+        y_offset_base = 40.0
         count = 3 if str(modules).startswith("3") else 2 if str(modules).startswith("2") else 1
-        spacing = 95.0
-        x0 = -spacing * (count - 1) / 2.0
+        spacing_y = h_tri + 15.0 # Espaçamento vertical entre os triângulos
+        
         parts = []
 
         for idx in range(count):
-            cx = x0 + idx * spacing
+            # No Revit, eles ficam um na frente do outro (eixo Y), o X é sempre o centro 0
+            cx = 0.0
+            y_offset = y_offset_base + (idx * spacing_y)
+            
             p_base_left = App.Vector(cx - s / 2, y_offset, 0)
             p_base_right = App.Vector(cx + s / 2, y_offset, 0)
             p_vertex = App.Vector(cx, y_offset + h_tri, 0)
@@ -31,17 +44,24 @@ def make_socket_plan_symbol(height_type, modules="1 Módulo", amperage="10A"):
                 wire_right = Part.makePolygon([p_mid, p_base_right, p_vertex, p_mid])
                 parts.append(Part.Face(wire_left))
                 parts.append(wire_right)
+            elif "Piso" in height_type:
+                # Tomada de Piso: Triângulo com um círculo ao redor
+                parts.append(Part.makePolygon([p_base_left, p_base_right, p_vertex, p_base_left]))
+                c_center = App.Vector(cx, y_offset + h_tri / 2.5, 0)
+                parts.append(Part.makeCircle(s * 0.7, c_center, App.Vector(0, 0, 1)))
             else:
                 wire_outer = Part.makePolygon([p_base_left, p_base_right, p_vertex, p_base_left])
                 parts.append(Part.Face(wire_outer))
 
-            parts.append(Part.makeLine(App.Vector(0, 0, 0), p_mid))
+            # A linha que liga à parede deve vir da base do primeiro triângulo (mais próximo da parede)
+            # até a base do triângulo atual (para conectar todos eles na mesma haste vertical)
+            if idx == 0:
+                parts.append(Part.makeLine(App.Vector(0, 0, 0), p_mid))
+            else:
+                prev_vertex = App.Vector(cx, y_offset_base + ((idx - 1) * spacing_y) + h_tri, 0)
+                parts.append(Part.makeLine(prev_vertex, p_mid))
 
-            if str(amperage) == "20A":
-                mark_y = y_offset + h_tri * 0.38
-                parts.append(Part.makeCircle(12.0, App.Vector(cx, mark_y, 0), App.Vector(0, 0, 1)))
-
-        wall_half = (s / 2) + spacing * max(0, count - 1) / 2.0
+        wall_half = s / 2
         parts.append(Part.makeLine(App.Vector(-wall_half, 0, 0), App.Vector(wall_half, 0, 0)))
         return Part.makeCompound(parts)
     except Exception:
@@ -56,6 +76,68 @@ def _resolve_family_path(fname):
     if os.sep in source:
         return os.path.join(lib_3d, source)
     return os.path.join(lib_3d, "Tomadas", source)
+
+def load_socket_family_shape(fname):
+    full_path_fcstd = _resolve_family_path(fname)
+    if not os.path.exists(full_path_fcstd):
+        return None
+    previous_doc_name = None
+    try:
+        if App.ActiveDocument:
+            previous_doc_name = App.ActiveDocument.Name
+    except Exception:
+        previous_doc_name = None
+    tmp_doc = App.openDocument(full_path_fcstd, True, True)
+    try:
+        best_s = None
+        max_vol = -1.0
+        for o in tmp_doc.Objects:
+            temp_s = None
+            if hasattr(o, "Shape") and o.Shape and not o.Shape.isNull():
+                if o.Shape.Volume > 1.0:
+                    temp_s = o.Shape.copy()
+                    if hasattr(o, "Placement") and o.Placement:
+                        temp_s.transformShape(o.Placement.toMatrix())
+            elif hasattr(o, "Tip") and o.Tip and o.Tip.Shape and not o.Tip.Shape.isNull():
+                temp_s = o.Tip.Shape.copy()
+                if hasattr(o, "Placement") and o.Placement:
+                    temp_s.transformShape(o.Placement.toMatrix())
+            
+            if temp_s and temp_s.Volume > max_vol:
+                max_vol = temp_s.Volume
+                best_s = temp_s
+        return best_s
+    finally:
+        try:
+            App.closeDocument(tmp_doc.Name)
+        finally:
+            if previous_doc_name:
+                try:
+                    App.setActiveDocument(previous_doc_name)
+                except Exception:
+                    pass
+
+def normalize_socket_shape(shape):
+    if not shape:
+        return None
+    try:
+        if shape.isNull():
+            return None
+    except Exception:
+        pass
+    
+    try:
+        bbox = shape.BoundBox
+        center = bbox.Center
+        # Centraliza exatamente na origem para tirar do "longe"
+        shape.translate(App.Vector(-center.x, -center.y, -center.z))
+        
+        # Gira 180 para alinhar com a frente do 2D
+        shape.rotate(App.Vector(0,0,0), App.Vector(0,0,1), _SOCKET_3D_ARROW_ALIGNMENT_DEG)
+    except Exception as e:
+        App.Console.PrintError(f"Erro em normalize_socket_shape: {e}\n")
+        
+    return shape
 
 class ProfessionalBIMSocket:
     """Motor Geométrico para Tomadas (Versão Final Estabilizada)"""
@@ -73,6 +155,11 @@ class ProfessionalBIMSocket:
         obj.addProperty("App::PropertyString", "CircuitNumber", e).CircuitNumber = "C-01"
         obj.addProperty("App::PropertyEnumeration", "Voltage", e).Voltage = ["127V", "220V", "380V"]
         obj.addProperty("App::PropertyFloat", "Power", e).Power = 100.0 # Watts
+        obj.addProperty("App::PropertyFloat", "ApparentPowerVA", e).ApparentPowerVA = 100.0
+        obj.addProperty("App::PropertyFloat", "ActivePowerW", e).ActivePowerW = 100.0
+        obj.addProperty("App::PropertyFloat", "PowerFactor", e).PowerFactor = 1.0
+        obj.addProperty("App::PropertyFloat", "DemandFactor", e).DemandFactor = 1.0
+        obj.addProperty("App::PropertyString", "LoadClassification", e).LoadClassification = "TUG"
         obj.addProperty("App::PropertyEnumeration", "Phase", e).Phase = ["R", "S", "T", "RS", "RT", "ST", "RST"]
         obj.addProperty("App::PropertyString", "PanelBoard", e).PanelBoard = ""
         obj.addProperty("App::PropertyString", "CircuitObject", e).CircuitObject = ""
@@ -81,11 +168,15 @@ class ProfessionalBIMSocket:
         # --- PARÂMETROS DE MODELAGEM ---
         g = "BIM_3D_Parametros"
         obj.addProperty("App::PropertyEnumeration", "Modules", g).Modules = ["1 Módulo", "2 Módulos", "3 Módulos"]
+        obj.addProperty("App::PropertyInteger", "ModuleCount", g).ModuleCount = 1
         obj.addProperty("App::PropertyEnumeration", "Amperage", g).Amperage = ["10A", "20A"]
         obj.addProperty("App::PropertyEnumeration", "PlateSize", g).PlateSize = ["4x2", "4x4"]
         obj.addProperty("App::PropertyEnumeration", "CircuitType", g).CircuitType = ["TUG (Geral)", "TUE (Específico)", "UPS (Emergência)"]
-        obj.addProperty("App::PropertyEnumeration", "HeightType", g).HeightType = ["Baixa (300mm)", "Média (1100mm)", "Alta (2200mm)"]
+        obj.addProperty("App::PropertyEnumeration", "HeightType", g).HeightType = ["Baixa (300mm)", "Média (1100mm)", "Alta (2200mm)", "Piso (0mm)"]
         obj.addProperty("App::PropertyString", "SourceFile", g).SourceFile = ""
+        obj.addProperty("App::PropertyString", "SocketApplication", g).SocketApplication = "Predial"
+        obj.addProperty("App::PropertyString", "IP_Rating", g).IP_Rating = "IP20"
+        obj.addProperty("App::PropertyString", "ElectricalStandard", g).ElectricalStandard = "NBR 5410"
         obj.addProperty("App::PropertyString", "ReferenceLevel", g).ReferenceLevel = "Projeto"
         obj.addProperty("App::PropertyString", "ReferenceLevelObject", g).ReferenceLevelObject = ""
         obj.addProperty("App::PropertyLength", "LevelElevation", g).LevelElevation = 0.0
@@ -97,15 +188,41 @@ class ProfessionalBIMSocket:
         if not hasattr(obj, "Tag"):
             obj.addProperty("App::PropertyString", "Tag", g).Tag = "TOM-01"
 
+        # --- SIMBOLOGIA 2D / PLOTAGEM ---
+        s = "BIM_Simbologia"
+        obj.addProperty("App::PropertyEnumeration", "SymbolPlaneMode", s).SymbolPlaneMode = ["Plano de simbologia", "Junto da tomada"]
+        try:
+            obj.SymbolPlaneMode = "Plano de simbologia"
+        except Exception:
+            pass
+        obj.addProperty("App::PropertyString", "SymbolPlaneName", s).SymbolPlaneName = "Plano de Simbologia"
+        obj.addProperty("App::PropertyLength", "SymbolPlaneHeight", s).SymbolPlaneHeight = 0.0
+        obj.addProperty("App::PropertyLength", "SymbolFinalElevation", s).SymbolFinalElevation = 0.0
+        obj.addProperty("App::PropertyFloat", "SymbolZOffset", s).SymbolZOffset = 0.0
+
+        # --- LIMITES 3D PARA CONECTORES MEP ---
+        # Calculados sobre a geometria 3D pura, antes do símbolo 2D, para que
+        # getSnapPoints retorne posições nas faces físicas da caixa.
+        sn = "BIM_Snap"
+        obj.addProperty("App::PropertyFloat", "Snap_XMin", sn).Snap_XMin = -60.0
+        obj.addProperty("App::PropertyFloat", "Snap_XMax", sn).Snap_XMax =  60.0
+        obj.addProperty("App::PropertyFloat", "Snap_YMin", sn).Snap_YMin =  -8.5
+        obj.addProperty("App::PropertyFloat", "Snap_YMax", sn).Snap_YMax =  10.0
+        obj.addProperty("App::PropertyFloat", "Snap_ZMin", sn).Snap_ZMin = -40.0
+        obj.addProperty("App::PropertyFloat", "Snap_ZMax", sn).Snap_ZMax =  40.0
+
     def execute(self, fp):
         global _SHAPE_CACHE
         try:
             # Mapeamento de Arquivos
             is_2 = "2 Módulos" in fp.Modules
+            is_3 = "3 Módulos" in fp.Modules
             is_20 = "20A" in fp.Amperage
             
             if getattr(fp, "SourceFile", ""):
                 fname = fp.SourceFile
+            elif is_3:
+                fname = "Tomada_Tripla_20A.FCStd" if is_20 else "Tomada_Tripla_10A.FCStd"
             elif is_2:
                 fname = "Tomada_Dupla_20A.FCStd" if is_20 else "Tomada_Dupla_10A_10A.FCStd"
             else:
@@ -114,80 +231,75 @@ class ProfessionalBIMSocket:
             final_shape = None
             
             # Verifica Cache (Usa serialização BREP String para evitar problemas de perda de documento e maximizar performance)
-            if fname in _SHAPE_CACHE:
+            cache_key = f"{fname}|{_SHAPE_CACHE_ALIGNMENT}"
+
+            if cache_key in _SHAPE_CACHE:
                 final_shape = Part.Shape()
-                final_shape.importBrepFromString(_SHAPE_CACHE[fname])
+                final_shape.importBrepFromString(_SHAPE_CACHE[cache_key])
             else:
-                # 1. TENTA PRIMEIRO A VERSÃO .brep (INFINITAMENTE MAIS RÁPIDA!)
-                base_fname, _ = os.path.splitext(fname)
-                brep_fname = base_fname + ".brep"
-                full_path_brep = _resolve_family_path(brep_fname)
-                
-                if os.path.exists(full_path_brep):
-                    try:
-                        best_s = Part.read(full_path_brep)
-                        if best_s and not best_s.isNull():
-                            # Alinha o objeto conforme o seu ajuste de -8.5
-                            bbox = best_s.BoundBox
-                            center = bbox.Center
-                            best_s.translate(App.Vector(-center.x, -bbox.YMin - 8.5, -center.z))
-                            
-                            # Salva em cache
-                            brep_data = best_s.exportBrepToString()
-                            _SHAPE_CACHE[fname] = brep_data
-                            final_shape = best_s
-                    except Exception as e:
-                        App.Console.PrintWarning(f"[Eletrica BIM] Erro ao ler .brep de '{brep_fname}': {str(e)}. Tentando FCStd.\n")
+                best_s = normalize_socket_shape(load_socket_family_shape(fname))
+                if best_s:
+                    brep_data = best_s.exportBrepToString()
+                    _SHAPE_CACHE[cache_key] = brep_data
+                    final_shape = Part.Shape()
+                    final_shape.importBrepFromString(brep_data)
+                # 1. REMOVIDO: O suporte a .brep foi removido pois perdia a matriz de Placement 
+                # (origem de inserção) das famílias originais. Agora usamos apenas FCStd direto.
                 
                 # 2. SE NÃO ENCONTROU O .brep, TENTA A VERSÃO CLÁSSICA .FCStd
                 if not final_shape:
                     full_path_fcstd = _resolve_family_path(fname)
                     if os.path.exists(full_path_fcstd):
-                        tmp_doc = App.openDocument(full_path_fcstd)
-                        best_s = None
-                        max_vol = -1.0
-                        for o in tmp_doc.Objects:
-                            temp_s = None
-                            if hasattr(o, "Shape") and o.Shape and not o.Shape.isNull():
-                                if o.Shape.Volume > 1.0:
-                                    temp_s = o.Shape
-                            elif hasattr(o, "Tip") and o.Tip and not o.Tip.Shape.isNull():
-                                temp_s = o.Tip.Shape
-                            
-                            if temp_s:
-                                if not best_s or temp_s.Volume > max_vol:
-                                    max_vol = temp_s.Volume
-                                    best_s = temp_s.copy()
-                                    bbox = best_s.BoundBox
-                                    center = bbox.Center
-                                    best_s.translate(App.Vector(-center.x, -bbox.YMin - 8.5, -center.z))
-
-                        if best_s:
-                            brep_data = best_s.exportBrepToString()
-                            _SHAPE_CACHE[fname] = brep_data
-                            final_shape = Part.Shape()
-                            final_shape.importBrepFromString(brep_data)
-                        App.closeDocument(tmp_doc.Name)
+                        tmp_doc = App.openDocument(full_path_fcstd, True, True)
+                        try:
+                            best_s = None
+                            max_vol = -1.0
+                            for o in tmp_doc.Objects:
+                                temp_s = None
+                                if hasattr(o, "Shape") and o.Shape and not o.Shape.isNull():
+                                    if o.Shape.Volume > 1.0:
+                                        temp_s = o.Shape.copy()
+                                        if hasattr(o, "Placement") and o.Placement:
+                                            temp_s.transformShape(o.Placement.toMatrix())
+                                elif hasattr(o, "Tip") and o.Tip and not o.Tip.Shape.isNull():
+                                    temp_s = o.Tip.Shape.copy()
+                                    if hasattr(o, "Placement") and o.Placement:
+                                        temp_s.transformShape(o.Placement.toMatrix())
+                                if temp_s:
+                                    if not best_s or temp_s.Volume > max_vol:
+                                        max_vol = temp_s.Volume
+                                        best_s = temp_s.copy()
+                            if best_s:
+                                best_s = normalize_socket_shape(best_s)
+                                if best_s:
+                                    brep_data = best_s.exportBrepToString()
+                                    _SHAPE_CACHE[cache_key] = brep_data
+                                    final_shape = Part.Shape()
+                                    final_shape.importBrepFromString(brep_data)
+                        finally:
+                            App.closeDocument(tmp_doc.Name)
                     else:
                         import FreeCADGui as Gui
                         App.Console.PrintWarning(f"[Eletrica BIM] Arquivo 3D nao localizado: '{fname}' ou '{brep_fname}' em '{_resolve_family_path('')}'\n")
                         Gui.statusMessage(f"AVISO: Arquivo 3D nao localizado: {fname}")
 
-            # FALLBACK (Caso falhe, cria o bloco 4x2 com o espelho sobressaindo apenas 2mm na frente da parede de Y=0)
+            # FALLBACK: cria bloco 4x2 no mesmo ponto funcional das familias:
+            # X centralizado, Y ancorado na parede/cursor com pequeno encaixe, Z centralizado.
             if not final_shape or final_shape.isNull():
                 final_shape = Part.makeBox(120, 5, 80)
                 final_shape.translate(App.Vector(-60, -8.5, -40))
 
-            # Gira 180 graus para alinhar a frente da tomada 3D com a ponta da seta do símbolo 2D (+Y)
-            if final_shape:
-                final_shape.rotate(App.Vector(0,0,0), App.Vector(0,0,1), 180.0)
-
-            # SIMBOLOGIA 2D NBR 5444
-            symbol_2d = self.make_nbr_symbol(fp.HeightType, fp.Modules, fp.Amperage)
-            if symbol_2d:
-                # O símbolo agora é colocado no (0,0,1) já que o 3D está centrado
-                symbol_2d.translate(App.Vector(0, 0, 1.0))
-                final_shape = Part.makeCompound([final_shape, symbol_2d])
+            # Armazena os limites 3D puros ANTES de qualquer simbologia 2D.
+            # O símbolo 2D agora é gerado como objeto separado pelo socket_gui,
+            # mantendo fp.Shape com geometria física pura para BBox e snap corretos.
+            if final_shape and not final_shape.isNull():
+                try:
+                    b = final_shape.BoundBox
+                    fp.Snap_XMin = b.XMin; fp.Snap_XMax = b.XMax
+                    fp.Snap_YMin = b.YMin; fp.Snap_YMax = b.YMax
+                    fp.Snap_ZMin = b.ZMin; fp.Snap_ZMax = b.ZMax
+                except Exception:
+                    pass
 
             fp.Shape = final_shape
             
@@ -205,25 +317,35 @@ class ProfessionalBIMSocket:
 
     def getSnapPoints(self, obj):
         """
-        Gera 5 pontos de conexão padrão (Revit Style) para a caixa da tomada.
+        Gera 5 pontos de conexão MEP (Revit Style) baseados na geometria 3D física.
+        Usa os limites armazenados em Snap_* que são calculados ANTES do símbolo 2D,
+        garantindo que os conectores fiquem nas faces reais da caixa da tomada.
         """
         try:
-            # Pegamos as dimensões reais da caixa para posicionar os imãs
-            bbox = obj.Shape.BoundBox
-            cx, cy = 0, 0 # Como está centralizado, o centro é 0,0
-            
-            # Altura média da caixa (Z)
-            z_mid = (bbox.ZMax + bbox.ZMin) / 2
-            
-            # Lista de Imãs (Conectores):
-            points = [
-                App.Vector(cx, bbox.YMax, z_mid),  # Topo (Norte)
-                App.Vector(cx, bbox.YMin, z_mid),  # Base (Sul)
-                App.Vector(bbox.XMax, cy, z_mid),  # Direita (Leste)
-                App.Vector(bbox.XMin, cy, z_mid),  # Esquerda (Oeste)
-                App.Vector(cx, cy, bbox.ZMin),     # Fundo (Centro)
+            # Usa os limites 3D armazenados (sem contaminação do símbolo 2D)
+            snap_props = ["Snap_XMin", "Snap_XMax", "Snap_YMin", "Snap_YMax", "Snap_ZMin", "Snap_ZMax"]
+            if all(hasattr(obj, p) for p in snap_props):
+                xmin, xmax = obj.Snap_XMin, obj.Snap_XMax
+                ymin, ymax = obj.Snap_YMin, obj.Snap_YMax
+                zmin, zmax = obj.Snap_ZMin, obj.Snap_ZMax
+            else:
+                # Fallback: usa o BoundBox da shape atual
+                b = obj.Shape.BoundBox
+                xmin, xmax = b.XMin, b.XMax
+                ymin, ymax = b.YMin, b.YMax
+                zmin, zmax = b.ZMin, b.ZMax
+
+            # Centro real da caixa (não hardcoded em 0,0)
+            cx = (xmax + xmin) / 2
+            cy = (ymax + ymin) / 2
+            z_mid = (zmax + zmin) / 2
+
+            return [
+                App.Vector(cx,   ymax,  z_mid),  # Norte (frente/parede)
+                App.Vector(cx,   ymin,  z_mid),  # Sul   (fundo/parede)
+                App.Vector(xmax, cy,    z_mid),  # Leste (direita)
+                App.Vector(xmin, cy,    z_mid),  # Oeste (esquerda)
+                App.Vector(cx,   cy,    zmin),   # Fundo (entrada do eletroduto)
             ]
-            
-            return points
-        except:
-            return [App.Vector(0,0,0)]
+        except Exception:
+            return [App.Vector(0, 0, 0)]

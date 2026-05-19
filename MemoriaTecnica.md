@@ -1,6 +1,6 @@
 # Memória Técnica - Bancada Eletrica (FreeCAD 1.1)
-**Versão**: 5.0 (Elite BIM Suite - Edição Estabilidade Total)
-**Última Atualização**: 2026-05-18
+**Versão**: 5.1 (Separação 3D/2D + Conectores MEP + TechDraw por Nível)
+**Última Atualização**: 2026-05-19
 
 ---
 
@@ -87,4 +87,71 @@ Na versão 5.0, o motor de posicionamento 3D (`GeometryScripts/bim_placement_cor
 - **Configuração Correta**: Correção do caminho do parâmetro de pré-seleção global de `BaseApp/Preferences/View` para `BaseApp/Preferences/Selection/EnablePreselection`. Agora, o realce visual (hover highlight) é desabilitado instantaneamente e restaurado perfeitamente ao fechar a ferramenta.
 
 ---
-*Este documento é parte integrante da documentação técnica da bancada Eletrica.*
+
+## 10. Separacao 3D/2D e Conectores MEP (v5.1)
+
+### 10.1 Separacao de Simbologia
+
+Anteriormente, o `execute()` da tomada matriz embuia o simbolo NBR 5444 no `fp.Shape`, criando
+um compound com geometria 3D + triangulos 2D. Isso causava dois problemas:
+
+- O `BoundBox` de `fp.Shape` incluia o simbolo, deslocando os conectores MEP para fora da caixa fisica.
+- O modelo 3D inserido no projeto aparecia em posicao X,Y diferente do cursor.
+
+Na v5.1, `execute()` armazena apenas a geometria 3D em `fp.Shape`. A simbologia e criada como
+um `Part::Feature` separado pelo metodo `SocketCommand._create_2d_symbol()` a cada insercao.
+
+### 10.2 Snap Bounds (Propriedades Snap_*)
+
+Para que os conectores MEP usem os limites da geometria fisica (e nao do compound antigo),
+o `execute()` armazena seis propriedades `App::PropertyFloat` na matriz logo apos calcular
+a forma 3D e antes de qualquer simbologia:
+
+| Propriedade | Calculo |
+|---|---|
+| `Snap_XMin`, `Snap_XMax` | `BoundBox.XMin`, `BoundBox.XMax` |
+| `Snap_YMin`, `Snap_YMax` | `BoundBox.YMin`, `BoundBox.YMax` |
+| `Snap_ZMin`, `Snap_ZMax` | `BoundBox.ZMin`, `BoundBox.ZMax` |
+
+O `getSnapPoints` le essas propriedades em vez de consultar `fp.Shape.BoundBox`,
+evitando qualquer contaminacao por objetos 2D adicionados depois.
+
+### 10.3 Centragem do Modelo 3D
+
+O modelo 3D da biblioteca e centralizado pelo centro geometrico real do bounding box:
+
+```python
+best_s.translate(App.Vector(-center.x, -center.y, -center.z))
+```
+
+O ajuste anterior `-bbox.YMin - 8.5` foi removido pois deslocava o modelo em Y
+fazendo-o aparecer em posicao diferente do cursor em planta.
+
+### 10.4 Organizacao 2D por Nivel para TechDraw
+
+Os simbolos 2D sao criados em subgrupos por nivel dentro de `Simbologia_2D_Tomadas`:
+
+```
+📁 Simbologia 2D — Tomadas
+   📁 Nivel Terreo   (Z = 0 mm)
+   📁 Nivel 01       (Z = 3000 mm)
+```
+
+O `SymbolPlaneHeight` padrao e `0`, colocando os simbolos no piso de cada nivel,
+prontos para selecao e plotagem no TechDraw via Top View.
+
+### 10.5 get_best_connection_point
+
+O metodo `AutoRouter.get_best_connection_point` em `EletricaLogic/Routing.py` resolve
+o conector adequado de qualquer objeto BIM para o roteamento automatico de eletrodutos:
+
+1. Proxy com `getSnapPoints` (caixas FeaturePython)
+2. Tomada instanciada via `LibraryMatrixObject` → Proxy da matriz
+3. Duck-typing: bound method sem argumento
+4. Fallback: `Placement.Base`
+
+O conector mais proximo do objeto de destino e selecionado automaticamente.
+A conversao de coordenadas locais para globais usa `Placement.multVec(pt)`.
+
+---
+*Este documento e parte integrante da documentacao tecnica da bancada Eletrica.*

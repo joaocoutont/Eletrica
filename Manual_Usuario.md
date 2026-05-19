@@ -306,11 +306,37 @@ Para melhorar a performance, a tomada BIM usa uma matriz oculta de biblioteca:
 - a tomada visivel usa `GeometrySourceMode = CachedShapeFromMatrix`;
 - circuito, quadro, potencia, nivel, ambiente/setor e dados IFC ficam na instancia real;
 - matrizes nao entram no recalculo de cargas, validacao, tabela de pontos, BOM, relatorios ou exportacao;
-- tomada baixa, media e alta usam matrizes separadas quando a simbologia/altura mudar.
+- tomada baixa, media e alta usam matrizes separadas quando a configuracao mudar.
 
-Na pratica, selecione e edite a tomada inserida normalmente. Nao use a matriz oculta para alterar circuito ou quadro.
+### 16.2 Simbologia 2D separada do 3D
 
-### 16.2 Pastas da biblioteca de tomadas e conjuntos
+A simbologia NBR 5444 e gerada como objeto separado do modelo 3D:
+
+- O modelo 3D (tomada instancia) e um `Part::Feature` com a geometria fisica da caixa.
+- O simbolo 2D e um `Part::Feature` leve com os triangulos e linha de parede, colocado no grupo `Simbologia 2D - Tomadas`.
+- Os dois podem ser ocultados de forma independente.
+- Essa separacao garante que os conectores MEP (`getSnapPoints`) apontem para as faces fisicas da caixa, nao para o simbolo.
+
+### 16.3 Organizacao 2D por nivel e TechDraw
+
+Os simbolos 2D sao organizados automaticamente por nivel na arvore do projeto:
+
+```
+📁 Simbologia 2D — Tomadas
+   📁 Nivel Terreo       ← simbolos em Z = 0 mm (piso do terreo)
+   📁 Nivel 01           ← simbolos em Z = 3000 mm (piso do Nivel 01)
+```
+
+Para plotar no TechDraw:
+
+1. Selecionar o subgrupo do nivel desejado.
+2. TechDraw → Inserir Vista → Top View.
+3. Resultado: planta eletrica limpa com todos os simbolos no plano correto.
+
+O `SymbolPlaneHeight` padrao e `0` (piso do nivel). Para pontos de luz de teto, ajuste para o
+pe-direito do pavimento (ex: 2800 mm).
+
+### 16.4 Pastas da biblioteca de tomadas e conjuntos
 
 Coloque modelos `.FCStd` de tomadas em:
 
@@ -318,19 +344,19 @@ Coloque modelos `.FCStd` de tomadas em:
 Library/3D/Tomadas
 ```
 
-Coloque modelos `.FCStd` de placas com tomada + interruptor, tomadas combinadas ou outros conjuntos em:
+Coloque modelos `.FCStd` de placas combinadas em:
 
 ```text
 Library/3D/Conjuntos_Modulares
 ```
 
-Se quiser manter simbolos 2D separados para esses conjuntos, use:
+Se quiser simbolos 2D separados para conjuntos, use:
 
 ```text
 Library/2D/Conjuntos_Modulares
 ```
 
-Depois de copiar arquivos manualmente, use **Gerenciar Familias** e, quando necessario, **Regerar Catalogo** para atualizar o `families.toml`.
+Depois de copiar arquivos manualmente, use **Gerenciar Familias** e **Regerar Catalogo** para atualizar o `families.toml`.
 
 ## 17. Auditoria, Documentacao e Visualizacao
 

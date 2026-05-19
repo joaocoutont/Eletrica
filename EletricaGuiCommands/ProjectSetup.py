@@ -851,15 +851,32 @@ def _parse_amp(value):
         return 0.0
 
 
+def _numeric_property(obj, name, default=0.0):
+    try:
+        value = getattr(obj, name)
+        return float(value.Value if hasattr(value, "Value") else value)
+    except Exception:
+        return default
+
+
+def _load_apparent_power(load):
+    power = _numeric_property(load, "ApparentPowerVA", None)
+    if power is not None:
+        return power
+    return _numeric_property(load, "Power", 0.0)
+
+
 def recalculate_circuit_loads(doc=None):
     doc = doc or FreeCAD.ActiveDocument
     if not doc:
         return {}
 
     totals = {}
+    demand_totals = {}
     counts = {}
     for circuit in get_circuit_objects(doc):
         totals[circuit.Name] = 0.0
+        demand_totals[circuit.Name] = 0.0
         counts[circuit.Name] = 0
 
     for load in get_load_objects(doc):
@@ -878,19 +895,19 @@ def recalculate_circuit_loads(doc=None):
         if not target:
             continue
 
-        power = getattr(load, "Power", 0.0)
-        try:
-            power = float(power.Value if hasattr(power, "Value") else power)
-        except Exception:
-            power = 0.0
+        power = _load_apparent_power(load)
+        load_demand = _numeric_property(load, "DemandFactor", 1.0)
 
         totals[target.Name] = totals.get(target.Name, 0.0) + power
+        demand_totals[target.Name] = demand_totals.get(target.Name, 0.0) + (power * load_demand)
         counts[target.Name] = counts.get(target.Name, 0) + 1
 
     for circuit in get_circuit_objects(doc):
         _ensure_property(circuit, "App::PropertyFloat", "ConnectedLoad", "BIM_Cargas", totals.get(circuit.Name, 0.0))
+        _ensure_property(circuit, "App::PropertyFloat", "DemandLoad", "BIM_Cargas", demand_totals.get(circuit.Name, 0.0))
         _ensure_property(circuit, "App::PropertyInteger", "PointCount", "BIM_Cargas", counts.get(circuit.Name, 0))
         connected = totals.get(circuit.Name, 0.0)
+        demanded = demand_totals.get(circuit.Name, connected)
         demand = getattr(circuit, "DemandFactor", 1.0)
         try:
             demand = float(demand.Value if hasattr(demand, "Value") else demand)
@@ -898,7 +915,7 @@ def recalculate_circuit_loads(doc=None):
             demand = 1.0
         voltage = _parse_voltage(getattr(circuit, "Voltage", "127V"))
         current = connected / voltage if voltage else 0.0
-        design_current = current * demand
+        design_current = (demanded * demand / voltage) if voltage else 0.0
         _ensure_property(circuit, "App::PropertyFloat", "CurrentA", "BIM_Calculo", current)
         _ensure_property(circuit, "App::PropertyFloat", "DesignCurrent", "BIM_Calculo", design_current)
         _ensure_property(circuit, "App::PropertyString", "SuggestedBreaker", "BIM_Calculo", _suggest_breaker(design_current))
@@ -1152,6 +1169,8 @@ def prepare_base(source, config=None):
     _ensure_property(project, "App::PropertyLength", "SocketLowHeight", "BIM_Projeto", heights.get("low", 300.0))
     _ensure_property(project, "App::PropertyLength", "SocketMediumHeight", "BIM_Projeto", heights.get("medium", 1100.0))
     _ensure_property(project, "App::PropertyLength", "SocketHighHeight", "BIM_Projeto", heights.get("high", 2200.0))
+    _ensure_property(project, "App::PropertyString", "DefaultSymbolPlaneName", "BIM_Simbologia", config.get("symbol_plane_name", "Plano de Simbologia"))
+    _ensure_property(project, "App::PropertyLength", "DefaultSymbolPlaneHeight", "BIM_Simbologia", config.get("symbol_plane_height", 2700.0))
 
     doc.recompute()
     return doc, groups, levels
@@ -1335,7 +1354,7 @@ def export_point_schedule(path, doc=None):
     doc = doc or FreeCAD.ActiveDocument
     if not doc or not path:
         return 0
-    fields = ["Name", "Label", "Type", "Level", "SpaceOrSector", "PanelBoard", "CircuitNumber", "Power", "Voltage", "MountingHeight", "FinalElevation"]
+    fields = ["Name", "Label", "Type", "Level", "SpaceOrSector", "PanelBoard", "CircuitNumber", "Power", "ApparentPowerVA", "ActivePowerW", "PowerFactor", "DemandFactor", "LoadClassification", "Phase", "Voltage", "MountingHeight", "FinalElevation"]
     rows = []
     for obj in get_load_objects(doc):
         power = getattr(obj, "Power", "")
@@ -1352,6 +1371,12 @@ def export_point_schedule(path, doc=None):
             "PanelBoard": getattr(obj, "PanelBoard", ""),
             "CircuitNumber": getattr(obj, "CircuitNumber", ""),
             "Power": power,
+            "ApparentPowerVA": getattr(obj, "ApparentPowerVA", power),
+            "ActivePowerW": getattr(obj, "ActivePowerW", ""),
+            "PowerFactor": getattr(obj, "PowerFactor", ""),
+            "DemandFactor": getattr(obj, "DemandFactor", ""),
+            "LoadClassification": getattr(obj, "LoadClassification", ""),
+            "Phase": getattr(obj, "Phase", ""),
             "Voltage": getattr(obj, "Voltage", ""),
             "MountingHeight": getattr(obj, "MountingHeight", ""),
             "FinalElevation": getattr(obj, "FinalElevation", ""),

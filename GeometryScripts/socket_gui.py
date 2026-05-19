@@ -1090,7 +1090,11 @@ class SocketCommand:
         if not obj or not getattr(obj, "ViewObject", None):
             return
         try:
-            obj.ViewObject.Visibility = False
+            # DO NOT set obj.ViewObject.Visibility = False! 
+            # If we do, the App::Link will also become invisible.
+            # Instead, we just ensure it's not selectable and hidden from the tree.
+            # The parent group (Simbologia_3D_Tomadas_Nao_Apagar) being invisible will hide it from the 3D view.
+            obj.ViewObject.Visibility = True
             obj.ViewObject.Selectable = False
         except Exception:
             pass
@@ -1107,7 +1111,11 @@ class SocketCommand:
             try:
                 role = getattr(candidate, "BIMRole", "")
                 if role == "SocketMatrix" or str(getattr(candidate, "Label", "")).startswith("Matriz_Tomada_"):
-                    self.hide_library_matrix(candidate)
+                    if hasattr(candidate, "ViewObject") and candidate.ViewObject:
+                        candidate.ViewObject.Visibility = True
+                        candidate.ViewObject.Selectable = False
+                        if hasattr(candidate.ViewObject, "ShowInTree"):
+                            candidate.ViewObject.ShowInTree = False
             except Exception:
                 pass
 

@@ -1173,6 +1173,10 @@ class SocketCommand:
         if source_shape:
             obj.Shape = source_shape
         
+        # Reseta o Placement para identidade - garantia de que o obj nao herda
+        # qualquer deslocamento da matriz ou do contexto de criacao
+        obj.Placement = App.Placement()
+        
         _set_property(obj, "App::PropertyString", "BIMRole", "BIM_Classificacao", "Socket")
         _set_property(obj, "App::PropertyBool", "IsLibraryMatrix", "BIM_Classificacao", False)
         _set_property(obj, "App::PropertyString", "LibraryMatrixObject", "BIM_Familia", getattr(matriz, "Name", ""))
@@ -1441,9 +1445,10 @@ class SocketCommand:
             target_pos.z = final_z + self.surface_offset
         target_rot = App.Rotation(App.Vector(0,0,1), self.rotation)
         target_placement = App.Placement(target_pos, target_rot)
-        if not is_ghost and getattr(obj, "TypeId", "") == "App::Link":
+        if not is_ghost:
             self.enable_link_independent_placement(obj, target_placement)
-            self.repair_socket_links(doc)
+            if getattr(obj, "TypeId", "") == "App::Link":
+                self.repair_socket_links(doc)
         else:
             obj.Placement = target_placement
         

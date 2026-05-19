@@ -1090,14 +1090,15 @@ class SocketCommand:
         if not obj or not getattr(obj, "ViewObject", None):
             return
         try:
-            # DO NOT set obj.ViewObject.Visibility = False! 
-            # If we do, the App::Link will also become invisible.
-            # Instead, we just ensure it's not selectable and hidden from the tree.
-            # The parent group (Simbologia_3D_Tomadas_Nao_Apagar) being invisible will hide it from the 3D view.
-            obj.ViewObject.Visibility = True
+            obj.ViewObject.Visibility = False
             obj.ViewObject.Selectable = False
         except Exception:
             pass
+        if hasattr(obj.ViewObject, "ShowInTree"):
+            try:
+                obj.ViewObject.ShowInTree = False
+            except Exception:
+                pass
         if hasattr(obj.ViewObject, "ShowInTree"):
             try:
                 obj.ViewObject.ShowInTree = False
@@ -1111,11 +1112,7 @@ class SocketCommand:
             try:
                 role = getattr(candidate, "BIMRole", "")
                 if role == "SocketMatrix" or str(getattr(candidate, "Label", "")).startswith("Matriz_Tomada_"):
-                    if hasattr(candidate, "ViewObject") and candidate.ViewObject:
-                        candidate.ViewObject.Visibility = True
-                        candidate.ViewObject.Selectable = False
-                        if hasattr(candidate.ViewObject, "ShowInTree"):
-                            candidate.ViewObject.ShowInTree = False
+                    self.hide_library_matrix(candidate)
             except Exception:
                 pass
 
@@ -1148,41 +1145,52 @@ class SocketCommand:
         return App.Vector(0, 0, 0)
 
     def make_socket_instance_object(self, doc, matriz):
-        obj = doc.addObject("App::Link", f"Tomada_{self.modules.replace(' ', '_')}")
-        obj.LinkedObject = matriz
+        # Part::Feature com copia da forma - independente da visibilidade da matriz
+        # App::Link nao funciona quando o LinkedObject precisa ser ocultado no mesmo documento
+        obj = doc.addObject("Part::Feature", f"Tomada_{self.modules.replace(' ', '_')}")
+        source_shape = None
+        
+        # Tenta pegar a forma ja normalizada da matriz (centrada na origem)
         try:
-            if hasattr(obj, "LinkTransform"):
-                obj.LinkTransform = True
+            if getattr(matriz, "Shape", None) and not matriz.Shape.isNull():
+                source_shape = matriz.Shape.copy()
         except Exception:
             pass
+
+        # Fallback: carrega do arquivo e normaliza
+        if source_shape is None:
+            try:
+                from .socket_bim import load_socket_family_shape, normalize_socket_shape
+                raw = load_socket_family_shape(self.family_file)
+                source_shape = normalize_socket_shape(raw)
+            except Exception:
+                pass
+
+        # Fallback final: bloco retangular simples
+        if source_shape is None:
+            source_shape = self.make_preview_shape()
+
+        if source_shape:
+            obj.Shape = source_shape
+        
         _set_property(obj, "App::PropertyString", "BIMRole", "BIM_Classificacao", "Socket")
         _set_property(obj, "App::PropertyBool", "IsLibraryMatrix", "BIM_Classificacao", False)
         _set_property(obj, "App::PropertyString", "LibraryMatrixObject", "BIM_Familia", getattr(matriz, "Name", ""))
-        _set_property(obj, "App::PropertyString", "GeometrySourceMode", "BIM_Familia", "CachedShapeFromMatrix")
+        _set_property(obj, "App::PropertyString", "GeometrySourceMode", "BIM_Familia", "CopiedShapeFromMatrix")
         return obj
 
     def enable_link_independent_placement(self, obj, placement=None):
+        # Com Part::Feature, o Placement e direto - a forma ja esta centralizada na origem
         if not obj:
             return
         if placement is None:
             placement = getattr(obj, "Placement", None)
-        try:
-            if hasattr(obj, "LinkTransform"):
-                # LinkTransform=False e o modo padrao do App::Link para cada instancia
-                # sobrescrever a posicao da matriz com seu proprio Placement.
-                obj.LinkTransform = False
-        except Exception:
-            pass
-        try:
-            if hasattr(obj, "LinkPlacement"):
-                obj.LinkPlacement = App.Placement()
-        except Exception:
-            pass
         if placement is not None:
             try:
                 obj.Placement = placement
-            except Exception:
-                pass
+            except Exception as e:
+                App.Console.PrintError(f"Erro ao posicionar tomada: {e}\n")
+                
         try:
             if getattr(obj, "ViewObject", None):
                 obj.ViewObject.Visibility = True

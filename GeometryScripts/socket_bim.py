@@ -291,7 +291,7 @@ class ProfessionalBIMSocket:
                             App.closeDocument(tmp_doc.Name)
                     else:
                         import FreeCADGui as Gui
-                        App.Console.PrintWarning(f"[Eletrica BIM] Arquivo 3D nao localizado: '{fname}' ou '{brep_fname}' em '{_resolve_family_path('')}'\n")
+                        App.Console.PrintWarning(f"[Eletrica BIM] Arquivo 3D nao localizado: '{fname}' em '{_resolve_family_path('')}'\n")
                         Gui.statusMessage(f"AVISO: Arquivo 3D nao localizado: {fname}")
 
             # FALLBACK: cria bloco 4x2 no mesmo ponto funcional das familias:

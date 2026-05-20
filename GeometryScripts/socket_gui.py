@@ -551,7 +551,7 @@ class SocketTaskPanel:
         self.command.rotation = self.rot_in.value()
         self.command.circuit_type = self.circuit_combo.currentText()
         self.command.height_type = self.height_combo.currentText()
-        self.command.panel_board = self.panel_combo.currentText() if self.panel_combo.currentIndex() > 0 else self.command.panel_board
+        self.command.panel_board = self.panel_combo.currentText() if self.panel_combo.currentIndex() > 0 else ""
         self.command.circuit_number = self.circuit_ref_combo.currentText().split(" ", 1)[0] if self.circuit_ref_combo.currentIndex() > 0 else self.command.circuit_number
         self.command.space_or_sector = self.space_combo.currentText() if self.space_combo.currentIndex() > 0 else self.command.space_or_sector
         if hasattr(self, "symbol_mode_combo"):
@@ -1103,11 +1103,6 @@ class SocketCommand:
                 obj.ViewObject.ShowInTree = False
             except Exception:
                 pass
-        if hasattr(obj.ViewObject, "ShowInTree"):
-            try:
-                obj.ViewObject.ShowInTree = False
-            except Exception:
-                pass
 
     def hide_socket_matrices(self, doc):
         if not doc:
@@ -1424,11 +1419,6 @@ class SocketCommand:
                     matriz.SymbolZOffset = self.get_symbol_z_offset()
                 source_matriz = matriz
                 self.mark_as_library_matrix(source_matriz)
-                
-                # Mantem a matriz como FeaturePython: o ponto BIM real e a instancia visivel.
-                matriz = source_matriz
-                self.mark_as_library_matrix(source_matriz)
-                self.mark_as_library_matrix(matriz)
                 try:
                     doc.recompute()
                 except Exception:
@@ -1580,7 +1570,6 @@ class SocketCommand:
 
             # Símbolo 2D como objeto separado no grupo Simbologia_2D_Tomadas
             self._create_2d_symbol(doc, obj, point)
-            self.hide_socket_matrices(doc)
 
             try:
                 from EletricaGuiCommands.ProjectSetup import recalculate_circuit_loads

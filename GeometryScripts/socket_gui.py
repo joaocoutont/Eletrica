@@ -15,6 +15,10 @@ DEFAULT_BIM_LEVELS = [
     ("Nivel 02", 6000.0),
 ]
 SYMBOL_PLANE_MODES = ["Plano de simbologia", "Junto da tomada"]
+SOCKET_3D_LINK_ROTATION_OFFSET_DEG = 180.0
+# Move o simbolo 2D inteiro no eixo Y, sem alterar/deformar o desenho interno.
+# Ajuste este valor quando precisar aproximar ou afastar a simbologia 2D do 3D.
+SOCKET_2D_SYMBOL_Y_OFFSET = 18.0
 
 def _plain_value(value):
     return value.Value if hasattr(value, "Value") else value
@@ -952,7 +956,7 @@ class SocketCommand:
             px = point.x if hasattr(point, 'x') else point[0]
             py = point.y if hasattr(point, 'y') else point[1]
             sym_obj.Placement = App.Placement(
-                App.Vector(px, py, self.get_symbol_final_z()),
+                App.Vector(px, py + SOCKET_2D_SYMBOL_Y_OFFSET, self.get_symbol_final_z()),
                 App.Rotation(App.Vector(0, 0, 1), self.rotation)
             )
 
@@ -1145,15 +1149,18 @@ class SocketCommand:
         return App.Vector(0, 0, 0)
 
     def make_socket_instance_object(self, doc, matriz):
-        # Part::Feature com copia da forma - independente da visibilidade da matriz
-        # App::Link nao funciona quando o LinkedObject precisa ser ocultado no mesmo documento
-        obj = doc.addObject("Part::Feature", f"Tomada_{self.modules.replace(' ', '_')}")
+        obj = None
         source_shape = None
         
         # Tenta pegar a forma ja normalizada da matriz (centrada na origem)
         try:
             if getattr(matriz, "Shape", None) and not matriz.Shape.isNull():
                 source_shape = matriz.Shape.copy()
+                # Garante que a shape esta centrada na origem
+                # (o cache pode ter sido carregado de uma sessao anterior sem normalizacao)
+                center = source_shape.BoundBox.Center
+                if abs(center.x) > 1.0 or abs(center.y) > 1.0 or abs(center.z) > 1.0:
+                    source_shape.translate(App.Vector(-center.x, -center.y, -center.z))
         except Exception:
             pass
 
@@ -1170,12 +1177,26 @@ class SocketCommand:
         if source_shape is None:
             source_shape = self.make_preview_shape()
 
+        source_name = f"{getattr(matriz, 'Name', 'Matriz_Tomada')}_LinkSource"
+        source_obj = doc.getObject(source_name)
+        if not source_obj:
+            source_obj = doc.addObject("Part::Feature", source_name)
+            source_obj.Label = f"{getattr(matriz, 'Label', source_name)} Link Source"
         if source_shape:
-            obj.Shape = source_shape
-        
-        # Reseta o Placement para identidade - garantia de que o obj nao herda
-        # qualquer deslocamento da matriz ou do contexto de criacao
-        obj.Placement = App.Placement()
+            source_obj.Shape = source_shape
+        self.mark_as_library_matrix(source_obj)
+        self.hide_library_matrix(source_obj)
+
+        obj = doc.addObject("App::Link", f"Tomada_{self.modules.replace(' ', '_')}")
+        obj.LinkedObject = source_obj
+        try:
+            obj.LinkTransform = True
+        except Exception:
+            pass
+        try:
+            obj.LinkPlacement = App.Placement()
+        except Exception:
+            pass
         
         _set_property(obj, "App::PropertyString", "BIMRole", "BIM_Classificacao", "Socket")
         _set_property(obj, "App::PropertyBool", "IsLibraryMatrix", "BIM_Classificacao", False)
@@ -1183,17 +1204,26 @@ class SocketCommand:
         _set_property(obj, "App::PropertyString", "GeometrySourceMode", "BIM_Familia", "CopiedShapeFromMatrix")
         return obj
 
-    def enable_link_independent_placement(self, obj, placement=None):
-        # Com Part::Feature, o Placement e direto - a forma ja esta centralizada na origem
+    def enable_link_independent_placement(self, obj, placement=None, visual_target=None, container=None, doc=None):
         if not obj:
             return
         if placement is None:
             placement = getattr(obj, "Placement", None)
+        if getattr(obj, "TypeId", "") == "App::Link":
+            try:
+                if hasattr(obj, "LinkTransform"):
+                    obj.LinkTransform = True
+                if hasattr(obj, "LinkPlacement"):
+                    obj.LinkPlacement = App.Placement()
+            except Exception:
+                pass
         if placement is not None:
             try:
                 obj.Placement = placement
             except Exception as e:
                 App.Console.PrintError(f"Erro ao posicionar tomada: {e}\n")
+        if getattr(obj, "TypeId", "") == "App::Link" and visual_target is not None:
+            self.correct_link_visual_position(obj, visual_target, container=container, doc=doc)
                 
         try:
             if getattr(obj, "ViewObject", None):
@@ -1201,6 +1231,72 @@ class SocketCommand:
                 obj.ViewObject.Selectable = True
         except Exception:
             pass
+
+    def correct_link_visual_position(self, obj, visual_target, container=None, doc=None):
+        if not obj or getattr(obj, "TypeId", "") != "App::Link":
+            return
+        if doc is None:
+            doc = getattr(obj, "Document", None) or App.ActiveDocument
+        target = visual_target.Base if hasattr(visual_target, "Base") else visual_target
+        try:
+            if doc:
+                doc.recompute([obj])
+        except Exception:
+            try:
+                if doc:
+                    doc.recompute()
+            except Exception:
+                pass
+        for _ in range(3):
+            try:
+                shape = getattr(obj, "Shape", None)
+                if not shape or shape.isNull():
+                    return
+                center = shape.BoundBox.Center
+                delta = App.Vector(target.x - center.x, target.y - center.y, target.z - center.z)
+                if delta.Length < 0.01:
+                    return
+                if container:
+                    try:
+                        delta = self.get_container_global_placement(container).inverse().Rotation.multVec(delta)
+                    except Exception:
+                        pass
+                obj.Placement.Base = obj.Placement.Base + delta
+                if doc:
+                    doc.recompute([obj])
+            except Exception as exc:
+                App.Console.PrintWarning(f"[Eletrica BIM] Nao foi possivel corrigir posicao visual do Link: {exc}\n")
+                return
+
+    def get_container_global_placement(self, container):
+        if not container:
+            return App.Placement()
+        for method_name in ("getGlobalPlacement", "globalPlacement"):
+            method = getattr(container, method_name, None)
+            if method:
+                try:
+                    placement = method()
+                    if placement:
+                        return placement
+                except Exception:
+                    pass
+        try:
+            return container.Placement
+        except Exception:
+            return App.Placement()
+
+    def placement_for_container(self, global_placement, container):
+        if not container:
+            return global_placement
+        try:
+            return self.get_container_global_placement(container).inverse() * global_placement
+        except Exception:
+            try:
+                parent_placement = self.get_container_global_placement(container)
+                local_pos = parent_placement.inverse().multVec(global_placement.Base)
+                return App.Placement(local_pos, global_placement.Rotation)
+            except Exception:
+                return global_placement
 
     def repair_socket_links(self, doc):
         if not doc:
@@ -1269,6 +1365,7 @@ class SocketCommand:
             # para garantir que o 3D use a ancoragem funcional da biblioteca.
             if matriz:
                 try:
+                    matriz.Placement = App.Placement()
                     from .socket_bim import _SHAPE_CACHE, _SHAPE_CACHE_ALIGNMENT
                     source_file = getattr(matriz, "SourceFile", "") or ""
                     cache_key = f"{source_file}|{_SHAPE_CACHE_ALIGNMENT}"
@@ -1287,6 +1384,7 @@ class SocketCommand:
             if not matriz:
                 matriz = doc.addObject("Part::FeaturePython", matriz_label)
                 matriz.Label = matriz_label
+                matriz.Placement = App.Placement()
                 from .socket_bim import ProfessionalBIMSocket
                 ProfessionalBIMSocket(matriz)
                 
@@ -1338,6 +1436,11 @@ class SocketCommand:
                 
                 # Oculta a matriz do desenho e da árvore para ficar invisível e limpa
             self.mark_as_library_matrix(matriz)
+            try:
+                matriz.Placement = App.Placement()
+                doc.recompute([matriz])
+            except Exception:
+                pass
             try:
                 if not getattr(matriz, "Shape", None) or matriz.Shape.isNull():
                     doc.recompute()
@@ -1443,28 +1546,34 @@ class SocketCommand:
         target_pos = App.Vector(px, py, final_z)
         if self.detect_surfaces and self.host_object:
             target_pos.z = final_z + self.surface_offset
-        target_rot = App.Rotation(App.Vector(0,0,1), self.rotation)
+        rotation_offset = SOCKET_3D_LINK_ROTATION_OFFSET_DEG if not is_ghost else 0.0
+        target_rot = App.Rotation(App.Vector(0,0,1), self.rotation + rotation_offset)
         target_placement = App.Placement(target_pos, target_rot)
+        level_obj = None
+        if not is_ghost and hasattr(self, "reference_level_object") and self.reference_level_object:
+            candidate_level = doc.getObject(self.reference_level_object)
+            if candidate_level and hasattr(candidate_level, "addObject"):
+                try:
+                    candidate_level.addObject(obj)
+                    level_obj = candidate_level
+                except Exception:
+                    level_obj = None
+        placement_to_apply = self.placement_for_container(target_placement, level_obj)
         if not is_ghost:
-            self.enable_link_independent_placement(obj, target_placement)
+            self.enable_link_independent_placement(obj, placement_to_apply, visual_target=target_pos, container=level_obj, doc=doc)
             if getattr(obj, "TypeId", "") == "App::Link":
                 self.repair_socket_links(doc)
         else:
             obj.Placement = target_placement
         
         if not is_ghost:
-            # Adiciona o objeto fisicamente ao nível/pavimento correto na árvore de projetos
-            if hasattr(self, "reference_level_object") and self.reference_level_object:
-                level_obj = doc.getObject(self.reference_level_object)
-                if level_obj and hasattr(level_obj, "addObject"):
-                    level_obj.addObject(obj)
-            
             try:
                 anchor = self.get_shape_xy_anchor(obj)
+                parent_label = getattr(level_obj, "Label", "") if level_obj else "raiz do documento"
                 App.Console.PrintLog(
                     f"Tomada inserida em: {px:.1f}, {py:.1f}, Z: {final_z:.1f} "
                     f"({self.reference_level_name} + {self.z_level:.1f}mm) | "
-                    f"anchor local 3D: {anchor.x:.1f}, {anchor.y:.1f}\n"
+                    f"container: {parent_label} | anchor local 3D: {anchor.x:.1f}, {anchor.y:.1f}\n"
                 )
             except Exception:
                 App.Console.PrintLog(f"Tomada inserida em: {px:.1f}, {py:.1f}, Z: {final_z:.1f} ({self.reference_level_name} + {self.z_level:.1f}mm)\n")

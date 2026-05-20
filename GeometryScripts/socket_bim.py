@@ -5,7 +5,7 @@ import os
 
 # Cache global para evitar abrir o arquivo da biblioteca repetidamente (Performance)
 _SHAPE_CACHE = {}
-_SHAPE_CACHE_ALIGNMENT = "fcstd_full_shape_transform_v17"
+_SHAPE_CACHE_ALIGNMENT = "fcstd_normalized_centered_v18"
 _SOCKET_3D_ARROW_ALIGNMENT_DEG = 180.0
 
 def _float_value(value, default=0.0):
@@ -236,7 +236,18 @@ class ProfessionalBIMSocket:
             if cache_key in _SHAPE_CACHE:
                 final_shape = Part.Shape()
                 final_shape.importBrepFromString(_SHAPE_CACHE[cache_key])
-            else:
+                # Valida que o cache esta realmente centrado na origem
+                # Se nao estiver (cache antigo corrompido), descarta e recarrega
+                try:
+                    center = final_shape.BoundBox.Center
+                    if abs(center.x) > 1.0 or abs(center.y) > 1.0:
+                        App.Console.PrintWarning(f"[BIM] Cache deslocado ({center.x:.1f}, {center.y:.1f}) - recalculando...\n")
+                        del _SHAPE_CACHE[cache_key]
+                        final_shape = None
+                except Exception:
+                    pass
+            
+            if not final_shape:
                 best_s = normalize_socket_shape(load_socket_family_shape(fname))
                 if best_s:
                     brep_data = best_s.exportBrepToString()
@@ -301,7 +312,32 @@ class ProfessionalBIMSocket:
                 except Exception:
                     pass
 
+            # GARANTIA FINAL: normaliza SEMPRE antes de gravar no objeto.
+            if final_shape and not final_shape.isNull():
+                try:
+                    center = final_shape.BoundBox.Center
+                    if abs(center.x) > 0.1 or abs(center.y) > 0.1 or abs(center.z) > 0.1:
+                        final_shape.translate(App.Vector(-center.x, -center.y, -center.z))
+                except Exception as e:
+                    App.Console.PrintError(f"[BIM] Erro ao centralizar shape: {e}\n")
+
+            try:
+                current_placement = fp.Placement
+                base = current_placement.Base
+                if (
+                    abs(base.x) > 0.001
+                    or abs(base.y) > 0.001
+                    or abs(base.z) > 0.001
+                    or abs(current_placement.Rotation.Angle) > 0.000001
+                ):
+                    final_shape.transformShape(current_placement.inverse().toMatrix())
+            except Exception:
+                pass
             fp.Shape = final_shape
+            try:
+                fp.Placement = App.Placement()
+            except Exception:
+                pass
             
             # Metadados
             prefix = "TUG" if "Geral" in fp.CircuitType else "TUE"
@@ -309,7 +345,8 @@ class ProfessionalBIMSocket:
             fp.Tag = f"{prefix}-{fp.Amperage}"
             
         except Exception as e:
-            App.Console.PrintError(f"Erro no motor BIM: {str(e)}\n")
+            import traceback
+            App.Console.PrintError(f"Erro no motor BIM: {str(e)}\n{traceback.format_exc()}\n")
 
     def make_nbr_symbol(self, height_type, modules="1 Módulo", amperage="10A"):
         """Cria o símbolo 2D padrão NBR 5444 alinhado e escalado com a mira no (0,0)."""

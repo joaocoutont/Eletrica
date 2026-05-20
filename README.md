@@ -124,5 +124,14 @@ Comandos adicionados:
 - Criar Ambiente/Setor.
 - Rotas Preliminares.
 
+## 🧱 Arquitetura de Componentes (Regra de Ouro)
+
+Todo desenvolvimento de novos comandos de inserção na bancada Elétrica (tomadas, interruptores, eletrodutos, luminárias, etc.) **DEVE** seguir a arquitetura de arquivos separados para garantir manutenibilidade e escalabilidade:
+
+- `<componente>_gui.py`: Exclusivo para código de interface (Qt), painéis laterais (TaskPanels), atalhos, cliques 3D e simbologia 2D.
+- `<componente>_bim.py`: Exclusivo para o proxy BIM (`FeaturePython`), geometria 3D, propriedades técnicas, pontos de ancoragem MEP (`getSnapPoints`) e não deve ter dependências gráficas ou Qt.
+
+**Nenhum novo botão deve injetar lógica em arquivos de outros componentes.** Mantenha a separação rígida.
+
 ---
 *Elite Industrial Suite - Desenvolvido para a Engenharia do Futuro.*

@@ -120,16 +120,27 @@ Library/2D/Conjuntos_Modulares
 
 `Library/3D/Tomadas` guarda familias de tomada. `Library/3D/Conjuntos_Modulares` guarda placas e combinacoes, como tomada + interruptor. A pasta 2D e opcional para simbologias separadas.
 
-### 4.2.2 Tomadas com matriz em cache
+### 4.2.2 Tomadas com matriz em cache (Padrão de Inserção)
 
 A insercao de tomadas usa uma matriz oculta de biblioteca para reduzir abertura de arquivos e recompute:
 
 - matriz oculta: `BIMRole = SocketMatrix`, `IsLibraryMatrix = True`;
-- instancia real: `BIMRole = Socket`, `IsLibraryMatrix = False`;
+- instancia real: `App::Link` com `BIMRole = Socket`, `IsLibraryMatrix = False`;
 - geometria visivel da instancia: `GeometrySourceMode = CachedShapeFromMatrix`;
 - a matriz guarda geometria/familia e fica fora de cargas, validacoes, tabelas, BOM, relatorios e exportacao;
-- a instancia real guarda `PanelBoard`, `CircuitNumber`, `CircuitObject`, `Power`, `ReferenceLevel`, `MountingHeight`, `FinalElevation` e demais dados BIM;
-- a chave da matriz inclui arquivo da familia, modulos, amperagem e altura para evitar reaproveitamento incorreto entre tomada baixa, media e alta.
+- a instancia real guarda `PanelBoard`, `CircuitNumber`, `CircuitObject`, `Power`, `ReferenceLevel`, `MountingHeight`, `FinalElevation` e demais dados BIM injetados dinamicamente via `hasattr` para evitar exceções de interface no backend;
+- a chave da matriz inclui arquivo da familia, modulos, amperagem e altura para evitar reaproveitamento incorreto entre tomada baixa, media e alta;
+- o loop de correção de posicionamento visual visual foi otimizado para disparar eventos de `recompute` de forma cirúrgica (apenas se for necessário nas tentativas iniciais), e o módulo `Arch` agora é importado sob proteções que garantem o funcionamento do comando até em instalações mínimas (headless) do FreeCAD.
+
+### 4.2.3 Regra de Ouro para Novos Pontos (Arquivos GUI e BIM)
+
+Para mantermos a documentação cristalina e a manutenção simplificada, ficou estabelecido que **cada botão de inserção de itens deve possuir o seu próprio par de arquivos independentes**. Não misture componentes diferentes no mesmo arquivo.
+ 
+O padrão a ser seguido é:
+- `<Item>_gui.py`: Trata as interações do usuário, painéis (TaskPanels), atalhos de clique e desenho dos símbolos 2D. (Exemplo: `socket_gui.py`).
+- `<Item>_bim.py`: Trata a geometria pura (FeaturePython proxy), inicialização do modelo 3D, lógica MEP (conectores via SnapPoints) e não pode conter dependências de interface Qt. (Exemplo: `socket_bim.py`).
+
+Esta separação clara documenta perfeitamente os contornos de cada comando novo introduzido na plataforma.
 
 ### 4.3 Objetos BIM de Quadro e Circuito
 

@@ -153,5 +153,19 @@ o conector adequado de qualquer objeto BIM para o roteamento automatico de eletr
 O conector mais proximo do objeto de destino e selecionado automaticamente.
 A conversao de coordenadas locais para globais usa `Placement.multVec(pt)`.
 
+### 10.6 Arquitetura de Comandos UI/BIM (Regra de Separação de Arquivos)
+
+Para facilitar a manutenção, documentação e evitar que o código de diferentes componentes se misture, o desenvolvimento de ferramentas de inserção de itens adota uma padronização rígida de arquitetura:
+
+**Cada novo item de inserção (cada botão na interface) deve possuir seus próprios arquivos exclusivos**, seguindo o modelo das tomadas:
+- `<componente>_gui.py`: Contém a definição do comando FreeCAD (`Command`), o painel de propriedades (`TaskPanel` ou UI), o tratamento de eventos do usuário, lógica de clique na tela e geração de símbolos 2D.
+- `<componente>_bim.py`: Contém a classe Proxy para o objeto `FeaturePython` (`ProfessionalBIM<Component>`), definições das propriedades BIM, rotina `execute()` (motor geométrico, carregamento de cache e cálculos 3D puros) e definição de pontos de conexão MEP (`getSnapPoints`).
+
+**Exemplo:**
+- Inserção de Tomadas: `socket_gui.py` e `socket_bim.py`
+- Inserção de Interruptores: `switch_gui.py` e `switch_bim.py` (e assim por diante).
+
+Esta regra garante que arquivos não inchem desnecessariamente e que as dependências fiquem explícitas.
+
 ---
 *Este documento e parte integrante da documentacao tecnica da bancada Eletrica.*

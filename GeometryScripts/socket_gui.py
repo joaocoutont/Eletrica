@@ -3,7 +3,12 @@ import FreeCADGui as Gui
 from PySide import QtGui, QtCore
 import os
 import math
-import Arch
+try:
+    import Arch
+    _ARCH_AVAILABLE = True
+except ImportError:
+    _ARCH_AVAILABLE = False
+    App.Console.PrintWarning("[Eletrica] Modulo Arch nao disponivel. Criacao de niveis BIM desabilitada.\n")
 import Part
 from .socket_bim import ProfessionalBIMSocket
 from .bim_placement_core import BIMPlacementEngine
@@ -90,6 +95,9 @@ def create_default_bim_levels(doc):
         return created
 
     for label, elevation in DEFAULT_BIM_LEVELS:
+        if not _ARCH_AVAILABLE:
+            App.Console.PrintWarning("[Eletrica] Arch indisponivel. Niveis BIM padrao nao foram criados.\n")
+            return created
         try:
             obj = Arch.makeBuildingPart()
         except Exception:
@@ -1242,7 +1250,7 @@ class SocketCommand:
                     doc.recompute()
             except Exception:
                 pass
-        for _ in range(3):
+        for attempt in range(3):
             try:
                 shape = getattr(obj, "Shape", None)
                 if not shape or shape.isNull():
@@ -1250,15 +1258,19 @@ class SocketCommand:
                 center = shape.BoundBox.Center
                 delta = App.Vector(target.x - center.x, target.y - center.y, target.z - center.z)
                 if delta.Length < 0.01:
-                    return
+                    return  # Posicao correta, encerra sem recompute extra
                 if container:
                     try:
                         delta = self.get_container_global_placement(container).inverse().Rotation.multVec(delta)
                     except Exception:
                         pass
                 obj.Placement.Base = obj.Placement.Base + delta
-                if doc:
-                    doc.recompute([obj])
+                # Recomputa apenas nas tentativas intermediarias (nao na ultima)
+                if attempt < 2 and doc:
+                    try:
+                        doc.recompute([obj])
+                    except Exception:
+                        pass
             except Exception as exc:
                 App.Console.PrintWarning(f"[Eletrica BIM] Nao foi possivel corrigir posicao visual do Link: {exc}\n")
                 return
@@ -1444,68 +1456,86 @@ class SocketCommand:
             self.hide_socket_matrices(doc)
             
             # --- ADICIONA AS PROPRIEDADES BIM INDIVIDUAIS DIRETAMENTE NO LINK ---
+            def _add_prop(prop_type, name, group, value):
+                """Adiciona propriedade apenas se ainda nao existe, depois atribui o valor."""
+                try:
+                    if not hasattr(obj, name):
+                        obj.addProperty(prop_type, name, group)
+                    setattr(obj, name, value)
+                except Exception:
+                    pass
+
             # Engenharia
-            obj.addProperty("App::PropertyString", "CircuitNumber", "BIM_Engenharia").CircuitNumber = self.circuit_number
-            obj.addProperty("App::PropertyEnumeration", "Voltage", "BIM_Engenharia").Voltage = ["127V", "220V", "380V"]
+            _add_prop("App::PropertyString",      "CircuitNumber",      "BIM_Engenharia", self.circuit_number)
+            if not hasattr(obj, "Voltage"):
+                try:
+                    obj.addProperty("App::PropertyEnumeration", "Voltage", "BIM_Engenharia").Voltage = ["127V", "220V", "380V"]
+                except Exception:
+                    pass
             try:
                 obj.Voltage = self.voltage
             except Exception:
                 pass
-            obj.addProperty("App::PropertyFloat", "Power", "BIM_Engenharia").Power = self.power
-            obj.addProperty("App::PropertyFloat", "ApparentPowerVA", "BIM_Engenharia").ApparentPowerVA = self.apparent_power_va
-            obj.addProperty("App::PropertyFloat", "ActivePowerW", "BIM_Engenharia").ActivePowerW = self.effective_active_power_w()
-            obj.addProperty("App::PropertyFloat", "PowerFactor", "BIM_Engenharia").PowerFactor = self.power_factor
-            obj.addProperty("App::PropertyFloat", "DemandFactor", "BIM_Engenharia").DemandFactor = self.demand_factor
-            obj.addProperty("App::PropertyString", "Phase", "BIM_Engenharia").Phase = self.phase
-            obj.addProperty("App::PropertyString", "LoadClassification", "BIM_Engenharia").LoadClassification = self.effective_load_classification()
-            obj.addProperty("App::PropertyString", "PanelBoard", "BIM_Engenharia").PanelBoard = self.panel_board
-            obj.addProperty("App::PropertyString", "CircuitObject", "BIM_Engenharia").CircuitObject = self.circuit_object
-            obj.addProperty("App::PropertyString", "SpaceOrSector", "BIM_Engenharia").SpaceOrSector = self.space_or_sector
-            
-            # Posicionamento/Referência
-            obj.addProperty("App::PropertyString", "ReferenceLevel", "BIM_Posicionamento").ReferenceLevel = self.reference_level_name
-            obj.addProperty("App::PropertyString", "ReferenceLevelObject", "BIM_Posicionamento").ReferenceLevelObject = self.reference_level_object
-            obj.addProperty("App::PropertyLength", "LevelElevation", "BIM_Posicionamento").LevelElevation = self.level_elevation
-            obj.addProperty("App::PropertyLength", "MountingHeight", "BIM_Posicionamento").MountingHeight = self.z_level
-            obj.addProperty("App::PropertyLength", "FinalElevation", "BIM_Posicionamento").FinalElevation = self.get_final_z()
+            _add_prop("App::PropertyFloat",       "Power",              "BIM_Engenharia", self.power)
+            _add_prop("App::PropertyFloat",       "ApparentPowerVA",    "BIM_Engenharia", self.apparent_power_va)
+            _add_prop("App::PropertyFloat",       "ActivePowerW",       "BIM_Engenharia", self.effective_active_power_w())
+            _add_prop("App::PropertyFloat",       "PowerFactor",        "BIM_Engenharia", self.power_factor)
+            _add_prop("App::PropertyFloat",       "DemandFactor",       "BIM_Engenharia", self.demand_factor)
+            _add_prop("App::PropertyString",      "Phase",              "BIM_Engenharia", self.phase)
+            _add_prop("App::PropertyString",      "LoadClassification", "BIM_Engenharia", self.effective_load_classification())
+            _add_prop("App::PropertyString",      "PanelBoard",         "BIM_Engenharia", self.panel_board)
+            _add_prop("App::PropertyString",      "CircuitObject",      "BIM_Engenharia", self.circuit_object)
+            _add_prop("App::PropertyString",      "SpaceOrSector",      "BIM_Engenharia", self.space_or_sector)
+
+            # Posicionamento/Referencia
+            _add_prop("App::PropertyString",      "ReferenceLevel",       "BIM_Posicionamento", self.reference_level_name)
+            _add_prop("App::PropertyString",      "ReferenceLevelObject", "BIM_Posicionamento", self.reference_level_object)
+            _add_prop("App::PropertyLength",      "LevelElevation",       "BIM_Posicionamento", self.level_elevation)
+            _add_prop("App::PropertyLength",      "MountingHeight",       "BIM_Posicionamento", self.z_level)
+            _add_prop("App::PropertyLength",      "FinalElevation",       "BIM_Posicionamento", self.get_final_z())
 
             # Simbologia / plotagem
-            obj.addProperty("App::PropertyEnumeration", "SymbolPlaneMode", "BIM_Simbologia").SymbolPlaneMode = SYMBOL_PLANE_MODES
+            if not hasattr(obj, "SymbolPlaneMode"):
+                try:
+                    obj.addProperty("App::PropertyEnumeration", "SymbolPlaneMode", "BIM_Simbologia").SymbolPlaneMode = SYMBOL_PLANE_MODES
+                except Exception:
+                    pass
             try:
                 obj.SymbolPlaneMode = self.symbol_plane_mode
             except Exception:
                 pass
-            obj.addProperty("App::PropertyString", "SymbolPlaneName", "BIM_Simbologia").SymbolPlaneName = self.symbol_plane_name
-            obj.addProperty("App::PropertyLength", "SymbolPlaneHeight", "BIM_Simbologia").SymbolPlaneHeight = self.symbol_plane_height
-            obj.addProperty("App::PropertyLength", "SymbolFinalElevation", "BIM_Simbologia").SymbolFinalElevation = self.get_symbol_final_z()
-            obj.addProperty("App::PropertyFloat", "SymbolZOffset", "BIM_Simbologia").SymbolZOffset = self.get_symbol_z_offset()
-            
-            # Família
-            obj.addProperty("App::PropertyString", "IFC_Class", "BIM_Classificacao").IFC_Class = self.ifc_class
-            obj.addProperty("App::PropertyString", "TipoBIM", "BIM_Classificacao").TipoBIM = "Tomada"
-            obj.addProperty("App::PropertyString", "ElectricalStandard", "BIM_Classificacao").ElectricalStandard = self.electrical_standard
-            obj.addProperty("App::PropertyString", "FamilyName", "BIM_Familia").FamilyName = self.family_name
-            obj.addProperty("App::PropertyString", "FamilyCategory", "BIM_Familia").FamilyCategory = self.family_category
-            obj.addProperty("App::PropertyInteger", "ModuleCount", "BIM_Familia").ModuleCount = self.get_module_count()
-            obj.addProperty("App::PropertyString", "SocketType", "BIM_Familia").SocketType = "Tripla" if self.modules.startswith("3") else "Dupla" if self.modules.startswith("2") else "Simples"
-            obj.addProperty("App::PropertyString", "Amperage", "BIM_Familia").Amperage = self.amperage
-            obj.addProperty("App::PropertyString", "SocketApplication", "BIM_Familia").SocketApplication = self.socket_application
-            obj.addProperty("App::PropertyString", "IP_Rating", "BIM_Familia").IP_Rating = self.ip_rating
-            obj.addProperty("App::PropertyString", "Manufacturer", "BIM_Familia").Manufacturer = self.manufacturer
-            obj.addProperty("App::PropertyString", "Model", "BIM_Familia").Model = self.model
-            obj.addProperty("App::PropertyString", "CatalogCode", "BIM_Familia").CatalogCode = self.catalog_code
-            obj.addProperty("App::PropertyString", "FamilyDescription", "BIM_Familia").FamilyDescription = self.family_description
-            
+            _add_prop("App::PropertyString",      "SymbolPlaneName",      "BIM_Simbologia", self.symbol_plane_name)
+            _add_prop("App::PropertyLength",      "SymbolPlaneHeight",    "BIM_Simbologia", self.symbol_plane_height)
+            _add_prop("App::PropertyLength",      "SymbolFinalElevation", "BIM_Simbologia", self.get_symbol_final_z())
+            _add_prop("App::PropertyFloat",       "SymbolZOffset",        "BIM_Simbologia", self.get_symbol_z_offset())
+
+            # Familia
+            _add_prop("App::PropertyString",      "IFC_Class",          "BIM_Classificacao", self.ifc_class)
+            _add_prop("App::PropertyString",      "TipoBIM",            "BIM_Classificacao", "Tomada")
+            _add_prop("App::PropertyString",      "ElectricalStandard", "BIM_Classificacao", self.electrical_standard)
+            _add_prop("App::PropertyString",      "FamilyName",         "BIM_Familia", self.family_name)
+            _add_prop("App::PropertyString",      "FamilyCategory",     "BIM_Familia", self.family_category)
+            _add_prop("App::PropertyInteger",     "ModuleCount",        "BIM_Familia", self.get_module_count())
+            _add_prop("App::PropertyString",      "SocketType",         "BIM_Familia",
+                      "Tripla" if self.modules.startswith("3") else "Dupla" if self.modules.startswith("2") else "Simples")
+            _add_prop("App::PropertyString",      "Amperage",           "BIM_Familia", self.amperage)
+            _add_prop("App::PropertyString",      "SocketApplication",  "BIM_Familia", self.socket_application)
+            _add_prop("App::PropertyString",      "IP_Rating",          "BIM_Familia", self.ip_rating)
+            _add_prop("App::PropertyString",      "Manufacturer",       "BIM_Familia", self.manufacturer)
+            _add_prop("App::PropertyString",      "Model",              "BIM_Familia", self.model)
+            _add_prop("App::PropertyString",      "CatalogCode",        "BIM_Familia", self.catalog_code)
+            _add_prop("App::PropertyString",      "FamilyDescription",  "BIM_Familia", self.family_description)
+
             if self.detect_surfaces:
-                obj.addProperty("App::PropertyString", "HostObject", "BIM_Posicionamento").HostObject = self.host_object
-                obj.addProperty("App::PropertyString", "HostFace", "BIM_Posicionamento").HostFace = self.host_sub
-                obj.addProperty("App::PropertyLength", "SurfaceOffset", "BIM_Posicionamento").SurfaceOffset = self.surface_offset
-            
+                _add_prop("App::PropertyString", "HostObject", "BIM_Posicionamento", self.host_object)
+                _add_prop("App::PropertyString", "HostFace",   "BIM_Posicionamento", self.host_sub)
+                _add_prop("App::PropertyLength", "SurfaceOffset", "BIM_Posicionamento", self.surface_offset)
+
             # Tag IFC/BIM
-            obj.addProperty("App::PropertyString", "Tag", "BIM_Classificacao")
             prefix = "TUG" if "Geral" in self.circuit_type else "TUE"
-            if "UPS" in self.circuit_type: prefix = "UPS"
-            obj.Tag = f"{prefix}-{self.amperage}"
+            if "UPS" in self.circuit_type:
+                prefix = "UPS"
+            _add_prop("App::PropertyString", "Tag", "BIM_Classificacao", f"{prefix}-{self.amperage}")
             
             color = (0.9, 0.9, 0.9)
             if "UPS" in self.circuit_type: color = (1.0, 0.0, 0.0)

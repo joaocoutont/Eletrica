@@ -38,7 +38,7 @@ class EquipmentManager:
                 obj.Tensao = "220V"
             
             if position:
-                obj.Placement.Base = position
+                manager.set_component_position(obj, position, doc=FreeCAD.ActiveDocument)
                 
             # Adicionar Tag de TUE para o BOM
             if not hasattr(obj, "TipoBIM"):

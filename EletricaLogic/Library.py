@@ -1,6 +1,7 @@
 # Gerenciador de Biblioteca de Objetos
 import os
 import FreeCAD
+import Part
 
 class LibraryManager:
     def __init__(self, path_3d=None, path_2d=None):
@@ -22,6 +23,171 @@ class LibraryManager:
         except:
             pass
         return None
+
+    @staticmethod
+    def configure_independent_link(link):
+        """Deixa o App::Link cair visualmente no Placement da propria instancia."""
+        if not link:
+            return
+        try:
+            if hasattr(link, "LinkTransform"):
+                link.LinkTransform = True
+            if hasattr(link, "LinkPlacement"):
+                link.LinkPlacement = FreeCAD.Placement()
+        except Exception:
+            pass
+
+    @staticmethod
+    def open_link_source(full_path):
+        previous_doc_name = None
+        try:
+            if FreeCAD.ActiveDocument:
+                previous_doc_name = FreeCAD.ActiveDocument.Name
+        except Exception:
+            previous_doc_name = None
+        source_doc = None
+        try:
+            try:
+                source_doc = FreeCAD.openDocument(full_path, True, True)
+            except TypeError:
+                source_doc = FreeCAD.open(full_path)
+            if not source_doc or not source_doc.Objects:
+                return None
+            return source_doc.Objects[0]
+        finally:
+            if previous_doc_name:
+                try:
+                    FreeCAD.setActiveDocument(previous_doc_name)
+                except Exception:
+                    pass
+
+    @staticmethod
+    def load_component_shape(full_path):
+        previous_doc_name = None
+        try:
+            if FreeCAD.ActiveDocument:
+                previous_doc_name = FreeCAD.ActiveDocument.Name
+        except Exception:
+            previous_doc_name = None
+
+        source_doc = None
+        try:
+            try:
+                source_doc = FreeCAD.openDocument(full_path, True, True)
+            except TypeError:
+                source_doc = FreeCAD.open(full_path)
+
+            best_shape = None
+            max_volume = -1.0
+            for obj in getattr(source_doc, "Objects", []):
+                shape = None
+                try:
+                    if hasattr(obj, "Shape") and obj.Shape and not obj.Shape.isNull():
+                        shape = obj.Shape.copy()
+                        if hasattr(obj, "Placement") and obj.Placement:
+                            shape.transformShape(obj.Placement.toMatrix())
+                    elif hasattr(obj, "Tip") and obj.Tip and obj.Tip.Shape and not obj.Tip.Shape.isNull():
+                        shape = obj.Tip.Shape.copy()
+                        if hasattr(obj, "Placement") and obj.Placement:
+                            shape.transformShape(obj.Placement.toMatrix())
+                except Exception:
+                    shape = None
+                if not shape:
+                    continue
+                try:
+                    volume = float(shape.Volume)
+                except Exception:
+                    volume = 0.0
+                if best_shape is None or volume > max_volume:
+                    best_shape = shape
+                    max_volume = volume
+
+            if best_shape:
+                center = best_shape.BoundBox.Center
+                best_shape.translate(FreeCAD.Vector(-center.x, -center.y, -center.z))
+            return best_shape
+        finally:
+            if source_doc:
+                try:
+                    FreeCAD.closeDocument(source_doc.Name)
+                except Exception:
+                    pass
+            if previous_doc_name:
+                try:
+                    FreeCAD.setActiveDocument(previous_doc_name)
+                except Exception:
+                    pass
+
+    @classmethod
+    def get_or_create_link_source(cls, doc, full_path, obj_name):
+        safe_name = "Matriz_" + "".join(ch if ch.isalnum() else "_" for ch in obj_name)
+        source = doc.getObject(safe_name)
+        if source:
+            return source
+
+        shape = cls.load_component_shape(full_path)
+        if not shape:
+            return None
+        source = doc.addObject("Part::Feature", safe_name)
+        source.Label = f"Matriz {obj_name}"
+        source.Shape = shape
+        try:
+            source.ViewObject.Visibility = False
+            source.ViewObject.Selectable = False
+            if hasattr(source.ViewObject, "ShowInTree"):
+                source.ViewObject.ShowInTree = False
+        except Exception:
+            pass
+        return source
+
+    @staticmethod
+    def correct_link_visual_position(link, target_pos, doc=None):
+        """
+        Em FreeCAD 1.1 o App::Link pode compor o Placement do objeto linkado
+        e/ou do container de origem. Corrige pelo resultado visual real.
+        """
+        if not link or getattr(link, "TypeId", "") != "App::Link" or target_pos is None:
+            return
+        doc = doc or getattr(link, "Document", None) or FreeCAD.ActiveDocument
+        try:
+            if doc:
+                doc.recompute([link])
+        except Exception:
+            try:
+                if doc:
+                    doc.recompute()
+            except Exception:
+                pass
+
+        for _ in range(3):
+            try:
+                shape = getattr(link, "Shape", None)
+                if not shape or shape.isNull():
+                    return
+                center = shape.BoundBox.Center
+                delta = FreeCAD.Vector(
+                    target_pos.x - center.x,
+                    target_pos.y - center.y,
+                    target_pos.z - center.z,
+                )
+                if delta.Length < 0.01:
+                    return
+                link.Placement.Base = link.Placement.Base + delta
+                if doc:
+                    doc.recompute([link])
+            except Exception as exc:
+                FreeCAD.Console.PrintWarning(f"[Eletrica] Nao foi possivel corrigir Link: {exc}\n")
+                return
+
+    @classmethod
+    def set_component_position(cls, obj, position, doc=None):
+        if not obj or position is None:
+            return
+        try:
+            obj.Placement.Base = position
+            cls.correct_link_visual_position(obj, position, doc=doc)
+        except Exception:
+            pass
 
     def list_components(self):
         """Lista todos os componentes .FCStd disponiveis na biblioteca 3D"""
@@ -54,8 +220,14 @@ class LibraryManager:
         # Criar um Link para o arquivo externo
         # No FreeCAD, o App::Link pode apontar para um arquivo externo
         try:
+            source = self.get_or_create_link_source(doc, full_path, obj_name)
+            if not source:
+                FreeCAD.Console.PrintError(f"Nenhuma geometria encontrada em: {full_path}\n")
+                return None
             link = doc.addObject("App::Link", obj_name)
-            link.LinkedObject = FreeCAD.open(full_path).Objects[0] # Pega o primeiro objeto do arquivo
+            link.LinkedObject = source
+            self.configure_independent_link(link)
+            self.correct_link_visual_position(link, FreeCAD.Vector(0, 0, 0), doc=doc)
             link.Label = label or obj_name
             
             # Adicionar propriedades elétricas customizadas (BIM)
@@ -64,10 +236,13 @@ class LibraryManager:
                 link.Potencia = 100.0 # Valor default
                 
             if not hasattr(link, "Tensao"):
-                from EletricaLogic.Settings import ProjectSettings
                 link.addProperty("App::PropertyEnumeration", "Tensao", "Eletrica", "Tensao de operacao")
                 link.Tensao = ["127V", "220V", "380V"]
-                link.Tensao = ProjectSettings.format_voltage(ProjectSettings.get_voltage())
+                try:
+                    from EletricaLogic.Settings import ProjectSettings
+                    link.Tensao = ProjectSettings.format_voltage(ProjectSettings.get_voltage())
+                except Exception:
+                    link.Tensao = "127V"
                 
             if not hasattr(link, "QuadroVinculado"):
                 link.addProperty("App::PropertyLink", "QuadroVinculado", "Eletrica", "Quadro de distribuicao que alimenta este item")
@@ -129,16 +304,20 @@ class LibraryManager:
         doc = FreeCAD.ActiveDocument
         try:
             sym_name = "Simbolo_" + symbol_filename.replace(".FCStd", "")
+            source = self.get_or_create_link_source(doc, full_path, sym_name)
+            if not source:
+                return None
             sym_link = doc.addObject("App::Link", sym_name)
-            sym_link.LinkedObject = FreeCAD.open(full_path).Objects[0]
+            sym_link.LinkedObject = source
+            self.configure_independent_link(sym_link)
             
             # Posicionamento: X e Y seguem o pai, Z vai para o 'teto'
             if parent_obj:
                 # Copiar X e Y do objeto 3D
                 pos = parent_obj.Placement.Base
-                sym_link.Placement.Base = FreeCAD.Vector(pos.x, pos.y, height)
+                self.set_component_position(sym_link, FreeCAD.Vector(pos.x, pos.y, height), doc=doc)
             else:
-                sym_link.Placement.Base = FreeCAD.Vector(0, 0, height)
+                self.set_component_position(sym_link, FreeCAD.Vector(0, 0, height), doc=doc)
                 
             return sym_link
         except:

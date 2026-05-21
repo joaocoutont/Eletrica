@@ -70,19 +70,18 @@ class InsertSocket:
 
 class InsertSpecialSocket:
     def GetResources(self):
+        base_path = os.path.dirname(os.path.dirname(__file__))
         icon_path = os.path.join(ICON_DIR, 'Tomada_TUE_BR.svg')
         return { 
             'Pixmap': icon_path, 
-            'MenuText': tr('Tomada Especial (20A)'), 
-            'ToolTip': tr('Insere tomada de 20A ou Uso Específico'),
+            'MenuText': tr('Tomada Especial (TUE)'), 
+            'ToolTip': tr('Insere tomada de Uso Especial com potência pré-configurada (Mira BIM)'),
             'Checkable': True
         }
     def Activated(self, *args, **kwargs):
-        from GeometryScripts.socket_gui import SocketCommand
-        cmd = SocketCommand()
+        from GeometryScripts.special_socket_gui import SpecialSocketCommand
+        cmd = SpecialSocketCommand()
         cmd.command_name = "Eletrica_InsertSpecialSocket"
-        cmd.circuit_type = "TUE (Específico)"
-        cmd.amperage = "20A"
         cmd.Activated(*args, **kwargs)
 
     def IsChecked(self):
@@ -90,10 +89,8 @@ class InsertSpecialSocket:
             from GeometryScripts.bim_placement_core import BIMPlacementEngine
             if BIMPlacementEngine.active_engine is not None:
                 active_cmd = BIMPlacementEngine.active_engine.cmd
-                from GeometryScripts.socket_gui import SocketCommand
-                if isinstance(active_cmd, SocketCommand) and getattr(active_cmd, "command_name", "") == "Eletrica_InsertSpecialSocket":
-                    return True
-                if isinstance(active_cmd, SocketCommand) and not getattr(active_cmd, "command_name", "") and getattr(active_cmd, "circuit_type", "") == "TUE (Específico)":
+                from GeometryScripts.special_socket_gui import SpecialSocketCommand
+                if isinstance(active_cmd, SpecialSocketCommand):
                     return True
         except Exception:
             pass
@@ -105,7 +102,7 @@ class InsertModularSet:
         return {
             'Pixmap': icon_path,
             'MenuText': tr('Conjunto Modular'),
-            'ToolTip': tr('Insere placa 4x2 com modulos combinados, como interruptor + tomada'),
+            'ToolTip': tr('Insere placa 4x2 com modulos combinados, como interruptor + tomada (Mira BIM)'),
             'Checkable': True
         }
 
@@ -121,7 +118,7 @@ class InsertModularSet:
             if BIMPlacementEngine.active_engine is not None:
                 active_cmd = BIMPlacementEngine.active_engine.cmd
                 from GeometryScripts.modular_set_gui import ModularSetCommand
-                if isinstance(active_cmd, ModularSetCommand) and getattr(active_cmd, "command_name", "") == "Eletrica_InsertModularSet":
+                if isinstance(active_cmd, ModularSetCommand):
                     return True
         except Exception:
             pass
@@ -129,13 +126,57 @@ class InsertModularSet:
 
 class InsertLight:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Light.svg'), 'MenuText': tr('Inserir Luminária'), 'ToolTip': tr('Insere ponto de iluminação') }
-    def Activated(self): insert_component_smart("Light_Ceiling.FCStd", tr("Luminaria Teto"))
+        icon_path = os.path.join(ICON_DIR, 'Light.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Inserir Luminária'), 
+            'ToolTip': tr('Insere ponto de iluminação com dados fotométricos e simbologia NBR (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.light_gui import LightCommand
+        cmd = LightCommand()
+        cmd.command_name = "Eletrica_InsertLight"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.light_gui import LightCommand
+                if isinstance(active_cmd, LightCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertSwitch:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Switch.svg'), 'MenuText': tr('Inserir Interruptor'), 'ToolTip': tr('Insere interruptor simples ou paralelo') }
-    def Activated(self): insert_component_smart("Switch_Simple.FCStd", tr("Interruptor"))
+        icon_path = os.path.join(ICON_DIR, 'Switch.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Inserir Interruptor'), 
+            'ToolTip': tr('Insere interruptor simples ou paralelo (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.switch_gui import SwitchCommand
+        cmd = SwitchCommand()
+        cmd.command_name = "Eletrica_InsertSwitch"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.switch_gui import SwitchCommand
+                if isinstance(active_cmd, SwitchCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class MergeSwitches:
     def GetResources(self):
@@ -146,13 +187,58 @@ class MergeSwitches:
 
 class InsertSmartDevice:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'SmartHome.svg'), 'MenuText': tr('Dispositivo IoT'), 'ToolTip': tr('Insere atuadores ou sensores inteligentes') }
-    def Activated(self): insert_component_smart("SmartRelay.FCStd", tr("Dispositivo IoT"))
+        icon_path = os.path.join(ICON_DIR, 'SmartHome.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Dispositivo IoT'), 
+            'ToolTip': tr('Insere atuadores ou sensores inteligentes (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.iot_gui import IoTCommand
+        cmd = IoTCommand()
+        cmd.command_name = "Eletrica_InsertSmartDevice"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.iot_gui import IoTCommand
+                if isinstance(active_cmd, IoTCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertAirConditioner:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'AirConditioning.svg'), 'MenuText': tr('Ar Condicionado'), 'ToolTip': tr('Insere unidade evaporadora/condensadora') }
-    def Activated(self): insert_component_smart("AC_Split.FCStd", tr("Ar Condicionado"))
+        icon_path = os.path.join(ICON_DIR, 'AirConditioning.svg')
+        return {
+            'Pixmap': icon_path,
+            'MenuText': tr('Ar Condicionado'),
+            'ToolTip': tr('Insere tomada para Ar Condicionado com seleção por BTU e Fases (Mira BIM)'),
+            'Checkable': True
+        }
+
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.ac_socket_gui import ACSocketCommand
+        cmd = ACSocketCommand()
+        cmd.command_name = "Eletrica_InsertAirConditioner"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.ac_socket_gui import ACSocketCommand
+                if isinstance(active_cmd, ACSocketCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertPumpSet:
     def GetResources(self):

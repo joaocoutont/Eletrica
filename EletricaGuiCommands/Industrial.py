@@ -56,31 +56,59 @@ class InsertQTA:
     def Activated(self):
         insert_component_smart("QTA_Panel.FCStd", tr("Quadro QTA"))
 
-class CreatePanel:
+class InsertPanel:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Panel.svg'), 'MenuText': tr('Criar Quadro (QDC)'), 'ToolTip': tr('Cria quadro de distribution inteligente') }
-    def Activated(self):
-        from EletricaLogic.Panels import PanelManager
-        doc = FreeCAD.ActiveDocument
-        doc.openTransaction(tr("Criar Quadro"))
-        PanelManager.create_panel(tr("QDC Novo"))
-        doc.commitTransaction()
+        icon_path = os.path.join(ICON_DIR, 'IndustrialPanel.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Inserir Quadro BIM'), 
+            'ToolTip': tr('Insere quadros de distribuição, comando ou CCM paramétricos (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.panel_gui import PanelCommand
+        cmd = PanelCommand()
+        cmd.command_name = "Eletrica_InsertPanel"
+        cmd.Activated(*args, **kwargs)
 
-class InsertCCM:
-    def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'IndustrialPanel.svg'), 'MenuText': tr('Centro de Controle (CCM)'), 'ToolTip': tr('Insere CCM para comando de motores') }
-    def Activated(self):
-        from EletricaLogic.Panels import PanelManager
-        doc = FreeCAD.ActiveDocument
-        doc.openTransaction(tr("Criar CCM"))
-        PanelManager.create_panel(tr("CCM-01"), "CCM")
-        doc.commitTransaction()
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.panel_gui import PanelCommand
+                if isinstance(active_cmd, PanelCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertMotor:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'MotorStarter.svg'), 'MenuText': tr('Inserir Motor'), 'ToolTip': tr('Insere motor elétrico WEG/Industrial') }
-    def Activated(self):
-        insert_component_smart("Motor_WEG_W22.FCStd", tr("Motor Eletrico"))
+        icon_path = os.path.join(ICON_DIR, 'MotorStarter.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Inserir Motor'), 
+            'ToolTip': tr('Insere motor elétrico WEG/Industrial com dados de carcaça (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.motor_gui import MotorCommand
+        cmd = MotorCommand()
+        cmd.command_name = "Eletrica_InsertMotor"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.motor_gui import MotorCommand
+                if isinstance(active_cmd, MotorCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class SetupMotorWizard:
     def GetResources(self):
@@ -91,21 +119,84 @@ class SetupMotorWizard:
 
 class InsertDataDevice:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Telecom.svg'), 'MenuText': tr('Ponto de Dados/Telecom'), 'ToolTip': tr('Insere tomada RJ45, Rack ou Switch') }
-    def Activated(self):
-        insert_component_smart("Data_Outlet_RJ45.FCStd", tr("Ponto de Dados"))
+        icon_path = os.path.join(ICON_DIR, 'Telecom.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Ponto de Dados/Telecom'), 
+            'ToolTip': tr('Insere tomada RJ45, RJ11, TV ou Fibra com simbologia NBR (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.data_point_gui import DataPointCommand
+        cmd = DataPointCommand()
+        cmd.command_name = "Eletrica_InsertDataDevice"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.data_point_gui import DataPointCommand
+                if isinstance(active_cmd, DataPointCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertPLC:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'PLC.svg'), 'MenuText': tr('Inserir CLP'), 'ToolTip': tr('Insere Controlador Lógico Programável') }
-    def Activated(self):
-        insert_component_smart("PLC_S7_1200.FCStd", tr("Controlador CLP"))
+        icon_path = os.path.join(ICON_DIR, 'PLC.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Inserir CLP'), 
+            'ToolTip': tr('Insere Controlador Lógico Programável e módulos de expansão (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.plc_gui import PLCCommand
+        cmd = PLCCommand()
+        cmd.command_name = "Eletrica_InsertPLC"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.plc_gui import PLCCommand
+                if isinstance(active_cmd, PLCCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertHMI:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'HMI.svg'), 'MenuText': tr('Inserir IHM'), 'ToolTip': tr('Insere Interface Homem-Máquina') }
-    def Activated(self):
-        insert_component_smart("HMI_Comfort_7.FCStd", tr("Interface IHM"))
+        icon_path = os.path.join(ICON_DIR, 'HMI.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Inserir IHM'), 
+            'ToolTip': tr('Insere Interface Homem-Máquina e painéis touch (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.hmi_gui import HMICommand
+        cmd = HMICommand()
+        cmd.command_name = "Eletrica_InsertHMI"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.hmi_gui import HMICommand
+                if isinstance(active_cmd, HMICommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class CCMCommandDiagram:
     def GetResources(self):
@@ -199,21 +290,84 @@ class InsertSolarInverter:
 
 class InsertAutomationDevice:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Automation.svg'), 'MenuText': tr('Sensor/Atuador Industrial'), 'ToolTip': tr('Insere PLC, HMI ou sensores industriais') }
-    def Activated(self):
-        insert_component_smart("Industrial_Sensor_Inductive.FCStd", tr("Sensor Indutivo"))
+        icon_path = os.path.join(ICON_DIR, 'Automation.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Sensor/Atuador Industrial'), 
+            'ToolTip': tr('Insere sensores de nível, pressão, vazão e atuadores (Mira BIM/ISA-5.1)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.industrial_device_gui import IndustrialDeviceCommand
+        cmd = IndustrialDeviceCommand()
+        cmd.command_name = "Eletrica_InsertAutomationDevice"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.industrial_device_gui import IndustrialDeviceCommand
+                if isinstance(active_cmd, IndustrialDeviceCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertFireDevice:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Fire.svg'), 'MenuText': tr('Detector de Incêndio'), 'ToolTip': tr('Insere detector de fumaça/térmico ou acionador') }
-    def Activated(self):
-        insert_component_smart("Fire_Smoke_Detector.FCStd", tr("Detector Fumaca"))
+        icon_path = os.path.join(ICON_DIR, 'Fire.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Detector de Incêndio'), 
+            'ToolTip': tr('Insere detectores de fumaça, calor e acionadores (Mira BIM/NBR 17240)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.fire_device_gui import FireDeviceCommand
+        cmd = FireDeviceCommand()
+        cmd.command_name = "Eletrica_InsertFireDevice"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.fire_device_gui import FireDeviceCommand
+                if isinstance(active_cmd, FireDeviceCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertSecurityDevice:
     def GetResources(self):
-        return { 'Pixmap': os.path.join(ICON_DIR, 'Camera.svg'), 'MenuText': tr('Câmera/Segurança'), 'ToolTip': tr('Insere CFTV, sensores de intrusão ou controle de acesso') }
-    def Activated(self):
-        insert_component_smart("CCTV_Camera_Dome.FCStd", tr("Camera CFTV"))
+        icon_path = os.path.join(ICON_DIR, 'Camera.svg')
+        return { 
+            'Pixmap': icon_path, 
+            'MenuText': tr('Câmera/Segurança'), 
+            'ToolTip': tr('Insere CFTV, sensores de intrusão ou controle de acesso (Mira BIM)'),
+            'Checkable': True
+        }
+    def Activated(self, *args, **kwargs):
+        from GeometryScripts.security_device_gui import SecurityDeviceCommand
+        cmd = SecurityDeviceCommand()
+        cmd.command_name = "Eletrica_InsertSecurityDevice"
+        cmd.Activated(*args, **kwargs)
+
+    def IsChecked(self):
+        try:
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine is not None:
+                active_cmd = BIMPlacementEngine.active_engine.cmd
+                from GeometryScripts.security_device_gui import SecurityDeviceCommand
+                if isinstance(active_cmd, SecurityDeviceCommand):
+                    return True
+        except Exception:
+            pass
+        return False
 
 class InsertSoundDevice:
     def GetResources(self):

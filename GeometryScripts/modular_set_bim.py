@@ -74,19 +74,24 @@ class ProfessionalBIMModularSet:
         
         # --- CLASSIFICAÇÃO BIM ---
         t = "BIM_Classificacao"
-        obj.addProperty("App::PropertyString", "IFC_Class", t).IFC_Class = "IfcFlowTerminal"
+        obj.addProperty("App::PropertyString", "IFC_Class", t).IFC_Class = "IfcDistributionElement"
         obj.addProperty("App::PropertyString", "Discipline", t).Discipline = "Elétrica"
-        obj.addProperty("App::PropertyString", "TipoBIM", t).TipoBIM = "Conjunto Modular"
+        obj.addProperty("App::PropertyString", "TipoBIM", t).TipoBIM = "ModularAssembly"
+        obj.addProperty("App::PropertyString", "FamilyCategory", t).FamilyCategory = "Conjunto Modular"
         
         # --- COMPOSIÇÃO ---
         c = "BIM_Composicao"
         obj.addProperty("App::PropertyStringList", "Modules", c).Modules = ["Tomada 10A", "Interruptor Simples"]
+        obj.addProperty("App::PropertyString", "Composition", c).Composition = "T1-S1"
+        obj.addProperty("App::PropertyInteger", "SocketCount", c).SocketCount = 1
+        obj.addProperty("App::PropertyInteger", "SwitchCount", c).SwitchCount = 1
         obj.addProperty("App::PropertyEnumeration", "PlateSize", c).PlateSize = ["4x2", "4x4"]
         
         # --- ENGENHARIA ELÉTRICA (Agregada) ---
         e = "BIM_Engenharia"
         obj.addProperty("App::PropertyString", "CircuitNumber", e).CircuitNumber = "C-01/C-02"
         obj.addProperty("App::PropertyString", "PanelBoard", e).PanelBoard = ""
+        obj.addProperty("App::PropertyString", "LoadClassification", e).LoadClassification = "Misto"
         
         # --- PARÂMETROS DE MODELAGEM ---
         g = "BIM_3D_Parametros"

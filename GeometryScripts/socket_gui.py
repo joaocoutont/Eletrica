@@ -23,7 +23,7 @@ SYMBOL_PLANE_MODES = ["Plano de simbologia", "Junto da tomada"]
 SOCKET_3D_LINK_ROTATION_OFFSET_DEG = 180.0
 # Move o simbolo 2D inteiro no eixo Y, sem alterar/deformar o desenho interno.
 # Ajuste este valor quando precisar aproximar ou afastar a simbologia 2D do 3D.
-SOCKET_2D_SYMBOL_Y_OFFSET = 18.0
+SOCKET_2D_SYMBOL_Y_OFFSET = 0.0
 
 def _plain_value(value):
     return value.Value if hasattr(value, "Value") else value
@@ -169,6 +169,16 @@ def discover_spaces_or_sectors(doc):
     result.sort(key=lambda item: item["name"])
     return result
 
+class DistanceSpinBox(QtGui.QDoubleSpinBox):
+    def keyPressEvent(self, event):
+        if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine:
+                BIMPlacementEngine.active_engine.place_at_distance(self.value())
+            event.accept()
+        else:
+            super(DistanceSpinBox, self).keyPressEvent(event)
+
 class SocketTaskPanel:
     """Interface de Famílias de Tomadas (Estilo Revit)"""
     def __init__(self, command_obj):
@@ -229,8 +239,67 @@ class SocketTaskPanel:
         self.insert_mode_combo.currentIndexChanged.connect(self.on_insert_mode_changed)
         pos_form.addRow("Modo:", self.insert_mode_combo)
         
+        self.detect_surfaces_cb = QtGui.QCheckBox("Aderir a superfícies")
+        self.detect_surfaces_cb.setChecked(self.command.detect_surfaces)
+        self.detect_surfaces_cb.stateChanged.connect(self.on_detect_surfaces_changed)
+        pos_form.addRow("Superfície:", self.detect_surfaces_cb)
+        
         pos_group.setLayout(pos_form)
         self.scroll_layout.addWidget(pos_group)
+
+        # MODO DE ROTAÇÃO (botões exclusivos)
+        rot_mode_group = QtGui.QGroupBox("✨ Modo de Rotação")
+        rot_mode_layout = QtGui.QGridLayout()
+        rot_mode_layout.setSpacing(4)
+
+        self.rot_mode_btn_normal = QtGui.QPushButton("Normal")
+        self.rot_mode_btn_90     = QtGui.QPushButton("↺ 90°  [G]")
+        self.rot_mode_btn_15     = QtGui.QPushButton("↺ 15°  [F]")
+        self.rot_mode_btn_dir    = QtGui.QPushButton("→ Dir  [Shift]")
+        self.rot_mode_btn_wall   = QtGui.QPushButton("□ Parede [W]")
+
+        for btn in [
+            self.rot_mode_btn_normal, self.rot_mode_btn_90,
+            self.rot_mode_btn_15, self.rot_mode_btn_dir, self.rot_mode_btn_wall
+        ]:
+            btn.setCheckable(True)
+            btn.setMinimumHeight(28)
+
+        self.rot_mode_btn_normal.setChecked(True)  # padrão
+
+        self.rot_mode_btn_normal.clicked.connect(lambda: self._set_engine_rot_mode(1))
+        self.rot_mode_btn_90.clicked.connect(lambda: self._apply_engine_rotation(90))
+        self.rot_mode_btn_15.clicked.connect(lambda: self._toggle_engine_rot_fine())
+        self.rot_mode_btn_dir.clicked.connect(lambda: self._set_engine_rot_mode(4))
+        self.rot_mode_btn_wall.clicked.connect(lambda: self._set_engine_rot_mode(5))
+
+        rot_mode_layout.addWidget(self.rot_mode_btn_normal, 0, 0)
+        rot_mode_layout.addWidget(self.rot_mode_btn_90,     0, 1)
+        rot_mode_layout.addWidget(self.rot_mode_btn_15,     0, 2)
+        rot_mode_layout.addWidget(self.rot_mode_btn_dir,    1, 0)
+        rot_mode_layout.addWidget(self.rot_mode_btn_wall,   1, 1, 1, 2)
+
+        rot_mode_group.setLayout(rot_mode_layout)
+        self.scroll_layout.addWidget(rot_mode_group)
+
+        # REFERÊNCIA & MEDIDAS (Atalho: R)
+        self.ref_group = QtGui.QGroupBox("📍 Referência & Medidas (R)")
+        ref_form = QtGui.QFormLayout()
+        
+        self.ref_btn = QtGui.QPushButton("Definir Referência (R)")
+        self.ref_btn.setCheckable(True)
+        self.ref_btn.clicked.connect(self.toggle_reference_mode)
+        ref_form.addRow(self.ref_btn)
+        
+        self.ref_dist_in = DistanceSpinBox()
+        self.ref_dist_in.setRange(0, 100000)
+        self.ref_dist_in.setSuffix(" mm")
+        self.ref_dist_in.setValue(0.0)
+        self.ref_dist_in.setEnabled(False)
+        ref_form.addRow("Distância da Ref.:", self.ref_dist_in)
+        
+        self.ref_group.setLayout(ref_form)
+        self.scroll_layout.addWidget(self.ref_group)
 
         symbol_group = QtGui.QGroupBox("Simbologia 2D / plotagem")
         symbol_form = QtGui.QFormLayout()
@@ -289,10 +358,49 @@ class SocketTaskPanel:
         self.scroll_layout.addWidget(tech_group)
 
         self.scroll_layout.addStretch()
-        self.scroll_layout.addWidget(QtGui.QLabel("Dica: clique para inserir | ESPAÇO gira | H altura | N nível | A amperagem | M módulo | I modo | ESC sai"))
+        self.scroll_layout.addWidget(QtGui.QLabel(
+            "G +90° | F fino 15° | [ -15° | ] +15° | W parede | Shift dir | R ref | H altura | N nível | Tab painel | ESC sai"
+        ))
         
         # Sincronização Inicial
         self.sync_ui()
+
+    def _set_engine_rot_mode(self, mode):
+        from GeometryScripts.bim_placement_core import BIMPlacementEngine
+        eng = BIMPlacementEngine.active_engine
+        if eng:
+            eng.set_rot_mode(mode)
+        # Atualiza botões mesmo sem engine (para feedback visual imediato)
+        self.sync_rot_mode_buttons(mode)
+
+    def _apply_engine_rotation(self, delta):
+        from GeometryScripts.bim_placement_core import BIMPlacementEngine
+        eng = BIMPlacementEngine.active_engine
+        if eng:
+            eng._apply_rotation(delta)
+
+    def _toggle_engine_rot_fine(self):
+        from GeometryScripts.bim_placement_core import BIMPlacementEngine
+        eng = BIMPlacementEngine.active_engine
+        if eng:
+            new_mode = 1 if eng.rot_mode == 3 else 3
+            eng.set_rot_mode(new_mode)
+        else:
+            self.sync_rot_mode_buttons(3)
+
+    def sync_rot_mode_buttons(self, mode):
+        """Atualiza o estado visual dos botões de modo de rotação."""
+        btns = [
+            (self.rot_mode_btn_normal, mode == 1),
+            (self.rot_mode_btn_90,     False),    # 90° é sempre um toque, nunca fica 'ativo'
+            (self.rot_mode_btn_15,     mode == 3),
+            (self.rot_mode_btn_dir,    mode == 4),
+            (self.rot_mode_btn_wall,   mode == 5),
+        ]
+        for btn, checked in btns:
+            btn.blockSignals(True)
+            btn.setChecked(checked)
+            btn.blockSignals(False)
 
     def add_quick_type_controls(self):
         quick_group = QtGui.QGroupBox("Tipo rápido")
@@ -418,23 +526,64 @@ class SocketTaskPanel:
         base_path = os.path.dirname(os.path.dirname(__file__))
         lib_path = os.path.join(base_path, "Library", "3D", "Tomadas")
         self.family_meta_by_source = {}
+        self.family_list.clear()
 
-        try:
-            from EletricaLogic.FamilyCatalog import list_families
-            families = list_families("Tomada")
-        except Exception as exc:
-            families = []
-            App.Console.PrintWarning(f"Nao foi possivel ler catalogo de familias: {exc}\n")
-        if families:
-            self.family_list.clear()
-            for family in families:
-                source = family.get("source_3d") or ""
-                if not source:
-                    continue
+        if os.path.exists(lib_path):
+            files = sorted([f for f in os.listdir(lib_path) if f.lower().endswith(".fcstd")])
+            from .socket_bim import load_socket_family_metadata
+            
+            for fname in files:
+                source = f"Tomadas/{fname}"
+                base = fname.replace(".FCStd", "").replace(".fcstd", "")
+                text = base.lower()
+                
+                # Lê as propriedades internas do FCStd
+                embedded_meta = load_socket_family_metadata(fname)
+                
+                if not embedded_meta or "modules" not in embedded_meta:
+                    # Fallback para arquivos sem propriedades
+                    if "tripla" in text or "_t3" in text:
+                        modules = "3 Modulos"
+                    elif "dupla" in text or "_t2" in text:
+                        modules = "2 Modulos"
+                    else:
+                        modules = "1 Modulo"
+                        
+                    amperage = "20A" if "20a" in text else "10A"
+                    count = 3 if modules.startswith("3") else 2 if modules.startswith("2") else 1
+                    power = (600.0 if amperage == "20A" else 100.0) * count
+                    family = {
+                        "name": base.replace("_", " "),
+                        "category": "Tomada",
+                        "source_3d": source,
+                        "modules": modules,
+                        "amperage": amperage,
+                        "voltage": "127V",
+                        "power": power,
+                        "apparent_power_va": power,
+                        "active_power_w": power,
+                        "power_factor": 1.0,
+                        "demand_factor": 1.0,
+                        "load_classification": "TUG",
+                        "socket_application": "Predial",
+                        "ip_rating": "IP20",
+                        "electrical_standard": "NBR 5410",
+                        "height_type": "Media (1100mm)",
+                        "mounting_height": 1100.0,
+                        "ifc_class": "IfcFlowTerminal",
+                    }
+                else:
+                    family = embedded_meta
+                    family["source_3d"] = source
+                    if "name" not in family:
+                        family["name"] = base.replace("_", " ")
+
                 self.family_meta_by_source[source] = family
-                item = QtGui.QListWidgetItem(family.get("name") or os.path.basename(source).replace(".FCStd", "").replace("_", " "))
+                display_name = family.get("name") or base.replace("_", " ")
+                item = QtGui.QListWidgetItem(display_name)
                 item.setData(QtCore.Qt.UserRole, source)
                 self.family_list.addItem(item)
+
             if self.family_list.count() > 0:
                 selected = self.select_family_file(self.command.family_file, apply=True)
                 if not selected:
@@ -443,23 +592,10 @@ class SocketTaskPanel:
                     self.family_list.blockSignals(False)
                     self.on_family_selected(self.family_list.item(0))
                 return
-        
-        if os.path.exists(lib_path):
-            files = sorted([f for f in os.listdir(lib_path) if f.endswith(".FCStd")])
-            self.family_list.clear()
-            for fname in files:
-                item = QtGui.QListWidgetItem(fname.replace(".FCStd", "").replace("_", " "))
-                item.setData(QtCore.Qt.UserRole, fname)
-                self.family_list.addItem(item)
-            if self.family_list.count() > 0:
-                selected = self.select_family_file(self.command.family_file, apply=True)
-                if not selected:
-                    self.family_list.blockSignals(True)
-                    self.family_list.setCurrentRow(0)
-                    self.family_list.blockSignals(False)
-                    self.on_family_selected(self.family_list.item(0))
+            return
         else:
             print(f"Erro: Pasta da biblioteca não encontrada em {lib_path}")
+            return
 
     def select_family_file(self, fname, apply=False):
         expected = str(fname or "").replace("\\", "/")
@@ -481,8 +617,26 @@ class SocketTaskPanel:
             self.command.modules = modules
         if amperage:
             self.command.amperage = amperage
-        if hasattr(self.command, "update_family_file_from_type"):
+            
+        # PROCURA UMA FAMÍLIA COMPATÍVEL NA LISTA DINÂMICA
+        best_match_source = None
+        req_m = self.command.modules.lower()
+        req_a = self.command.amperage.lower()
+        
+        for source, meta in self.family_meta_by_source.items():
+            m = str(meta.get("modules", "")).lower()
+            a = str(meta.get("amperage", "")).lower()
+            
+            # Checa se o primeiro caractere de modulos bate (1, 2, 3) e amperagem
+            if m and req_m and m[0] == req_m[0] and req_a in a:
+                best_match_source = source
+                break
+                
+        if best_match_source:
+            self.command.family_file = os.path.basename(best_match_source)
+        elif hasattr(self.command, "update_family_file_from_type"):
             self.command.update_family_file_from_type()
+            
         self.sync_ui()
         self.refresh_ghost()
 
@@ -508,6 +662,15 @@ class SocketTaskPanel:
         fname = item.data(QtCore.Qt.UserRole) or (name.replace(" ", "_") + ".FCStd")
         self.command.family_file = fname
         meta = self.family_meta_by_source.get(str(fname).replace("\\", "/"), {})
+        try:
+            from .socket_bim import load_socket_family_metadata
+            embedded_meta = load_socket_family_metadata(fname)
+            if embedded_meta:
+                merged_meta = dict(meta)
+                merged_meta.update(embedded_meta)
+                meta = merged_meta
+        except Exception as exc:
+            App.Console.PrintWarning(f"[Eletrica BIM] Nao foi possivel ler propriedades embutidas da familia: {exc}\n")
         if meta and hasattr(self.command, "apply_family_metadata"):
             self.command.apply_family_metadata(meta)
             if hasattr(self, "z_in"):
@@ -554,6 +717,27 @@ class SocketTaskPanel:
         self.command.params.SetBool("SocketContinuousInsert", self.command.continuous_insert)
         self.sync_values()
 
+    def on_detect_surfaces_changed(self, state):
+        self.command.detect_surfaces = self.detect_surfaces_cb.isChecked()
+        if hasattr(self.command, 'engine') and self.command.engine:
+            self.command.engine.show_placement_status()
+        self.sync_values()
+
+    def toggle_reference_mode(self):
+        from GeometryScripts.bim_placement_core import BIMPlacementEngine
+        if BIMPlacementEngine.active_engine:
+            BIMPlacementEngine.active_engine.ref_mode_active = self.ref_btn.isChecked()
+            if BIMPlacementEngine.active_engine.ref_mode_active:
+                BIMPlacementEngine.active_engine.ref_point = None
+                self.ref_dist_in.setEnabled(False)
+                self.ref_dist_in.setValue(0.0)
+                BIMPlacementEngine.active_engine.delete_temp_line()
+                mw = Gui.getMainWindow()
+                if mw:
+                    mw.statusBar().showMessage("Modo de Referência: clique no ponto de partida (ex: quina da parede).", 5000)
+            else:
+                BIMPlacementEngine.active_engine.clear_reference_mode()
+
     def sync_values(self):
         self.command.z_level = self.z_in.value()
         self.command.rotation = self.rot_in.value()
@@ -562,6 +746,8 @@ class SocketTaskPanel:
         self.command.panel_board = self.panel_combo.currentText() if self.panel_combo.currentIndex() > 0 else ""
         self.command.circuit_number = self.circuit_ref_combo.currentText().split(" ", 1)[0] if self.circuit_ref_combo.currentIndex() > 0 else self.command.circuit_number
         self.command.space_or_sector = self.space_combo.currentText() if self.space_combo.currentIndex() > 0 else self.command.space_or_sector
+        if hasattr(self, "detect_surfaces_cb"):
+            self.command.detect_surfaces = self.detect_surfaces_cb.isChecked()
         if hasattr(self, "symbol_mode_combo"):
             self.command.symbol_plane_mode = self.symbol_mode_combo.currentText()
             self.command.symbol_plane_name = self.symbol_name_in.text() or "Plano de Simbologia"
@@ -603,6 +789,11 @@ class SocketTaskPanel:
         self.insert_mode_combo.setCurrentIndex(0 if self.command.continuous_insert else 1)
         self.insert_mode_combo.blockSignals(False)
 
+        if hasattr(self, "detect_surfaces_cb"):
+            self.detect_surfaces_cb.blockSignals(True)
+            self.detect_surfaces_cb.setChecked(self.command.detect_surfaces)
+            self.detect_surfaces_cb.blockSignals(False)
+
         if hasattr(self, "symbol_mode_combo"):
             self.symbol_mode_combo.blockSignals(True)
             self.symbol_mode_combo.setCurrentText(self.command.symbol_plane_mode)
@@ -624,6 +815,16 @@ class SocketTaskPanel:
         self.select_family_file(self.command.family_file)
         self.sync_quick_buttons()
         self.final_z_label.setText(f"Z final: {self.command.get_final_z():.0f} mm")
+        
+        if hasattr(self, "ref_btn") and hasattr(self, "ref_dist_in"):
+            from GeometryScripts.bim_placement_core import BIMPlacementEngine
+            if BIMPlacementEngine.active_engine:
+                self.ref_btn.blockSignals(True)
+                self.ref_btn.setChecked(BIMPlacementEngine.active_engine.ref_mode_active)
+                self.ref_btn.blockSignals(False)
+                self.ref_dist_in.blockSignals(True)
+                self.ref_dist_in.setEnabled(BIMPlacementEngine.active_engine.ref_point is not None)
+                self.ref_dist_in.blockSignals(False)
         
         # Atualiza o texto de ajuda (Dica HUD)
         print(f"HUD: Nível={self.command.reference_level_name} | Altura={self.command.z_level}mm | Circuito={self.command.circuit_type}")
@@ -772,18 +973,41 @@ class SocketCommand:
         except Exception:
             self.detect_surfaces = True
         self.quiet_placement = self.params.GetBool("QuietSocketPlacement", True)
-        if self.quiet_placement:
-            self.detect_surfaces = False
         self.z_level = self.socket_medium_height
 
     def make_preview_shape(self):
-        # Usa a mesma simbologia 2D da tomada real, mantendo o fantasma leve.
+        # Combina a simbologia 2D e o modelo 3D real no fantasma para visualizacao completa
         try:
-            from .socket_bim import make_socket_plan_symbol
-            shape = make_socket_plan_symbol(self.normalized_height_type(), self.modules, self.amperage)
-            if shape:
-                shape.translate(App.Vector(0, 0, self.get_symbol_z_offset()))
-                return shape
+            from .socket_bim import make_socket_plan_symbol, load_socket_family_shape, normalize_socket_shape
+            
+            # 1. Tenta carregar a simbologia 2D
+            sym_shape = None
+            try:
+                sym_shape = make_socket_plan_symbol(self.normalized_height_type(), self.modules, self.amperage)
+                if sym_shape:
+                    sym_shape.translate(App.Vector(0, 0, self.get_symbol_z_offset()))
+            except Exception:
+                pass
+            
+            # 2. Tenta carregar o modelo 3D real da tomada
+            model_shape = None
+            try:
+                raw = load_socket_family_shape(self.family_file)
+                model_shape = normalize_socket_shape(raw)
+                if model_shape:
+                    # O modelo 3D precisa do offset de 180 para bater com a simbologia
+                    model_shape.rotate(App.Vector(0,0,0), App.Vector(0,0,1), 180.0)
+            except Exception:
+                pass
+            
+            shapes = []
+            if model_shape:
+                shapes.append(model_shape)
+            if sym_shape:
+                shapes.append(sym_shape)
+                
+            if shapes:
+                return Part.makeCompound(shapes)
         except Exception:
             pass
 
@@ -806,17 +1030,13 @@ class SocketCommand:
         return os.path.join(base_path, "Library", "3D", "Tomadas")
 
     def family_filename_for_type(self):
-        try:
-            from EletricaLogic.FamilyCatalog import find_family
-            family = find_family("Tomada", modules=self.modules, amperage=self.amperage)
-            if family and family.get("source_3d"):
-                self.apply_family_metadata(family)
-                return family.get("source_3d")
-        except Exception:
-            pass
         is_2 = self.modules.startswith("2")
         is_3 = self.modules.startswith("3")
         is_20 = self.amperage == "20A"
+        module_count = 3 if is_3 else 2 if is_2 else 1
+        new_source = f"Tomadas/Cx_4x2_T{module_count}.FCStd"
+        if os.path.exists(self.resolve_family_path(new_source)):
+            return new_source
         if is_3:
             tripla = "Tomada_Tripla_20A.FCStd" if is_20 else "Tomada_Tripla_10A.FCStd"
             self.apparent_power_va = (600.0 if is_20 else 100.0) * 3
@@ -938,23 +1158,6 @@ class SocketCommand:
             if not sym_shape:
                 return None
 
-            # Organiza por nível: Simbologia 2D — Tomadas > [Nome do Nível]
-            import re
-            safe_level = re.sub(r'[^A-Za-z0-9]', '_', self.reference_level_name or "Projeto").strip("_") or "Projeto"
-            PARENT_NAME = "Simbologia_2D_Tomadas"
-            LEVEL_NAME  = f"Sym2D_Nivel_{safe_level}"
-
-            parent = doc.getObject(PARENT_NAME)
-            if not parent:
-                parent = doc.addObject("App::DocumentObjectGroup", PARENT_NAME)
-                parent.Label = "Simbologia 2D — Tomadas"
-
-            group = doc.getObject(LEVEL_NAME)
-            if not group:
-                group = doc.addObject("App::DocumentObjectGroup", LEVEL_NAME)
-                group.Label = self.reference_level_name or "Projeto"
-                parent.addObject(group)
-
             # Cria o objeto leve do símbolo
             sym_obj = doc.addObject("Part::Feature", f"Sym2D_{instance_obj.Name}")
             sym_obj.Label = f"↗ {instance_obj.Label}"
@@ -963,8 +1166,14 @@ class SocketCommand:
             # Posiciona no plano de simbologia (Z correto + mesma rotação da tomada)
             px = point.x if hasattr(point, 'x') else point[0]
             py = point.y if hasattr(point, 'y') else point[1]
+            
+            # Deslocamento 2D perpendicular à rotação
+            rot_rad = math.radians(self.rotation)
+            dx = -SOCKET_2D_SYMBOL_Y_OFFSET * math.sin(rot_rad)
+            dy = SOCKET_2D_SYMBOL_Y_OFFSET * math.cos(rot_rad)
+
             sym_obj.Placement = App.Placement(
-                App.Vector(px, py + SOCKET_2D_SYMBOL_Y_OFFSET, self.get_symbol_final_z()),
+                App.Vector(px + dx, py + dy, self.get_symbol_final_z()),
                 App.Rotation(App.Vector(0, 0, 1), self.rotation)
             )
 
@@ -990,7 +1199,28 @@ class SocketCommand:
             except Exception:
                 pass
 
-            group.addObject(sym_obj)
+            global_sym_placement = App.Placement(
+                App.Vector(px + dx, py + dy, self.get_symbol_final_z()),
+                App.Rotation(App.Vector(0, 0, 1), self.rotation)
+            )
+
+            try:
+                from .socket_bim import apply_socket_plan_symbol_colors
+                apply_socket_plan_symbol_colors(sym_obj, is_ghost)
+            except Exception:
+                pass
+
+            level_obj = None
+            if hasattr(self, "reference_level_object") and self.reference_level_object:
+                level_obj = doc.getObject(self.reference_level_object)
+                if level_obj and hasattr(level_obj, "addObject"):
+                    level_obj.addObject(sym_obj)
+
+            if hasattr(self, "placement_for_container"):
+                sym_obj.Placement = self.placement_for_container(global_sym_placement, level_obj)
+            else:
+                sym_obj.Placement = global_sym_placement
+
             return sym_obj
         except Exception as ex:
             App.Console.PrintWarning(f"[Eletrica BIM] Símbolo 2D: {ex}\n")
@@ -1225,8 +1455,10 @@ class SocketCommand:
                 obj.Placement = placement
             except Exception as e:
                 App.Console.PrintError(f"Erro ao posicionar tomada: {e}\n")
-        if getattr(obj, "TypeId", "") == "App::Link" and visual_target is not None:
-            self.correct_link_visual_position(obj, visual_target, container=container, doc=doc)
+        # O posicionamento por placement_to_apply já é o posicionamento exato da ancoragem de inserção.
+        # Evitamos centralizar pelo BBox da forma física, para respeitar a origem (0,0,0) modelada pelo usuário.
+        # if getattr(obj, "TypeId", "") == "App::Link" and visual_target is not None:
+        #     self.correct_link_visual_position(obj, visual_target, container=container, doc=doc)
                 
         try:
             if getattr(obj, "ViewObject", None):
@@ -1515,6 +1747,7 @@ class SocketCommand:
             _add_prop("App::PropertyString",      "ElectricalStandard", "BIM_Classificacao", self.electrical_standard)
             _add_prop("App::PropertyString",      "FamilyName",         "BIM_Familia", self.family_name)
             _add_prop("App::PropertyString",      "FamilyCategory",     "BIM_Familia", self.family_category)
+            _add_prop("App::PropertyString",      "SourceFile",         "BIM_Familia", self.family_file)
             _add_prop("App::PropertyInteger",     "ModuleCount",        "BIM_Familia", self.get_module_count())
             _add_prop("App::PropertyString",      "SocketType",         "BIM_Familia",
                       "Tripla" if self.modules.startswith("3") else "Dupla" if self.modules.startswith("2") else "Simples")
@@ -1568,23 +1801,26 @@ class SocketCommand:
             target_pos.z = final_z + self.surface_offset
         rotation_offset = SOCKET_3D_LINK_ROTATION_OFFSET_DEG if not is_ghost else 0.0
         target_rot = App.Rotation(App.Vector(0,0,1), self.rotation + rotation_offset)
-        target_placement = App.Placement(target_pos, target_rot)
-        level_obj = None
-        if not is_ghost and hasattr(self, "reference_level_object") and self.reference_level_object:
-            candidate_level = doc.getObject(self.reference_level_object)
-            if candidate_level and hasattr(candidate_level, "addObject"):
-                try:
-                    candidate_level.addObject(obj)
-                    level_obj = candidate_level
-                except Exception:
-                    level_obj = None
-        placement_to_apply = self.placement_for_container(target_placement, level_obj)
-        if not is_ghost:
-            self.enable_link_independent_placement(obj, placement_to_apply, visual_target=target_pos, container=level_obj, doc=doc)
-            if getattr(obj, "TypeId", "") == "App::Link":
-                self.repair_socket_links(doc)
+        if is_ghost:
+            obj.Placement = App.Placement(target_pos, target_rot)
         else:
-            obj.Placement = target_placement
+            try:
+                obj.Placement = App.Placement(target_pos, target_rot)
+                doc.recompute([obj])
+                
+                level_obj = None
+                if hasattr(self, "reference_level_object") and self.reference_level_object:
+                    candidate_level = doc.getObject(self.reference_level_object)
+                    if candidate_level and hasattr(candidate_level, "addObject"):
+                        try:
+                            candidate_level.addObject(obj)
+                            level_obj = candidate_level
+                            if hasattr(candidate_level, "Placement"):
+                                obj.Placement = candidate_level.Placement.inverse() * App.Placement(target_pos, target_rot)
+                        except Exception:
+                            pass
+            except Exception as e:
+                App.Console.PrintError(f"Erro ao posicionar tomada: {e}\n")
         
         if not is_ghost:
             try:
@@ -1608,6 +1844,36 @@ class SocketCommand:
                 pass
             doc.recompute()
         return obj
+
+class EletricaDocumentObserver(object):
+    """Observer de documento para realizar a exclusão em cascata de simbologias 2D órfãs."""
+    def slotChangedObject(self, obj, prop):
+        if prop == "LockedReference":
+            try:
+                locked = getattr(obj, "LockedReference", False)
+                if hasattr(obj, "ViewObject") and obj.ViewObject is not None:
+                    obj.ViewObject.Selectable = not locked
+                # Propagar para filhos de forma recursiva
+                if hasattr(obj, "OutList") and obj.OutList:
+                    for child in obj.OutList:
+                        if hasattr(child, "LockedReference") and child.LockedReference != locked:
+                            child.LockedReference = locked
+            except Exception:
+                pass
+
+    def slotDeletedObject(self, obj):
+        try:
+            sym_name = getattr(obj, "Symbol2DObject", None)
+            if sym_name:
+                doc = getattr(obj, "Document", None)
+                if doc:
+                    sym_obj = doc.getObject(sym_name)
+                    if sym_obj:
+                        doc.removeObject(sym_name)
+                        import FreeCAD
+                        FreeCAD.Console.PrintLog(f"[Eletrica] Exclusão em cascata: símbolo 2D '{sym_name}' removido.\n")
+        except Exception:
+            pass
 
 try:
     if hasattr(Gui, "listCommands") and 'Eletrica_InsertSocket' in Gui.listCommands() and hasattr(Gui, "removeCommand"):

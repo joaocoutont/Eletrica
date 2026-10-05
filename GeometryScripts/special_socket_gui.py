@@ -182,13 +182,42 @@ class SpecialSocketCommand:
         self.engine.start()
 
     def make_preview_shape(self):
+        # Combina a simbologia 2D e o modelo 3D real no fantasma para TUE
         try:
             from .special_socket_bim import make_special_socket_plan_symbol
-            # TUE usa triângulo preenchido
-            h_label = "Alta" if self.z_level > 1600 else "Média" if self.z_level > 700 else "Baixa"
-            return make_special_socket_plan_symbol(h_label, "1 Módulo", self.amperage)
+            from .socket_bim import load_socket_family_shape, normalize_socket_shape
+            
+            # 1. Tenta carregar a simbologia 2D
+            sym_shape = None
+            try:
+                h_label = "Alta" if self.z_level > 1600 else "Média" if self.z_level > 700 else "Baixa"
+                sym_shape = make_special_socket_plan_symbol(h_label, "1 Módulo", self.amperage)
+            except Exception:
+                pass
+            
+            # 2. Tenta carregar o modelo 3D real da tomada
+            model_shape = None
+            try:
+                raw = load_socket_family_shape(self.family_file)
+                model_shape = normalize_socket_shape(raw)
+                if model_shape:
+                    model_shape.rotate(App.Vector(0,0,0), App.Vector(0,0,1), 180.0)
+            except Exception:
+                pass
+                
+            shapes = []
+            if model_shape:
+                shapes.append(model_shape)
+            if sym_shape:
+                shapes.append(sym_shape)
+                
+            if shapes:
+                return Part.makeCompound(shapes)
         except Exception:
-            return Part.makeBox(80, 120, 2)
+            pass
+
+        # Fallback seguro
+        return Part.makeBox(80, 120, 2)
 
     def place_special_socket(self, point, is_ghost=False):
         doc = App.ActiveDocument or App.newDocument("Projeto_Eletrico")

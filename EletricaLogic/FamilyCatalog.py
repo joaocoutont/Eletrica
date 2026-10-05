@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 
 try:
     import tomllib
@@ -262,11 +263,11 @@ def default_catalog():
 def ensure_catalog():
     os.makedirs(CATALOG_DIR, exist_ok=True)
     if not os.path.exists(CATALOG_PATH):
-        save_catalog(default_catalog())
+        save_toml_catalog(default_catalog())
     return CATALOG_PATH
 
 
-def load_catalog():
+def load_toml_catalog():
     ensure_catalog()
     with open(CATALOG_PATH, "rb") as fh:
         content = fh.read()
@@ -280,10 +281,160 @@ def load_catalog():
     return data
 
 
-def save_catalog(data):
+def save_toml_catalog(data):
     os.makedirs(CATALOG_DIR, exist_ok=True)
     with open(CATALOG_PATH, "w", encoding="utf-8") as fh:
         fh.write(_toml_dump(data))
+    return CATALOG_PATH
+
+
+def _category_to_freecad(category, load_category=""):
+    text = str(category or "")
+    load = str(load_category or text)
+    if load in ["GeneralSocket", "SpecificSocket"] or text in ["GeneralSocket", "SpecificSocket"]:
+        return "Tomada"
+    if load == "Lighting":
+        return "Iluminacao"
+    if load == "Switch":
+        return "Interruptor"
+    if load in ["DistributionPanel", "MainSwitchboard"]:
+        return "Quadro"
+    if load == "Motor":
+        return "Motor"
+    if load in ["DataPoint", "SecurityDevice", "SmartDevice"]:
+        return "Automacao"
+    if load == "GenericEquipment":
+        return "Equipamento"
+    return text or "Equipamento"
+
+
+def _load_classification_from_category(category, default="Geral"):
+    if category == "GeneralSocket":
+        return "TUG"
+    if category == "SpecificSocket":
+        return "TUE"
+    return default
+
+
+def _family_from_sqlite_json(data):
+    electrical = data.get("electrical", {}) if isinstance(data, dict) else {}
+    physical = data.get("physical", {}) if isinstance(data, dict) else {}
+    asset = data.get("asset", {}) if isinstance(data, dict) else {}
+    category = data.get("category", "")
+    dimensions = physical.get("dimensions_mm", [0.0, 0.0, 0.0])
+    if not isinstance(dimensions, list):
+        dimensions = [0.0, 0.0, 0.0]
+    dimensions = (dimensions + [0.0, 0.0, 0.0])[:3]
+    modules = int(physical.get("modules", 1) or 1)
+    load_class = _load_classification_from_category(
+        electrical.get("load_category", category),
+        electrical.get("load_classification", "Geral"),
+    )
+    return {
+        "id": data.get("family_id", ""),
+        "name": data.get("name", data.get("family_id", "")),
+        "category": _category_to_freecad(data.get("category", ""), electrical.get("load_category", "")),
+        "rust_category": data.get("category", ""),
+        "discipline": data.get("discipline", "Eletrica"),
+        "ifc_class": data.get("ifc_class", ""),
+        "source_3d": _normalize_source(data.get("source_3d", "")),
+        "source_2d": _normalize_source(data.get("source_2d", "")),
+        "modules": f"{modules} Modulos" if modules > 1 else "1 Modulo",
+        "amperage": physical.get("amperage", ""),
+        "voltage": f"{electrical.get('voltage', 127)}V",
+        "power": electrical.get("apparent_power_va", 0.0),
+        "apparent_power_va": electrical.get("apparent_power_va", 0.0),
+        "active_power_w": electrical.get("active_power_watts", 0.0),
+        "power_factor": electrical.get("power_factor", 1.0),
+        "demand_factor": electrical.get("demand_factor", 1.0),
+        "utilization_factor": electrical.get("utilization_factor", 1.0),
+        "simultaneity_factor": electrical.get("simultaneity_factor", 1.0),
+        "harmonic_dist_thd": electrical.get("harmonic_dist_thd", 0.0),
+        "phase": electrical.get("phase", "R"),
+        "load_classification": load_class,
+        "socket_application": physical.get("socket_application", ""),
+        "ip_rating": physical.get("ip_rating", ""),
+        "electrical_standard": data.get("electrical_standard", "NBR 5410"),
+        "height_type": physical.get("height_type", ""),
+        "mounting_height": physical.get("mounting_height_mm", 0.0),
+        "width_mm": dimensions[0],
+        "height_mm": dimensions[1],
+        "depth_mm": dimensions[2],
+        "weight_kg": physical.get("weight_kg", 0.0),
+        "material_name": physical.get("material_name", ""),
+        "material_density_kg_m3": physical.get("material_density_kg_m3", 0.0),
+        "embedded_carbon_kg_kg": physical.get("embedded_carbon_kg_kg", 0.0),
+        "cost_per_unit": physical.get("cost_per_unit", 0.0),
+        "manufacturer": asset.get("manufacturer", ""),
+        "model": asset.get("model", ""),
+        "catalog_code": asset.get("catalog_code", ""),
+        "description": asset.get("description", ""),
+        "omniclass_code": asset.get("omniclass_code", ""),
+        "uniformat_code": asset.get("uniformat_code", ""),
+        "expected_life_years": asset.get("expected_life_years", 0.0),
+        "maintenance_manual_url": asset.get("maintenance_manual_url", ""),
+    }
+
+
+def load_sqlite_catalog():
+    try:
+        from EletricaLogic.FamilySQLite import connect
+        conn = connect()
+        try:
+            rows = conn.execute(
+                "SELECT data_json FROM families ORDER BY category, name"
+            ).fetchall()
+        finally:
+            conn.close()
+        families = []
+        for (raw,) in rows:
+            try:
+                families.append(_family_from_sqlite_json(json.loads(raw)))
+            except Exception:
+                pass
+        return {
+            "schema_version": 1,
+            "library_root": "Library/3D",
+            "family": families,
+            "source": "familias.sqlite",
+        }
+    except Exception:
+        return None
+
+
+def sqlite_catalog_has_families():
+    data = load_sqlite_catalog()
+    return bool(data and data.get("family"))
+
+
+def save_sqlite_catalog(data):
+    from EletricaLogic.FamilySQLite import connect, upsert_family
+    conn = connect()
+    try:
+        for family in data.get("family", []):
+            upsert_family(conn, family)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def load_catalog():
+    sqlite_data = load_sqlite_catalog()
+    if sqlite_data and sqlite_data.get("family"):
+        return sqlite_data
+
+    data = load_toml_catalog()
+    try:
+        save_sqlite_catalog(data)
+    except Exception:
+        pass
+    return data
+
+
+def save_catalog(data):
+    save_sqlite_catalog(data)
+    # Mantem o TOML como backup legivel e rota de recuperacao.
+    save_toml_catalog(data)
     return CATALOG_PATH
 
 
@@ -292,9 +443,9 @@ def infer_family_from_source(source):
     base = os.path.splitext(os.path.basename(source))[0]
     text = base.lower()
     category = "Tomada" if "tomada" in text else "Equipamento"
-    if "tripla" in text or "_3" in text:
+    if "tripla" in text or text.endswith("_t3") or "_t3" in text:
         modules = "3 Modulos"
-    elif "dupla" in text or "_2" in text:
+    elif "dupla" in text or text.endswith("_t2") or "_t2" in text:
         modules = "2 Modulos"
     else:
         modules = "1 Modulo"
@@ -338,7 +489,10 @@ def scan_library_sources():
     if not os.path.isdir(LIBRARY_3D_DIR):
         return sources
     for root, dirs, files in os.walk(LIBRARY_3D_DIR):
-        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        dirs[:] = [
+            d for d in dirs
+            if not d.startswith(".") and "backup" not in d.lower() and "__pycache__" not in d.lower()
+        ]
         for fname in files:
             if not fname.lower().endswith(".fcstd"):
                 continue
@@ -347,12 +501,101 @@ def scan_library_sources():
             sources.append(_normalize_source(rel))
     return sorted(sources)
 
+def _family_module_count(value):
+    text = str(value or "")
+    for number in [3, 2, 1]:
+        if text.startswith(str(number)) or str(number) in text:
+            return number
+    return 1
+
+def _socket_replacement_source(family, available_sources):
+    if family.get("category") != "Tomada":
+        return ""
+    identity = " ".join([
+        str(family.get("id", "")),
+        str(family.get("name", "")),
+        str(family.get("source_3d", "")),
+    ]).lower()
+    if "simples" in identity:
+        modules = 1
+    elif "dupla" in identity:
+        modules = 2
+    elif "tripla" in identity:
+        modules = 3
+    elif "_t3" in identity or "cx_4x2_t3" in identity:
+        modules = 3
+    elif "_t2" in identity or "cx_4x2_t2" in identity:
+        modules = 2
+    elif "_t1" in identity or "cx_4x2_t1" in identity:
+        modules = 1
+    else:
+        modules = _family_module_count(family.get("modules"))
+    candidates = [f"Tomadas/Cx_4x2_T{modules}.FCStd"]
+    is_20 = family.get("amperage") == "20A"
+    if modules == 3:
+        candidates.append("Tomadas/Tomada_Tripla_20A.FCStd" if is_20 else "Tomadas/Tomada_Tripla_10A.FCStd")
+    elif modules == 2:
+        candidates.append("Tomadas/Tomada_Dupla_20A.FCStd" if is_20 else "Tomadas/Tomada_Dupla_10A_10A.FCStd")
+    else:
+        candidates.append("Tomadas/Tomada_Simples_20A.FCStd" if is_20 else "Tomadas/Tomada_Simples_10A.FCStd")
+    for candidate in candidates:
+        if _normalize_source(candidate) in available_sources:
+            return candidate
+    return ""
+
+def _sync_socket_defaults_from_identity(family):
+    identity = " ".join([
+        str(family.get("id", "")),
+        str(family.get("name", "")),
+        str(family.get("source_3d", "")),
+    ]).lower()
+    if family.get("category") != "Tomada":
+        return
+    if "simples" in identity:
+        modules = 1
+    elif "dupla" in identity:
+        modules = 2
+    elif "tripla" in identity:
+        modules = 3
+    elif "_t3" in identity or "cx_4x2_t3" in identity:
+        modules = 3
+    elif "_t2" in identity or "cx_4x2_t2" in identity:
+        modules = 2
+    elif "_t1" in identity or "cx_4x2_t1" in identity:
+        modules = 1
+    else:
+        modules = _family_module_count(family.get("modules"))
+    amperage = "20A" if "20a" in identity else family.get("amperage", "10A") or "10A"
+    unit_power = 600.0 if amperage == "20A" else 100.0
+    power = unit_power * modules
+    family["modules"] = f"{modules} Modulos" if modules > 1 else "1 Modulo"
+    family["amperage"] = amperage
+    family["power"] = power
+    family["apparent_power_va"] = power
+    family["active_power_w"] = power * float(family.get("power_factor", 1.0) or 1.0)
+
 
 def refresh_catalog_from_library():
     data = load_catalog()
     families = data.setdefault("family", [])
+    sources = scan_library_sources()
+    available = set(sources)
+    for family in families:
+        source = _normalize_source(family.get("source_3d"))
+        source_is_backup = "backup" in source.lower()
+        replacement = _socket_replacement_source(family, available) if source else ""
+        standard_socket_needs_repair = (
+            replacement
+            and replacement != source
+            and any(word in " ".join([str(family.get("id", "")), str(family.get("name", ""))]).lower() for word in ["simples", "dupla", "tripla"])
+        )
+        if source and (source_is_backup or standard_socket_needs_repair or (source not in available and not _source_exists(source))):
+            if replacement:
+                family["source_3d"] = replacement
+                _sync_socket_defaults_from_identity(family)
+
     existing = {_normalize_source(item.get("source_3d")) for item in families}
-    for source in scan_library_sources():
+    for source in sources:
         if source not in existing:
             families.append(infer_family_from_source(source))
             existing.add(source)

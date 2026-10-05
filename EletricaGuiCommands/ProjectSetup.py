@@ -16,7 +16,21 @@ except ImportError:
         try:
             from PySide2 import QtWidgets
         except ImportError:
-            QtWidgets = None
+            try:
+                from PySide6 import QtWidgets
+            except ImportError:
+                QtWidgets = None
+
+try:
+    from PySide import QtCore
+except ImportError:
+    try:
+        from PySide2 import QtCore
+    except ImportError:
+        try:
+            from PySide6 import QtCore
+        except ImportError:
+            QtCore = None
 
 ICON_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Icons")
 PROFILE_TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Templates", "ProjectProfiles")
@@ -292,6 +306,32 @@ def _object_text(obj):
 
 
 def _is_level_object(obj):
+    if not obj:
+        return False
+        
+    if hasattr(obj, "IfcType"):
+        if obj.IfcType == "Building Storey":
+            return True
+        if obj.IfcType in ["Building", "Site", "Space"]:
+            return False
+            
+    if hasattr(obj, "BIMRole"):
+        if obj.BIMRole == "Level":
+            return True
+        if obj.BIMRole in ["Building", "Site", "Space"]:
+            return False
+            
+    # Heurística baseada em nome/role
+    label = obj.Label.lower() if hasattr(obj, "Label") else ""
+    name = obj.Name.lower()
+    
+    if "edificacao" in label or "edificacao" in name or "building" in label or "building" in name:
+        return False
+    
+    for prop in obj.PropertiesList:
+        if "BIM_Nivel" in prop or prop == "Elevation":
+            return True
+            
     text = _object_text(obj)
     return any(word in text for word in LEVEL_KEYWORDS)
 
@@ -351,6 +391,72 @@ def _ensure_property(obj, prop_type, name, group, value):
         setattr(obj, name, value)
     except Exception:
         pass
+
+
+def make_compound_batched(shapes, batch_size=500):
+    import Part
+    if not shapes:
+        return Part.Shape()
+    if len(shapes) <= batch_size:
+        return Part.makeCompound(shapes)
+    
+    batches = []
+    for i in range(0, len(shapes), batch_size):
+        batch_shapes = shapes[i:i + batch_size]
+        batches.append(Part.makeCompound(batch_shapes))
+    return Part.makeCompound(batches)
+
+
+def configure_view_object(obj):
+    import FreeCAD
+    if getattr(FreeCAD, "GuiUp", False):
+        try:
+            if hasattr(obj, "ViewObject") and obj.ViewObject is not None:
+                if hasattr(obj.ViewObject, "DisplayMode"):
+                    obj.ViewObject.DisplayMode = "Shaded"
+                if hasattr(obj.ViewObject, "Deviation"):
+                    obj.ViewObject.Deviation = 0.5
+        except Exception as e:
+            FreeCAD.Console.PrintWarning(f"Aviso ao configurar ViewObject de {obj.Name}: {e}\n")
+
+
+def _propagate_properties_to_group_children(parent):
+    """
+    Recursively propagates reference properties from parent to children/sub-children.
+    """
+    if not parent or not hasattr(parent, "OutList"):
+        return
+
+    # List of properties to propagate
+    props_to_propagate = [
+        ("ReferenceSource", "App::PropertyString"),
+        ("ReferenceLevel", "App::PropertyString"),
+        ("LevelElevation", "App::PropertyLength"),
+        ("ReferenceTarget", "App::PropertyString"),
+        ("OriginalFile", "App::PropertyString"),
+        ("DrawingScaleFactor", "App::PropertyFloat"),
+        ("LockedReference", "App::PropertyBool"),
+    ]
+
+    for child in parent.OutList:
+        # Propagation
+        for prop_name, prop_type in props_to_propagate:
+            if hasattr(parent, prop_name):
+                val = getattr(parent, prop_name)
+                _ensure_property(child, prop_type, prop_name, "BIM_Referencia", val)
+        
+        # Apply selectability to child based on LockedReference
+        if hasattr(child, "LockedReference"):
+            locked = child.LockedReference
+            try:
+                if hasattr(child, "ViewObject") and child.ViewObject is not None:
+                    child.ViewObject.Selectable = not locked
+            except Exception:
+                pass
+
+        # Recursively propagate to grandchild elements if the child is a group
+        if child.isDerivedFrom("App::DocumentObjectGroup"):
+            _propagate_properties_to_group_children(child)
 
 
 class ElectricalPanelProxy:
@@ -456,7 +562,13 @@ class SetupConfigDialog(QtWidgets.QDialog if QtWidgets else object):
         self.setWindowTitle(tr("Preparar Projeto Eletrico BIM"))
         self.resize(520, 360)
 
-        layout = QtWidgets.QVBoxLayout(self)
+        main_layout = QtWidgets.QVBoxLayout(self)
+
+        scroll = QtWidgets.QScrollArea()
+        scroll.setWidgetResizable(True)
+        
+        container = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(container)
         form = QtWidgets.QFormLayout()
 
         self.file_in = QtWidgets.QLineEdit()
@@ -465,6 +577,44 @@ class SetupConfigDialog(QtWidgets.QDialog if QtWidgets else object):
         file_row.addWidget(self.file_in)
         file_row.addWidget(self.file_btn)
         form.addRow(tr("Arquivo:"), file_row)
+
+        self.ifc_importer_combo = None
+        self.ifc_checkboxes = {}
+        self.ifc_categories_group = None
+        if source == "IFC":
+            self.ifc_importer_combo = QtWidgets.QComboBox()
+            self.ifc_importer_combo.addItems([
+                tr("Referência Leve (rápido, sem objetos individuais)"),
+                tr("Arch IFC (importIFC) - Python (Alternativo)"),
+                tr("Native IFC (nativeifc) - C++ (Padrão)"),
+                tr("Automático / Padrão do FreeCAD")
+            ])
+            form.addRow(tr("Importador IFC:"), self.ifc_importer_combo)
+
+            self.ifc_categories_group = QtWidgets.QGroupBox(tr("Categorias do IFC para importar"))
+            grid = QtWidgets.QGridLayout(self.ifc_categories_group)
+            categories = [
+                ("Paredes", tr("Paredes")),
+                ("Lajes e Tetos", tr("Lajes e Tetos")),
+                ("Portas e Janelas", tr("Portas e Janelas")),
+                ("Estrutura", tr("Estrutura")),
+                ("Outros", tr("Outros"))
+            ]
+            for i, (key, label) in enumerate(categories):
+                row = i // 3
+                col = i % 3
+                cb = QtWidgets.QCheckBox(label)
+                cb.setChecked(True)
+                grid.addWidget(cb, row, col)
+                self.ifc_checkboxes[key] = cb
+            form.addRow("", self.ifc_categories_group)
+
+            def toggle_categories_visibility():
+                is_lightweight = "Referência Leve" in self.ifc_importer_combo.currentText()
+                self.ifc_categories_group.setEnabled(is_lightweight)
+
+            self.ifc_importer_combo.currentTextChanged.connect(toggle_categories_visibility)
+            toggle_categories_visibility()
 
         self.profile_combo = QtWidgets.QComboBox()
         self.profile_combo.addItems(list(PROJECT_PROFILES.keys()))
@@ -492,11 +642,11 @@ class SetupConfigDialog(QtWidgets.QDialog if QtWidgets else object):
         form.addRow("", self.create_spaces_cb)
 
         self.lock_reference_cb = QtWidgets.QCheckBox(tr("Travar referencia importada/selecionada"))
-        self.lock_reference_cb.setChecked(source in ["CAD", "IFC"])
+        self.lock_reference_cb.setChecked(source == "CAD")
         form.addRow("", self.lock_reference_cb)
 
         self.create_electrical_defaults_cb = QtWidgets.QCheckBox(tr("Criar quadros e circuitos padrao do perfil"))
-        self.create_electrical_defaults_cb.setChecked(True)
+        self.create_electrical_defaults_cb.setChecked(False)
         form.addRow("", self.create_electrical_defaults_cb)
 
         layout.addLayout(form)
@@ -567,8 +717,11 @@ class SetupConfigDialog(QtWidgets.QDialog if QtWidgets else object):
         heights_form.addRow("Tomada alta (mm):", self.high_h)
         layout.addWidget(heights_group)
 
+        scroll.setWidget(container)
+        main_layout.addWidget(scroll)
+
         buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
-        layout.addWidget(buttons)
+        main_layout.addWidget(buttons)
 
         self.file_btn.clicked.connect(self.choose_file)
         self.profile_combo.currentTextChanged.connect(self.refresh_reference_targets)
@@ -577,20 +730,25 @@ class SetupConfigDialog(QtWidgets.QDialog if QtWidgets else object):
         self.refresh_reference_targets()
 
     def choose_file(self):
+        import os
+        param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Eletrica")
+        last_dir = param.GetString("LastReferenceDir", "")
+        
         path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self,
             tr("Escolher arquivo de referencia"),
-            "",
+            last_dir,
             FILE_FILTERS.get(self.source, "Todos (*.*)")
         )
         if path:
             self.file_in.setText(path)
+            param.SetString("LastReferenceDir", os.path.dirname(path))
 
     def config(self):
         scale_factor = 1.0
         if self.source == "CAD" and self.measured_len.value():
             scale_factor = self.known_len.value() / self.measured_len.value()
-        return {
+        config_dict = {
             "source": self.source,
             "file_path": self.file_in.text().strip(),
             "profile_name": self.profile_combo.currentText(),
@@ -622,6 +780,11 @@ class SetupConfigDialog(QtWidgets.QDialog if QtWidgets else object):
                 "high": self.high_h.value(),
             },
         }
+        if self.ifc_importer_combo is not None:
+            config_dict["ifc_importer"] = self.ifc_importer_combo.currentText()
+        if self.ifc_checkboxes:
+            config_dict["ifc_categories"] = [key for key, cb in self.ifc_checkboxes.items() if cb.isChecked()]
+        return config_dict
 
     def refresh_reference_targets(self):
         profile = PROJECT_PROFILES.get(self.profile_combo.currentText(), PROJECT_PROFILES["Generico"])
@@ -644,9 +807,9 @@ def ask_setup_config(source):
             "create_missing": True,
             "create_levels": True,
             "create_spaces": True,
-            "lock_reference": source in ["CAD", "IFC"],
+            "lock_reference": source == "CAD",
             "reference_target": "Automatico / primeiro nivel ou setor",
-            "create_electrical_defaults": True,
+            "create_electrical_defaults": False,
             "apply_cad_scale": False,
             "cad_scale_factor": 1.0,
             "base_mode": "Usar origem do arquivo",
@@ -660,6 +823,8 @@ def ask_setup_config(source):
             "voltage_scope": "BT/MT ate 35 kV",
             "levels": DEFAULT_LEVELS,
             "socket_heights": {"low": 300.0, "medium": 1100.0, "high": 2200.0},
+            "ifc_importer": "Arch IFC (importIFC) - Python (Alternativo)",
+            "ifc_categories": ["Paredes", "Lajes e Tetos", "Portas e Janelas", "Estrutura", "Outros"],
         }
     dialog = SetupConfigDialog(source)
     if dialog.exec_() != QtWidgets.QDialog.Accepted:
@@ -703,6 +868,11 @@ def ensure_building(doc, site=None):
         except Exception:
             building = doc.addObject("App::DocumentObjectGroup", "Edificacao_Principal")
         building.Label = "Edificacao - Principal"
+        try:
+            if hasattr(building, "IfcType"):
+                building.IfcType = "Building"
+        except Exception:
+            pass
         _ensure_property(building, "App::PropertyString", "BIMRole", "BIM_Contexto", "Building")
     _add_child(site, building)
     return building
@@ -710,7 +880,13 @@ def ensure_building(doc, site=None):
 
 def create_default_levels(doc, parent=None, default_levels=None):
     created = []
-    for label, elevation in (default_levels or DEFAULT_LEVELS):
+    
+    if default_levels is None:
+        default_levels = DEFAULT_LEVELS
+    elif isinstance(default_levels, bool):
+        default_levels = DEFAULT_LEVELS if default_levels else []
+    
+    for label, elevation in default_levels:
         if any(obj.Label == label for obj in doc.Objects):
             continue
         try:
@@ -1026,7 +1202,7 @@ class CircuitManagerDialog(QtWidgets.QDialog if QtWidgets else object):
     def add_panel(self):
         name, ok = QtWidgets.QInputDialog.getText(self, tr("Novo quadro"), tr("Nome do quadro:"))
         if ok and name:
-            parent = _find_group(self.doc, "Quadros")
+            parent = _find_first(self.doc, _is_level_object) or _find_first(self.doc, _is_building_object) or _find_first(self.doc, _is_site_object)
             ensure_panel_object(self.doc, str(name), parent)
             self.doc.recompute()
             self.refresh()
@@ -1038,7 +1214,7 @@ class CircuitManagerDialog(QtWidgets.QDialog if QtWidgets else object):
             panel = selected.text()
         name, ok = QtWidgets.QInputDialog.getText(self, tr("Novo circuito"), tr("Nome do circuito:"))
         if ok and name:
-            parent = _find_group(self.doc, "Circuitos")
+            parent = _find_first(self.doc, _is_level_object) or _find_first(self.doc, _is_building_object) or _find_first(self.doc, _is_site_object)
             ensure_circuit_object(self.doc, str(name), parent, panel)
             self.doc.recompute()
             self.refresh()
@@ -1108,75 +1284,432 @@ def apply_spatial_reference(objects, config):
             pass
 
 
-def prepare_base(source, config=None):
+def discover_levels(doc, exclude_objects=None):
+    levels = []
+    seen = set()
+    exclude_names = {obj.Name for obj in exclude_objects} if exclude_objects else set()
+    
+    for obj in doc.Objects:
+        if obj.Name in seen or obj.Name in exclude_names or not _is_level_object(obj):
+            continue
+        levels.append(obj)
+        seen.add(obj.Name)
+    levels.sort(key=lambda lvl: getattr(lvl.Placement.Base, "z", 0.0) if hasattr(lvl, "Placement") else 0.0)
+    return levels
+
+
+def prepare_base(source, config=None, reference_objects=None):
     config = config or ask_setup_config(source)
     if config is None:
         return None, {}, []
+        
     profile_name = config.get("profile_name") or list(PROJECT_PROFILES.keys())[0]
     profile = PROJECT_PROFILES.get(profile_name, PROJECT_PROFILES["Generico"])
-    doc = _ensure_doc()
-    project = _ensure_group(doc, PROJECT_GROUP)
-    groups = {name: _ensure_group(doc, name, project) for name in PROJECT_GROUPS}
-    context = groups["Contexto BIM"]
-    sector_parent = groups["Zonas e Setores"]
-
+    
+    doc = FreeCAD.ActiveDocument or FreeCAD.newDocument()
     create_missing = config.get("create_missing", True)
+    
     site = None
     building = None
+    
     if profile.get("site"):
-        site = ensure_site(doc, context) if create_missing else _find_first(doc, _is_site_object)
-        _add_child(context, site)
+        site = ensure_site(doc) if create_missing else _find_first(doc, _is_site_object, exclude=reference_objects)
+        
     if profile.get("building"):
-        building = ensure_building(doc, site or context) if create_missing else _find_first(doc, _is_building_object)
-        _add_child(site or context, building)
-    create_profile_groups(doc, profile_name, sector_parent)
-    if config.get("create_electrical_defaults", True):
-        create_electrical_defaults(doc, profile_name, groups)
-
-    levels = discover_levels(doc)
-    if profile.get("levels") and config.get("create_levels", True) and not levels:
-        create_default_levels(doc, groups["Niveis"], config.get("levels"))
-        levels = discover_levels(doc)
+        building = ensure_building(doc, site) if create_missing else _find_first(doc, _is_building_object, exclude=reference_objects)
+        _add_child(site, building)
+        
+    levels = discover_levels(doc, exclude_objects=reference_objects)
+    if config.get("create_levels", True) and not levels:
+        levels_to_create = config.get("levels")
+        if not levels_to_create or isinstance(levels_to_create, bool):
+            levels_to_create = DEFAULT_LEVELS
+        created_levels = create_default_levels(doc, building or site, levels_to_create)
+        for lvl in created_levels:
+            _add_child(building or site, lvl)
+        levels = discover_levels(doc, exclude_objects=reference_objects)
 
     for level in levels:
-        _add_child(groups["Niveis"], level)
         _add_child(building or site, level)
 
     spaces = discover_spaces(doc)
-    if profile.get("spaces") and config.get("create_spaces", True) and not spaces:
-        create_default_spaces(doc, levels, groups["Espacos"])
-        spaces = discover_spaces(doc)
+    for space in spaces:
+        _add_child(building or site, space)
+
+    if config.get("create_electrical_defaults", True):
+        groups_dummy = {}
+        # O Padrão BIM manda colocar os Quadros no nível (BuildingStorey) correspondente.
+        # Caso não haja nível, usamos o Building ou Site.
+        default_parent = levels[0] if levels else (building or site)
+        groups_dummy["Quadros"] = default_parent
+        groups_dummy["Circuitos"] = default_parent
+        create_electrical_defaults(doc, profile_name, groups_dummy)
+
+    main_obj = building or site or doc
+    if main_obj and main_obj != doc:
+        _ensure_property(main_obj, "App::PropertyString", "BIMSource", "BIM_Projeto", source)
+        _ensure_property(main_obj, "App::PropertyString", "ProjectProfile", "BIM_Projeto", profile_name)
+        _ensure_property(main_obj, "App::PropertyString", "ElectricalStandard", "BIM_Projeto", config.get("standard", "NBR 5410"))
+
+    if main_obj and main_obj != doc:
+        _ensure_property(main_obj, "App::PropertyString", "VoltageScope", "BIM_Projeto", config.get("voltage_scope", "BT/MT ate 35 kV"))
+        base = config.get("base_point", (0.0, 0.0, 0.0))
+        _ensure_property(main_obj, "App::PropertyString", "SpatialReferenceMode", "BIM_ReferenciaEspacial", config.get("base_mode", "Usar origem do arquivo"))
+        _ensure_property(main_obj, "App::PropertyLength", "BasePointX", "BIM_ReferenciaEspacial", base[0])
+        _ensure_property(main_obj, "App::PropertyLength", "BasePointY", "BIM_ReferenciaEspacial", base[1])
+        _ensure_property(main_obj, "App::PropertyLength", "BasePointZ", "BIM_ReferenciaEspacial", base[2])
+        _ensure_property(main_obj, "App::PropertyAngle", "ProjectNorthAngle", "BIM_ReferenciaEspacial", config.get("north_angle", 0.0))
+        _ensure_property(main_obj, "App::PropertyBool", "UseSharedCoordinates", "BIM_ReferenciaEspacial", config.get("use_shared_coordinates", True))
+        _ensure_property(main_obj, "App::PropertyBool", "DetectSurfaces", "BIM_Superficies", config.get("detect_surfaces", True))
+        _ensure_property(main_obj, "App::PropertyBool", "UseTerrainSurface", "BIM_Superficies", config.get("use_terrain_surface", False))
+        _ensure_property(main_obj, "App::PropertyLength", "SurfaceOffset", "BIM_Superficies", config.get("surface_offset", 5.0))
+        apply_automation_defaults(main_obj, profile_name)
+        heights = config.get("socket_heights", {})
+        _ensure_property(main_obj, "App::PropertyLength", "SocketLowHeight", "BIM_Projeto", heights.get("low", 300.0))
+        _ensure_property(main_obj, "App::PropertyLength", "SocketMediumHeight", "BIM_Projeto", heights.get("medium", 1100.0))
+        _ensure_property(main_obj, "App::PropertyLength", "SocketHighHeight", "BIM_Projeto", heights.get("high", 2200.0))
+        _ensure_property(main_obj, "App::PropertyString", "DefaultSymbolPlaneName", "BIM_Simbologia", config.get("symbol_plane_name", "Plano de Simbologia"))
+        _ensure_property(main_obj, "App::PropertyLength", "DefaultSymbolPlaneHeight", "BIM_Simbologia", config.get("symbol_plane_height", 2700.0))
+
+    if doc:
+        doc.recompute()
+        try:
+            import FreeCADGui
+            FreeCADGui.updateGui()
+            if hasattr(FreeCADGui, "Selection"):
+                building = next((obj for obj in doc.Objects if obj.Name == "Edificacao_Principal" or obj.Label == "Edificacao - Principal"), None)
+                if building:
+                    FreeCADGui.Selection.clearSelection()
+                    FreeCADGui.Selection.addSelection(building)
+        except Exception:
+            pass
+
+    return doc, {}, levels
+
+
+class ImportCanceledError(Exception):
+    """Exceção lançada quando o usuário cancela a importação de referência."""
+    pass
+
+
+def import_ifc_as_lightweight_reference(file_path, doc_name=None, config=None):
+    import FreeCAD
+    import Part
+    import os
+    
+    ifc_categories = None
+    if config and "ifc_categories" in config:
+        ifc_categories = set(config["ifc_categories"])
     else:
-        for space in spaces:
-            _add_child(groups["Espacos"], space)
+        ifc_categories = {"Paredes", "Lajes e Tetos", "Portas e Janelas", "Estrutura", "Outros"}
+    
+    if not doc_name:
+        doc = FreeCAD.ActiveDocument
+        if not doc:
+            doc = FreeCAD.newDocument("Projeto_Eletrico")
+    else:
+        doc = FreeCAD.getDocument(doc_name)
+        if not doc:
+            doc = FreeCAD.newDocument(doc_name)
 
-    _ensure_property(project, "App::PropertyString", "BIMSource", "BIM_Projeto", source)
-    _ensure_property(project, "App::PropertyString", "ProjectProfile", "BIM_Projeto", profile_name)
-    _ensure_property(project, "App::PropertyString", "ElectricalStandard", "BIM_Projeto", config.get("standard", "NBR 5410"))
-    _ensure_property(project, "App::PropertyString", "VoltageScope", "BIM_Projeto", config.get("voltage_scope", "BT/MT ate 35 kV"))
-    base = config.get("base_point", (0.0, 0.0, 0.0))
-    _ensure_property(project, "App::PropertyString", "SpatialReferenceMode", "BIM_ReferenciaEspacial", config.get("base_mode", "Usar origem do arquivo"))
-    _ensure_property(project, "App::PropertyLength", "BasePointX", "BIM_ReferenciaEspacial", base[0])
-    _ensure_property(project, "App::PropertyLength", "BasePointY", "BIM_ReferenciaEspacial", base[1])
-    _ensure_property(project, "App::PropertyLength", "BasePointZ", "BIM_ReferenciaEspacial", base[2])
-    _ensure_property(project, "App::PropertyAngle", "ProjectNorthAngle", "BIM_ReferenciaEspacial", config.get("north_angle", 0.0))
-    _ensure_property(project, "App::PropertyBool", "UseSharedCoordinates", "BIM_ReferenciaEspacial", config.get("use_shared_coordinates", True))
-    _ensure_property(project, "App::PropertyBool", "DetectSurfaces", "BIM_Superficies", config.get("detect_surfaces", True))
-    _ensure_property(project, "App::PropertyBool", "UseTerrainSurface", "BIM_Superficies", config.get("use_terrain_surface", False))
-    _ensure_property(project, "App::PropertyLength", "SurfaceOffset", "BIM_Superficies", config.get("surface_offset", 5.0))
-    apply_automation_defaults(project, profile_name)
-    heights = config.get("socket_heights", {})
-    _ensure_property(project, "App::PropertyLength", "SocketLowHeight", "BIM_Projeto", heights.get("low", 300.0))
-    _ensure_property(project, "App::PropertyLength", "SocketMediumHeight", "BIM_Projeto", heights.get("medium", 1100.0))
-    _ensure_property(project, "App::PropertyLength", "SocketHighHeight", "BIM_Projeto", heights.get("high", 2200.0))
-    _ensure_property(project, "App::PropertyString", "DefaultSymbolPlaneName", "BIM_Simbologia", config.get("symbol_plane_name", "Plano de Simbologia"))
-    _ensure_property(project, "App::PropertyLength", "DefaultSymbolPlaneHeight", "BIM_Simbologia", config.get("symbol_plane_height", 2700.0))
+    try:
+        import ifcopenshell
+        import ifcopenshell.geom
+    except ImportError as e:
+        FreeCAD.Console.PrintError("O modulo 'ifcopenshell' nao esta instalado no FreeCAD.\n")
+        raise RuntimeError("O modulo 'ifcopenshell' nao esta instalado no FreeCAD.") from e
 
-    doc.recompute()
-    return doc, groups, levels
+    FreeCAD.Console.PrintMessage(f"Iniciando importacao de referencia leve do arquivo IFC '{file_path}'...\n")
+
+    settings = ifcopenshell.geom.settings()
+    
+    # Configure use_world_coords
+    if hasattr(settings, "USE_WORLD_COORDS"):
+        settings.set(settings.USE_WORLD_COORDS, True)
+    else:
+        try:
+            settings.set("use-world-coords", True)
+        except Exception as e:
+            FreeCAD.Console.PrintWarning(f"Aviso: Nao foi possivel configurar use-world-coords: {e}\n")
+            
+    # Configure BREP / serialized geometry output
+    if hasattr(settings, "USE_BREP_DATA"):
+        settings.set(settings.USE_BREP_DATA, True)
+    else:
+        try:
+            # IfcOpenShell v0.8.0+ uses iterator-output setting
+            if hasattr(ifcopenshell, "ifcopenshell_wrapper") and hasattr(ifcopenshell.ifcopenshell_wrapper, "SERIALIZED"):
+                settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.SERIALIZED)
+            else:
+                settings.set("iterator-output", 1) # SERIALIZED is usually 1
+        except Exception as e:
+            FreeCAD.Console.PrintWarning(f"Aviso: Nao foi possivel configurar iterator-output: {e}\n")
+    
+    try:
+        ifc_file = ifcopenshell.open(file_path)
+    except Exception as e:
+        FreeCAD.Console.PrintError(f"Erro ao abrir o arquivo IFC: {e}\n")
+        raise
+
+    # Get approximate element count for the progress bar
+    try:
+        products = ifc_file.by_type("IfcProduct")
+        total_steps = len(products) if products else 100
+    except Exception:
+        total_steps = 100
+
+    import multiprocessing
+    try:
+        num_cores = multiprocessing.cpu_count()
+    except Exception:
+        num_cores = 4
+
+    pg = FreeCAD.Base.ProgressIndicator()
+    pg.start("Importando referencia leve do IFC...", total_steps)
+
+    progress_dialog = None
+    if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+        try:
+            progress_dialog = QtWidgets.QProgressDialog(
+                tr("Importando referência leve do IFC..."),
+                tr("Cancelar"),
+                0,
+                total_steps,
+                None
+            )
+            progress_dialog.setWindowTitle(tr("Importação IFC"))
+            if QtCore:
+                progress_dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+            else:
+                progress_dialog.setWindowModality(2) # Qt.ApplicationModal fallback
+            progress_dialog.setMinimumDuration(0)
+            progress_dialog.setAutoClose(False)
+            progress_dialog.setAutoReset(False)
+            progress_dialog.setValue(0)
+            progress_dialog.show()
+            QtWidgets.QApplication.processEvents()
+        except Exception as dialog_err:
+            FreeCAD.Console.PrintWarning(f"Aviso: Nao foi possivel inicializar QProgressDialog: {dialog_err}\n")
+            progress_dialog = None
+
+    category_shapes = {
+        "Paredes": [],
+        "Lajes e Tetos": [],
+        "Portas e Janelas": [],
+        "Estrutura": [],
+        "Outros": []
+    }
+    step_idx = 0
+    try:
+        try:
+            iterator = ifcopenshell.geom.iterator(settings, ifc_file, num_threads=num_cores)
+        except TypeError:
+            # Fallback em versoes de ifcopenshell que nao tenham num_threads
+            iterator = ifcopenshell.geom.iterator(settings, ifc_file)
+
+        if iterator.initialize():
+            while True:
+                geom = iterator.get()
+                if geom and geom.geometry and hasattr(geom.geometry, "brep_data"):
+                    entity_type = (geom.type.upper() if (hasattr(geom, "type") and geom.type) else "")
+                    if "OPENING" in entity_type or "SPACE" in entity_type:
+                        # Skip virtual space and opening subtraction volumes
+                        pass
+                    else:
+                        cat = "Outros"
+                        if "WALL" in entity_type:
+                            cat = "Paredes"
+                        elif "SLAB" in entity_type or "ROOF" in entity_type or "CEILING" in entity_type:
+                            cat = "Lajes e Tetos"
+                        elif "DOOR" in entity_type or "WINDOW" in entity_type:
+                            cat = "Portas e Janelas"
+                        elif any(x in entity_type for x in ["COLUMN", "BEAM", "MEMBER", "FOOTING", "PILE", "PLATE", "STRUCTURAL"]):
+                            cat = "Estrutura"
+
+                        if cat in ifc_categories:
+                            try:
+                                shape = Part.Shape()
+                                shape.importBrepFromString(geom.geometry.brep_data)
+                                
+                                # Categorize geometry
+                                if cat == "Paredes":
+                                    single_label = tr("Parede")
+                                    category_shapes["Paredes"].append((geom.id, shape, single_label, getattr(geom, "name", "")))
+                                elif cat == "Lajes e Tetos":
+                                    if "SLAB" in entity_type:
+                                        single_label = tr("Laje")
+                                    elif "ROOF" in entity_type:
+                                        single_label = tr("Telhado")
+                                    else:
+                                        single_label = tr("Teto")
+                                    category_shapes["Lajes e Tetos"].append((geom.id, shape, single_label, getattr(geom, "name", "")))
+                                elif cat == "Portas e Janelas":
+                                    category_shapes["Portas e Janelas"].append(shape)
+                                elif cat == "Estrutura":
+                                    category_shapes["Estrutura"].append(shape)
+                                else:
+                                    category_shapes["Outros"].append(shape)
+                            except Exception as shape_err:
+                                FreeCAD.Console.PrintWarning(f"Aviso: Nao foi possivel converter geometria do elemento #{geom.id}: {shape_err}\n")
+                
+                pg.next()
+                step_idx += 1
+                
+                if progress_dialog:
+                    if step_idx >= progress_dialog.maximum():
+                        progress_dialog.setMaximum(step_idx + 1000)
+                    
+                    if step_idx % 50 == 0 or step_idx == total_steps:
+                        progress_dialog.setValue(step_idx)
+                        progress_dialog.setLabelText(
+                            tr("Importando referência leve do IFC...") + f" ({step_idx}/{progress_dialog.maximum()})"
+                        )
+                        QtWidgets.QApplication.processEvents()
+                    if progress_dialog.wasCanceled():
+                        FreeCAD.Console.PrintWarning("Importacao cancelada pelo usuario.\n")
+                        raise ImportCanceledError("Importação cancelada pelo usuário.")
+                
+                if not iterator.next():
+                    break
+    except ImportCanceledError:
+        raise
+    except Exception as e:
+        FreeCAD.Console.PrintError(f"Erro durante processamento de geometria IFC: {e}\n")
+        raise
+    finally:
+        pg.stop()
+
+    total_shapes = sum(len(lst) for lst in category_shapes.values())
+    if total_shapes == 0:
+        if progress_dialog:
+            progress_dialog.close()
+        FreeCAD.Console.PrintWarning("Nenhuma geometria encontrada no arquivo IFC.\n")
+        return []
+
+    try:
+        base_name = os.path.splitext(os.path.basename(file_path))[0]
+        clean_name = "".join(c if c.isalnum() or c == "_" else "_" for c in base_name)
+        
+        # Criar a pasta do grupo
+        group_name = f"Referenca_Leve_Grupo_{clean_name}"
+        group = doc.addObject("App::DocumentObjectGroup", group_name)
+        group.Label = f"Referência IFC - {base_name}"
+        
+        imported_objs = [group]
+        
+        total_cats = sum(1 for lst in category_shapes.values() if lst)
+        cat_idx = 0
+
+        # Agora para cada categoria que tem formas, cria um compound ou subgrupo e adiciona ao grupo
+        for cat_name, shapes_list in category_shapes.items():
+            if not shapes_list:
+                continue
+            cat_idx += 1
+            
+            # Criar o objeto para esta categoria (subgrupo ou Part::Feature)
+            cat_clean_name = "".join(c if c.isalnum() or c == "_" else "_" for c in cat_name)
+            obj_name = f"RefLeve_{clean_name}_{cat_clean_name}"
+            
+            if cat_name in ["Paredes", "Lajes e Tetos"]:
+                if progress_dialog:
+                    progress_dialog.setLabelText(
+                        tr("Unificando {count} formas de '{category}' ({index}/{total})...").format(
+                            count=len(shapes_list),
+                            category=tr(cat_name),
+                            index=cat_idx,
+                            total=total_cats
+                        )
+                    )
+                    QtWidgets.QApplication.processEvents()
+                
+                # Criar Subgrupo
+                cat_obj = doc.addObject("App::DocumentObjectGroup", obj_name)
+                cat_obj.Label = tr(cat_name)
+                group.addObject(cat_obj)
+                imported_objs.append(cat_obj)
+                
+                # Criar os objetos Part::Feature individuais dentro do subgrupo
+                for geom_id, shape, single_label, g_name in shapes_list:
+                    elem_name = f"RefElem_{clean_name}_{geom_id}"
+                    elem_obj = doc.addObject("Part::Feature", elem_name)
+                    if g_name:
+                        elem_obj.Label = f"{single_label} #{geom_id} ({g_name})"
+                    else:
+                        elem_obj.Label = f"{single_label} #{geom_id}"
+                    elem_obj.Shape = shape
+                    
+                    # Configurar view object
+                    configure_view_object(elem_obj)
+                    
+                    # Adicionar ao subgrupo
+                    cat_obj.addObject(elem_obj)
+            else:
+                # Criar Part::Feature (composto único)
+                FreeCAD.Console.PrintMessage(f"Unificando {len(shapes_list)} formas de '{cat_name}'...\n")
+                
+                if progress_dialog:
+                    progress_dialog.setLabelText(
+                        tr("Unificando {count} formas de '{category}' ({index}/{total})...").format(
+                            count=len(shapes_list),
+                            category=tr(cat_name),
+                            index=cat_idx,
+                            total=total_cats
+                        )
+                    )
+                    QtWidgets.QApplication.processEvents()
+                
+                cat_compound = make_compound_batched(shapes_list)
+                
+                cat_obj = doc.addObject("Part::Feature", obj_name)
+                cat_obj.Label = tr(cat_name)
+                cat_obj.Shape = cat_compound
+                
+                # Configurar view object
+                configure_view_object(cat_obj)
+                
+                # Adicionar ao grupo
+                group.addObject(cat_obj)
+                imported_objs.append(cat_obj)
+                
+        if progress_dialog:
+            progress_dialog.setLabelText(tr("Renderizando e calculando malhas 3D no viewport..."))
+            progress_dialog.setMaximum(step_idx + 2)
+            progress_dialog.setValue(step_idx + 1)
+            QtWidgets.QApplication.processEvents()
+
+        doc.recompute()
+        FreeCAD.Console.PrintMessage(f"Importacao concluida com sucesso! Grupo '{group.Label}' adicionado com {len(imported_objs) - 1} categorias.\n")
+        return imported_objs
+    finally:
+        if progress_dialog:
+            progress_dialog.close()
 
 
-def import_reference_file(source, file_path):
+def import_reference_file(source, file_path, config=None):
+    # Garantir que os caminhos do BIM/Arch estejam em sys.path para carregar os importadores (como nativeifc e importIFC)
+    import sys
+    try:
+        import FreeCAD
+        home_path = FreeCAD.getHomePath() if hasattr(FreeCAD, "getHomePath") else None
+        app_data_path = FreeCAD.getUserAppDataDir() if hasattr(FreeCAD, "getUserAppDataDir") else None
+        for base_dir in [home_path, app_data_path]:
+            if not base_dir:
+                continue
+            bim_path = os.path.normpath(os.path.join(base_dir, "Mod", "BIM"))
+            if os.path.exists(bim_path):
+                if bim_path not in sys.path:
+                    sys.path.append(bim_path)
+                bim_importers_path = os.path.normpath(os.path.join(bim_path, "importers"))
+                if os.path.exists(bim_importers_path) and bim_importers_path not in sys.path:
+                    sys.path.append(bim_importers_path)
+    except Exception as e:
+        try:
+            FreeCAD.Console.PrintWarning(f"Erro ao configurar caminhos do BIM em sys.path: {e}\n")
+        except Exception:
+            pass
+
+
+
     if not file_path:
         return []
     if not os.path.exists(file_path):
@@ -1184,22 +1717,151 @@ def import_reference_file(source, file_path):
         return []
 
     if source == "FreeCAD":
-        opened = FreeCAD.openDocument(file_path)
-        FreeCAD.setActiveDocument(opened.Name)
-        return list(opened.Objects)
+        doc = FreeCAD.ActiveDocument
+        
+        # Se não há documento ativo, ou se o doc ativo é o próprio arquivo referenciado, criamos um novo
+        if not doc or (doc.FileName and os.path.normpath(doc.FileName) == os.path.normpath(file_path)):
+            doc = FreeCAD.newDocument("Projeto_Eletrico")
+            FreeCAD.setActiveDocument(doc.Name)
+            
+        if not doc.FileName:
+            if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Eletrica")
+                last_save_dir = param.GetString("LastSaveDir", "")
+                save_path = os.path.join(last_save_dir, "Projeto_Eletrico.FCStd") if last_save_dir else "Projeto_Eletrico.FCStd"
+
+                path, _ = QtWidgets.QFileDialog.getSaveFileName(
+                    None, 
+                    "Salvar Novo Projeto Eletrico", 
+                    save_path, 
+                    "FreeCAD (*.FCStd)"
+                )
+                if path:
+                    param.SetString("LastSaveDir", os.path.dirname(path))
+                    doc.saveAs(path)
+                else:
+                    return []
+            else:
+                FreeCAD.Console.PrintError("Erro: O documento ativo deve ser salvo antes de vincular a arquitetura FreeCAD.\\n")
+                return []
+                
+        base_name = os.path.splitext(os.path.basename(file_path))[0]
+        
+        try:
+            import Arch
+            ref = Arch.makeReference(file_path)
+            ref.Label = f"Ref - {base_name}"
+            
+            _ensure_property(ref, "App::PropertyString", "ReferenceSource", "BIM_Referencia", source)
+            _ensure_property(ref, "App::PropertyString", "OriginalFile", "BIM_Referencia", file_path)
+            _ensure_property(ref, "App::PropertyBool", "LockedReference", "BIM_Referencia", True)
+            
+            try:
+                ref.ViewObject.Visibility = True
+            except Exception:
+                pass
+            
+            return [ref]
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"Falha ao criar Referencia BIM Externa: {e}\\n")
+            return []
 
     doc = _ensure_doc()
     before = set(obj.Name for obj in doc.Objects)
-    try:
-        import ImportGui
-        ImportGui.insert(file_path, doc.Name)
-    except Exception:
+
+    ext = os.path.splitext(file_path)[1].lower()
+    if source == "IFC" or ext == ".ifc":
+        # Resolve o importador dinamicamente a partir do registro do FreeCAD ou fallbacks
+        importer_module_name = None
         try:
-            import importDXF
-            importDXF.insert(file_path, doc.Name)
-        except Exception as e:
-            FreeCAD.Console.PrintError(f"Falha ao importar referencia {file_path}: {e}\n")
+            registered_types = FreeCAD.getImportType("ifc")
+            if registered_types:
+                importer_module_name = registered_types[0]
+        except Exception:
+            pass
+
+        selected_importer = config.get("ifc_importer", "") if config else ""
+
+        if "Referência Leve" in selected_importer:
+            try:
+                imported_objs = import_ifc_as_lightweight_reference(file_path, doc.Name, config=config)
+                return imported_objs
+            except ImportCanceledError:
+                FreeCAD.Console.PrintWarning("Importacao cancelada pelo usuario.\n")
+                return []
+            except Exception as e:
+                FreeCAD.Console.PrintWarning(f"Falha ao importar como Referencia Leve: {e}. Tentando importadores normais...\n")
+                if QtWidgets:
+                    reply = QtWidgets.QMessageBox.question(
+                        None,
+                        tr("Falha no Importador Leve"),
+                        tr("A importação como Referência Leve falhou com o seguinte erro:\n\n") + f"{e}\n\n" +
+                        tr("Deseja tentar os importadores convencionais do FreeCAD? (Aviso: Pode ser muito lento ou travar em arquivos grandes)"),
+                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                        QtWidgets.QMessageBox.No
+                    )
+                    if reply == QtWidgets.QMessageBox.No:
+                        return []
+
+        modules_to_try = []
+        if "Arch IFC" in selected_importer:
+            modules_to_try = ["importIFC", "nativeifc.ifc_import"]
+        elif "Native IFC" in selected_importer:
+            modules_to_try = ["nativeifc.ifc_import", "importIFC"]
+        else:
+            if importer_module_name:
+                modules_to_try.append(importer_module_name)
+            for m in ["nativeifc.ifc_import", "importIFC"]:
+                if m not in modules_to_try:
+                    modules_to_try.append(m)
+
+        imported_ok = False
+        import importlib
+        last_error = ""
+        for mod_name in modules_to_try:
+            try:
+                importer = importlib.import_module(mod_name)
+                if hasattr(importer, "insert"):
+                    FreeCAD.Console.PrintMessage(f"Importando IFC diretamente usando o modulo '{mod_name}'...\n")
+                    importer.insert(file_path, doc.Name)
+                    imported_ok = True
+                    break
+            except Exception as e:
+                FreeCAD.Console.PrintWarning(f"Falha ao tentar importador {mod_name}: {e}\n")
+                last_error = str(e)
+                import traceback
+                traceback.print_exc()
+
+        if not imported_ok:
+            error_msg = f"Nenhum importador IFC compativel pôde ser executado para '{file_path}'."
+            if last_error:
+                error_msg += f"\n\nErro do ultimo importador: {last_error}"
+            FreeCAD.Console.PrintError(error_msg + "\n")
+            if QtWidgets:
+                QtWidgets.QMessageBox.critical(
+                    None,
+                    tr("Erro de Importação IFC"),
+                    tr("Nenhum importador IFC compatível pôde ser executado para o arquivo:") + f"\n{file_path}" +
+                    (f"\n\n{tr('Erro detalhado:')}\n{last_error}" if last_error else "")
+                )
             return []
+    else:
+        try:
+            import ImportGui
+            ImportGui.insert(file_path, doc.Name)
+        except Exception:
+            try:
+                import importDXF
+                importDXF.insert(file_path, doc.Name)
+            except Exception as e:
+                FreeCAD.Console.PrintError(f"Falha ao importar referencia {file_path}: {e}\n")
+                if QtWidgets:
+                    QtWidgets.QMessageBox.critical(
+                        None,
+                        tr("Erro de Importação CAD"),
+                        tr("Falha ao importar referência CAD:") + f"\n{file_path}\n\n{tr('Erro:')} {e}"
+                    )
+                return []
 
     return [obj for obj in doc.Objects if obj.Name not in before]
 
@@ -1224,16 +1886,19 @@ def mark_references(objects, source, config, groups, levels):
         _ensure_property(obj, "App::PropertyFloat", "DrawingScaleFactor", "BIM_Referencia", config.get("cad_scale_factor", 1.0))
         locked = config.get("lock_reference", True)
         _ensure_property(obj, "App::PropertyBool", "LockedReference", "BIM_Referencia", locked)
-        if locked:
-            try:
-                obj.ViewObject.Selectable = False
-            except Exception:
-                pass
+        try:
+            if hasattr(obj, "ViewObject") and obj.ViewObject is not None:
+                obj.ViewObject.Selectable = not locked
+        except Exception:
+            pass
         try:
             groups["Referencias"].addObject(obj)
         except Exception:
             pass
-        _add_child(target, obj)
+
+        if obj.isDerivedFrom("App::DocumentObjectGroup"):
+            _propagate_properties_to_group_children(obj)
+
         count += 1
 
     return count
@@ -1244,10 +1909,11 @@ def run_preparation(source):
     if config is None:
         return None, 0, 0
 
-    imported = import_reference_file(source, config.get("file_path", ""))
+    imported = import_reference_file(source, config.get("file_path", ""), config)
     selected = list(FreeCADGui.Selection.getSelection())
+    reference_objects = imported or selected
 
-    doc, groups, levels = prepare_base(source, config)
+    doc, groups, levels = prepare_base(source, config, reference_objects=reference_objects)
     if not doc:
         return None, 0, 0
 
@@ -1258,6 +1924,55 @@ def run_preparation(source):
     count = mark_references(reference_objects, source, config, groups, levels)
     doc.recompute()
     return doc, len(levels), count
+
+
+class ToggleReferenceLock:
+    def GetResources(self):
+        return {
+            "Pixmap": os.path.join(ICON_DIR, "BIM_IfcExplorer.svg"),
+            "MenuText": tr("Destravar/Travar Referências"),
+            "ToolTip": tr("Alterna o travamento (seleção no 3D) de todas as referências CAD/IFC importadas"),
+        }
+
+    def Activated(self):
+        import FreeCAD
+        import FreeCADGui
+
+        doc = FreeCAD.ActiveDocument
+        if not doc:
+            return
+
+        ref_objects = []
+        for obj in doc.Objects:
+            if hasattr(obj, "LockedReference"):
+                ref_objects.append(obj)
+
+        if not ref_objects:
+            if hasattr(FreeCADGui, "getMainWindow") and FreeCADGui.getMainWindow() is not None:
+                FreeCADGui.getMainWindow().statusBar().showMessage(tr("Nenhuma referência encontrada para travar/destravar."))
+            return
+
+        any_unlocked = any(not getattr(obj, "LockedReference", False) for obj in ref_objects)
+        new_locked_state = any_unlocked
+
+        parent_refs = []
+        for obj in ref_objects:
+            is_child = False
+            for other in ref_objects:
+                if other != obj and hasattr(other, "OutList") and obj in other.OutList:
+                    is_child = True
+                    break
+            if not is_child:
+                parent_refs.append(obj)
+
+        for obj in parent_refs:
+            obj.LockedReference = new_locked_state
+
+        doc.recompute()
+
+        msg = tr("Todas as referências foram travadas.") if new_locked_state else tr("Todas as referências foram destravadas.")
+        if hasattr(FreeCADGui, "getMainWindow") and FreeCADGui.getMainWindow() is not None:
+            FreeCADGui.getMainWindow().statusBar().showMessage(msg)
 
 
 class PrepareFromCAD:
@@ -1730,3 +2445,391 @@ class CreateSpaceOrSector:
         obj = _ensure_group(doc, str(name), parent)
         _ensure_property(obj, "App::PropertyString", "BIMRole", "BIM_Espaco", "IfcSpace")
         doc.recompute()
+
+
+def get_geom_id_from_name(name):
+    # Name format: RefElem_{clean_name}_{geom_id}
+    try:
+        parts = name.split("_")
+        if len(parts) >= 3 and parts[0] == "RefElem":
+            return int(parts[-1])
+    except Exception:
+        pass
+    return None
+
+
+def _recursive_delete_object(doc, obj):
+    if hasattr(obj, "OutList") and obj.OutList:
+        for child in list(obj.OutList):
+            _recursive_delete_object(doc, child)
+    try:
+        doc.removeObject(obj.Name)
+    except Exception:
+        pass
+
+
+def _recreate_child(doc, temp_child, ref_group, clean_name, source, original_file):
+    """
+    Helper to recreate a child (either group or Part::Feature) from temp document to main document.
+    """
+    label = temp_child.Label
+    clean_label = "".join(c if c.isalnum() or c == "_" else "_" for c in label)
+    
+    if temp_child.isDerivedFrom("App::DocumentObjectGroup"):
+        obj_name = f"RefLeve_{clean_name}_{clean_label}"
+        main_child = doc.addObject("App::DocumentObjectGroup", obj_name)
+        main_child.Label = label
+        
+        # Recreate child elements
+        for t_elem in getattr(temp_child, "OutList", []):
+            gid = get_geom_id_from_name(t_elem.Name)
+            if gid is not None:
+                elem_name = f"RefElem_{clean_name}_{gid}"
+                m_elem = doc.addObject("Part::Feature", elem_name)
+                m_elem.Label = t_elem.Label
+                m_elem.Shape = t_elem.Shape
+                
+                # Copy properties
+                _ensure_property(m_elem, "App::PropertyString", "ReferenceSource", "BIM_Referencia", source)
+                _ensure_property(m_elem, "App::PropertyString", "ReferenceLevel", "BIM_Referencia", getattr(ref_group, "ReferenceLevel", "Projeto"))
+                _ensure_property(m_elem, "App::PropertyLength", "LevelElevation", "BIM_Referencia", getattr(ref_group, "LevelElevation", 0.0))
+                _ensure_property(m_elem, "App::PropertyString", "ReferenceTarget", "BIM_Referencia", getattr(ref_group, "ReferenceTarget", "Projeto"))
+                _ensure_property(m_elem, "App::PropertyString", "OriginalFile", "BIM_Referencia", original_file)
+                _ensure_property(m_elem, "App::PropertyFloat", "DrawingScaleFactor", "BIM_Referencia", getattr(ref_group, "DrawingScaleFactor", 1.0))
+                _ensure_property(m_elem, "App::PropertyBool", "LockedReference", "BIM_Referencia", getattr(ref_group, "LockedReference", True))
+                
+                configure_view_object(m_elem)
+                main_child.addObject(m_elem)
+    else:
+        obj_name = f"RefLeve_{clean_name}_{clean_label}"
+        main_child = doc.addObject("Part::Feature", obj_name)
+        main_child.Label = label
+        main_child.Shape = temp_child.Shape
+        configure_view_object(main_child)
+
+    # Copy properties to main_child
+    _ensure_property(main_child, "App::PropertyString", "ReferenceSource", "BIM_Referencia", source)
+    _ensure_property(main_child, "App::PropertyString", "ReferenceLevel", "BIM_Referencia", getattr(ref_group, "ReferenceLevel", "Projeto"))
+    _ensure_property(main_child, "App::PropertyLength", "LevelElevation", "BIM_Referencia", getattr(ref_group, "LevelElevation", 0.0))
+    _ensure_property(main_child, "App::PropertyString", "ReferenceTarget", "BIM_Referencia", getattr(ref_group, "ReferenceTarget", "Projeto"))
+    _ensure_property(main_child, "App::PropertyString", "OriginalFile", "BIM_Referencia", original_file)
+    _ensure_property(main_child, "App::PropertyFloat", "DrawingScaleFactor", "BIM_Referencia", getattr(ref_group, "DrawingScaleFactor", 1.0))
+    _ensure_property(main_child, "App::PropertyBool", "LockedReference", "BIM_Referencia", getattr(ref_group, "LockedReference", True))
+    
+    return main_child
+
+
+class ReloadReference:
+    def GetResources(self):
+        return {
+            "Pixmap": os.path.join(ICON_DIR, "SyncTitleBlock.svg"),
+            "MenuText": tr("Atualizar Vínculo / Recarregar Referência"),
+            "ToolTip": tr("Recarrega as geometrias da referência selecionada a partir de seu arquivo de origem"),
+        }
+
+    def Activated(self):
+        doc = FreeCAD.ActiveDocument
+        if not doc:
+            return
+
+        # 1. Obter a seleção
+        sel = FreeCADGui.Selection.getSelection()
+        if not sel:
+            if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                QtWidgets.QMessageBox.warning(
+                    None,
+                    tr("Erro"),
+                    tr("Selecione um objeto de referência ou seu grupo para atualizar.")
+                )
+            else:
+                FreeCAD.Console.PrintWarning(tr("Selecione um objeto de referência ou seu grupo para atualizar.") + "\n")
+            return
+
+        selected_obj = sel[0]
+
+        # 2. Identificar o grupo ou objeto de referência principal que contém OriginalFile
+        ref_group = None
+        if hasattr(selected_obj, "OriginalFile") and selected_obj.OriginalFile:
+            if selected_obj.isDerivedFrom("App::DocumentObjectGroup"):
+                ref_group = selected_obj
+            else:
+                # Se for um objeto com a propriedade mas não for grupo, tenta achar o pai no tree view
+                for parent in getattr(selected_obj, "InList", []):
+                    if parent.isDerivedFrom("App::DocumentObjectGroup") and hasattr(parent, "OriginalFile") and parent.OriginalFile:
+                        ref_group = parent
+                        break
+                if not ref_group:
+                    ref_group = selected_obj
+        else:
+            # Tenta buscar subindo a hierarquia
+            for parent in getattr(selected_obj, "InList", []):
+                if parent.isDerivedFrom("App::DocumentObjectGroup") and hasattr(parent, "OriginalFile") and parent.OriginalFile:
+                    ref_group = parent
+                    break
+
+        if not ref_group:
+            if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                QtWidgets.QMessageBox.warning(
+                    None,
+                    tr("Erro"),
+                    tr("Selecione um objeto de referência ou seu grupo para atualizar.")
+                )
+            else:
+                FreeCAD.Console.PrintWarning(tr("Selecione um objeto de referência ou seu grupo para atualizar.") + "\n")
+            return
+
+        original_file = getattr(ref_group, "OriginalFile", "")
+        source = getattr(ref_group, "ReferenceSource", "")
+
+        if not original_file:
+            if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                QtWidgets.QMessageBox.warning(
+                    None,
+                    tr("Erro"),
+                    tr("Selecione um objeto de referência ou seu grupo para atualizar.")
+                )
+            else:
+                FreeCAD.Console.PrintWarning(tr("Selecione um objeto de referência ou seu grupo para atualizar.") + "\n")
+            return
+
+        # 3. Verificar se o arquivo físico existe. Caso não exista, solicitar localização.
+        if not os.path.exists(original_file):
+            if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                reply = QtWidgets.QMessageBox.question(
+                    None,
+                    tr("Erro"),
+                    tr("Arquivo de origem não encontrado. Deseja localizá-lo?"),
+                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+                )
+                if reply == QtWidgets.QMessageBox.Yes:
+                    # Filtros de arquivos
+                    filters = FILE_FILTERS.get(source, "Todos (*.*)")
+                    new_file, _ = QtWidgets.QFileDialog.getOpenFileName(
+                        None,
+                        tr("Escolher arquivo de referencia"),
+                        "",
+                        filters
+                    )
+                    if new_file and os.path.exists(new_file):
+                        original_file = new_file
+                    else:
+                        return
+                else:
+                    return
+            else:
+                FreeCAD.Console.PrintError("Arquivo de referencia nao encontrado e interface grafica nao disponivel.\n")
+                return
+
+        # Atualizar OriginalFile no ref_group
+        _ensure_property(ref_group, "App::PropertyString", "OriginalFile", "BIM_Referencia", original_file)
+
+        # Se for uma referência nativa do FreeCAD, não precisamos de documento temporário nem recriar estrutura
+        if source == "FreeCAD":
+            if hasattr(ref_group, "File"):
+                ref_group.File = original_file  # Força o recarregamento nativo
+                doc.recompute()
+                if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                    FreeCADGui.getMainWindow().statusBar().showMessage(tr("Vínculo atualizado com sucesso!"), 5000)
+                else:
+                    FreeCAD.Console.PrintLog(tr("Vínculo atualizado com sucesso!") + "\n")
+            else:
+                FreeCAD.Console.PrintError(tr("Objeto de referência FreeCAD inválido.") + "\n")
+            return
+
+        # 4. Criar documento temporário para importar a nova referência
+        temp_doc = FreeCAD.newDocument("Temp_ReloadReference")
+        try:
+            # Mudar temporariamente o active document para que as importações ocorram nele
+            main_doc_name = doc.Name
+            FreeCAD.setActiveDocument(temp_doc.Name)
+
+            # Reconstruir config com base no projeto principal
+            project = _find_group(doc, PROJECT_GROUP)
+            config = {}
+            if project:
+                config["base_mode"] = getattr(project, "SpatialReferenceMode", "Usar origem do arquivo")
+                config["base_point"] = (
+                    getattr(project, "BasePointX", 0.0),
+                    getattr(project, "BasePointY", 0.0),
+                    getattr(project, "BasePointZ", 0.0)
+                )
+                config["north_angle"] = getattr(project, "ProjectNorthAngle", 0.0)
+                config["use_shared_coordinates"] = getattr(project, "UseSharedCoordinates", True)
+                config["detect_surfaces"] = getattr(project, "DetectSurfaces", True)
+                config["use_terrain_surface"] = getattr(project, "UseTerrainSurface", False)
+                config["surface_offset"] = getattr(project, "SurfaceOffset", 5.0)
+            
+            # Se for IFC, configurar também o importador de referência leve e selecionar categorias ativas
+            config["ifc_importer"] = "Referência Leve (rápido, sem objetos individuais)"
+            config["file_path"] = original_file
+            if source == "IFC" and ref_group and ref_group.isDerivedFrom("App::DocumentObjectGroup"):
+                active_categories = []
+                categories_map = {
+                    tr("Paredes"): "Paredes",
+                    tr("Lajes e Tetos"): "Lajes e Tetos",
+                    tr("Portas e Janelas"): "Portas e Janelas",
+                    tr("Estrutura"): "Estrutura",
+                    tr("Outros"): "Outros"
+                }
+                for child in getattr(ref_group, "OutList", []):
+                    if child.Label in categories_map:
+                        active_categories.append(categories_map[child.Label])
+                if active_categories:
+                    config["ifc_categories"] = active_categories
+
+            # Executar a importação no documento temporário
+            imported_temp = import_reference_file(source, original_file, config)
+
+            # Voltar ao documento principal
+            FreeCAD.setActiveDocument(main_doc_name)
+
+            if not imported_temp:
+                raise RuntimeError("Falha ao importar o arquivo de referência.")
+
+            # Se for IFC e tivermos um ref_group estruturado:
+            if source == "IFC" and ref_group.isDerivedFrom("App::DocumentObjectGroup"):
+                # Obter o grupo de referência no documento temporário (é o primeiro elemento retornado)
+                temp_group = imported_temp[0]
+                temp_children = {child.Label: child for child in getattr(temp_group, "OutList", [])}
+
+                # Atualizar os objetos existentes no grupo principal
+                existing_children = {child.Label: child for child in getattr(ref_group, "OutList", [])}
+
+                # Helper to extract clean name from original_file
+                base_name = os.path.splitext(os.path.basename(original_file))[0]
+                clean_name = "".join(c if c.isalnum() or c == "_" else "_" for c in base_name)
+
+                for label, temp_child in temp_children.items():
+                    if label in existing_children:
+                        main_child = existing_children[label]
+                        # Caso 1: Ambos são grupos (subgrupos de Paredes ou Lajes/Tetos)
+                        if main_child.isDerivedFrom("App::DocumentObjectGroup") and temp_child.isDerivedFrom("App::DocumentObjectGroup"):
+                            # Mapear geom_id dos filhos
+                            existing_elems = {}
+                            for elem in getattr(main_child, "OutList", []):
+                                gid = get_geom_id_from_name(elem.Name)
+                                if gid is not None:
+                                    existing_elems[gid] = elem
+                            
+                            temp_elems = {}
+                            for elem in getattr(temp_child, "OutList", []):
+                                gid = get_geom_id_from_name(elem.Name)
+                                if gid is not None:
+                                    temp_elems[gid] = elem
+
+                            # Adicionar ou atualizar elementos
+                            for gid, t_elem in temp_elems.items():
+                                if gid in existing_elems:
+                                    m_elem = existing_elems[gid]
+                                    m_elem.Shape = t_elem.Shape
+                                    m_elem.Label = t_elem.Label
+                                    _ensure_property(m_elem, "App::PropertyString", "OriginalFile", "BIM_Referencia", original_file)
+                                else:
+                                    # Novo elemento individual
+                                    elem_name = f"RefElem_{clean_name}_{gid}"
+                                    m_elem = doc.addObject("Part::Feature", elem_name)
+                                    m_elem.Label = t_elem.Label
+                                    m_elem.Shape = t_elem.Shape
+                                    
+                                    # Copiar propriedades de referência do ref_group
+                                    _ensure_property(m_elem, "App::PropertyString", "ReferenceSource", "BIM_Referencia", source)
+                                    _ensure_property(m_elem, "App::PropertyString", "ReferenceLevel", "BIM_Referencia", getattr(ref_group, "ReferenceLevel", "Projeto"))
+                                    _ensure_property(m_elem, "App::PropertyLength", "LevelElevation", "BIM_Referencia", getattr(ref_group, "LevelElevation", 0.0))
+                                    _ensure_property(m_elem, "App::PropertyString", "ReferenceTarget", "BIM_Referencia", getattr(ref_group, "ReferenceTarget", "Projeto"))
+                                    _ensure_property(m_elem, "App::PropertyString", "OriginalFile", "BIM_Referencia", original_file)
+                                    _ensure_property(m_elem, "App::PropertyFloat", "DrawingScaleFactor", "BIM_Referencia", getattr(ref_group, "DrawingScaleFactor", 1.0))
+                                    _ensure_property(m_elem, "App::PropertyBool", "LockedReference", "BIM_Referencia", getattr(ref_group, "LockedReference", True))
+                                    
+                                    configure_view_object(m_elem)
+                                    main_child.addObject(m_elem)
+
+                            # Remover elementos que não existem mais
+                            for gid, m_elem in existing_elems.items():
+                                if gid not in temp_elems:
+                                    try:
+                                        doc.removeObject(m_elem.Name)
+                                    except Exception:
+                                        pass
+                                        
+                        # Caso 2: Ambos são Part::Features (compostos normais)
+                        elif not main_child.isDerivedFrom("App::DocumentObjectGroup") and not temp_child.isDerivedFrom("App::DocumentObjectGroup"):
+                            main_child.Shape = temp_child.Shape
+                            _ensure_property(main_child, "App::PropertyString", "OriginalFile", "BIM_Referencia", original_file)
+                        
+                        # Caso 3: Incompatibilidade de tipos (ex: antes era composto, agora é grupo)
+                        else:
+                            # Remove o antigo e recria
+                            _recursive_delete_object(doc, main_child)
+                            # Criar novo
+                            new_child = _recreate_child(doc, temp_child, ref_group, clean_name, source, original_file)
+                            ref_group.addObject(new_child)
+                    else:
+                        # Objeto de categoria novo
+                        new_child = _recreate_child(doc, temp_child, ref_group, clean_name, source, original_file)
+                        ref_group.addObject(new_child)
+
+                # Limpar categorias nas referências principais que não existem mais na nova importação
+                for label, main_child in existing_children.items():
+                    if label not in temp_children:
+                        _recursive_delete_object(doc, main_child)
+
+            else:
+                # Caso genérico (CAD ou outros sem estrutura de grupo categoria)
+                # Encontrar todos os objetos no documento principal com o mesmo OriginalFile
+                if ref_group.isDerivedFrom("App::DocumentObjectGroup"):
+                    main_objs = [obj for obj in ref_group.OutList if getattr(obj, "OriginalFile", "") == original_file]
+                else:
+                    main_objs = [obj for obj in doc.Objects if getattr(obj, "OriginalFile", "") == original_file]
+
+                # Deletar os objetos antigos do doc principal
+                for obj in main_objs:
+                    try:
+                        doc.removeObject(obj.Name)
+                    except Exception:
+                        pass
+
+                # Mover os novos objetos importados do doc temporário para o doc principal
+                new_main_objs = []
+                for temp_obj in imported_temp:
+                    if temp_obj.Name == "Temp_ReloadReference" or temp_obj.isDerivedFrom("App::DocumentObjectGroup"):
+                        continue
+                    copied_obj = doc.copyObject(temp_obj, True)
+                    new_main_objs.append(copied_obj)
+                    if ref_group.isDerivedFrom("App::DocumentObjectGroup"):
+                        ref_group.addObject(copied_obj)
+
+                # Aplicar transformações espaciais e propriedades nos novos objetos
+                if source == "CAD" and config.get("apply_cad_scale", False):
+                    apply_cad_scale(new_main_objs, config.get("cad_scale_factor", 1.0))
+                
+                apply_spatial_reference(new_main_objs, config)
+
+                # Marcar e organizar os novos objetos
+                project = _find_group(doc, PROJECT_GROUP)
+                groups = {name: _ensure_group(doc, name, project) for name in PROJECT_GROUPS}
+                levels = discover_levels(doc)
+                mark_references(new_main_objs, source, config, groups, levels)
+
+            doc.recompute()
+            _propagate_properties_to_group_children(ref_group)
+            doc.recompute()
+
+            if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                FreeCADGui.getMainWindow().statusBar().showMessage(tr("Vínculo atualizado com sucesso!"), 5000)
+            else:
+                FreeCAD.Console.PrintLog(tr("Vínculo atualizado com sucesso!") + "\n")
+
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"Falha ao atualizar o vínculo: {e}\n")
+            if QtWidgets and getattr(FreeCAD, "GuiUp", False):
+                QtWidgets.QMessageBox.critical(
+                    None,
+                    tr("Erro"),
+                    tr("Falha ao atualizar o vínculo: ") + str(e)
+                )
+        finally:
+            # Fechar e limpar o documento temporário
+            FreeCAD.closeDocument(temp_doc.Name)
+            # Garantir que o documento principal volte a ser o ativo
+            FreeCAD.setActiveDocument(doc.Name)
+

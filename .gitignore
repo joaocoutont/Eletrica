@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+pytest-cache-files-*/
 
 # FreeCAD
 *.FCStd.lock
@@ -13,7 +15,22 @@ Library/3D/Tomadas_Backup/
 .vscode/
 .idea/
 
-# Local logs/dumps
+# Local logs/dumps and scratch
 git_diff.txt
 git_log.txt
-
+scratch/
+test_out*.txt
+cmds.txt
+diag_*.py
+old_*.py
+check.py
+check_backup.py
+inspect_*.py
+test.py
+test_*.py
+!tests/test_*.py
+export_meshes.py
+fix_library.py
+bake_library.py
+force_bake.py
+familias_test.sqlite

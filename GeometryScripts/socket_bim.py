@@ -21,7 +21,7 @@ def make_socket_plan_symbol(height_type, modules="1 Módulo", amperage="10A"):
     try:
         s = 150.0
         h_tri = s * math.sqrt(3) / 2
-        y_offset_base = 40.0
+        y_offset_base = 50.0
         count = 3 if str(modules).startswith("3") else 2 if str(modules).startswith("2") else 1
         spacing_y = h_tri + 15.0 # Espaçamento vertical entre os triângulos
         
@@ -61,8 +61,8 @@ def make_socket_plan_symbol(height_type, modules="1 Módulo", amperage="10A"):
                 prev_vertex = App.Vector(cx, y_offset_base + ((idx - 1) * spacing_y) + h_tri, 0)
                 parts.append(Part.makeLine(prev_vertex, p_mid))
 
-        wall_half = s / 2
-        parts.append(Part.makeLine(App.Vector(-wall_half, 0, 0), App.Vector(wall_half, 0, 0)))
+        # wall_half = s / 2
+        # parts.append(Part.makeLine(App.Vector(-wall_half, 0, 0), App.Vector(wall_half, 0, 0)))
         return Part.makeCompound(parts)
     except Exception:
         return None
@@ -76,6 +76,46 @@ def _resolve_family_path(fname):
     if os.sep in source:
         return os.path.join(lib_3d, source)
     return os.path.join(lib_3d, "Tomadas", source)
+
+def _existing_socket_source(fname, modules="", amperage=""):
+    source = str(fname or "").replace("\\", "/").strip("/")
+    if os.path.exists(_resolve_family_path(source)):
+        return source
+
+    is_3 = "3" in str(modules)
+    is_2 = "2" in str(modules)
+    is_20 = "20A" in str(amperage)
+    module_count = 3 if is_3 else 2 if is_2 else 1
+
+    candidates = [
+        f"Tomadas/Cx_4x2_T{module_count}.FCStd",
+        f"Cx_4x2_T{module_count}.FCStd",
+    ]
+    if module_count == 3:
+        candidates.extend([
+            "Tomadas/Tomada_Tripla_20A.FCStd" if is_20 else "Tomadas/Tomada_Tripla_10A.FCStd",
+            "Tomada_Tripla_20A.FCStd" if is_20 else "Tomada_Tripla_10A.FCStd",
+        ])
+    elif module_count == 2:
+        candidates.extend([
+            "Tomadas/Tomada_Dupla_20A.FCStd" if is_20 else "Tomadas/Tomada_Dupla_10A_10A.FCStd",
+            "Tomada_Dupla_20A.FCStd" if is_20 else "Tomada_Dupla_10A_10A.FCStd",
+        ])
+    else:
+        candidates.extend([
+            "Tomadas/Tomada_Simples_20A.FCStd" if is_20 else "Tomadas/Tomada_Simples_10A.FCStd",
+            "Tomada_Simples_20A.FCStd" if is_20 else "Tomada_Simples_10A.FCStd",
+        ])
+
+    for candidate in candidates:
+        if os.path.exists(_resolve_family_path(candidate)):
+            if source and source != candidate:
+                App.Console.PrintWarning(
+                    f"[Eletrica BIM] Familia 3D '{source}' nao encontrada. "
+                    f"Usando '{candidate}' como alternativa.\n"
+                )
+            return candidate
+    return source
 
 def load_socket_family_shape(fname):
     full_path_fcstd = _resolve_family_path(fname)
@@ -117,6 +157,81 @@ def load_socket_family_shape(fname):
                 except Exception:
                     pass
 
+def load_socket_family_metadata(fname):
+    full_path_fcstd = _resolve_family_path(fname)
+    if not os.path.exists(full_path_fcstd):
+        return {}
+    previous_doc_name = None
+    try:
+        if App.ActiveDocument:
+            previous_doc_name = App.ActiveDocument.Name
+    except Exception:
+        previous_doc_name = None
+
+    tmp_doc = App.openDocument(full_path_fcstd, True, True)
+    try:
+        source = str(fname or "").replace("\\", "/").strip("/")
+        base = os.path.splitext(os.path.basename(source))[0]
+        meta = {
+            "id": base.lower().replace(" ", "_"),
+            "name": base.replace("_", " "),
+            "category": "Tomada",
+            "discipline": "Eletrica",
+            "ifc_class": "IfcFlowTerminal",
+            "source_3d": source,
+        }
+        candidates = list(getattr(tmp_doc, "Objects", []) or [])
+        candidates.sort(key=lambda obj: 0 if hasattr(obj, "Shape") else 1)
+        prop_map = {
+            "FamilyName": "name",
+            "FamilyCategory": "category",
+            "IFC_Class": "ifc_class",
+            "Modules": "modules",
+            "ModuleCount": "modules",
+            "Amperage": "amperage",
+            "Voltage": "voltage",
+            "Power": "power",
+            "ApparentPowerVA": "apparent_power_va",
+            "ActivePowerW": "active_power_w",
+            "PowerFactor": "power_factor",
+            "DemandFactor": "demand_factor",
+            "Phase": "phase",
+            "LoadClassification": "load_classification",
+            "SocketApplication": "socket_application",
+            "IP_Rating": "ip_rating",
+            "ElectricalStandard": "electrical_standard",
+            "HeightType": "height_type",
+            "MountingHeight": "mounting_height",
+            "Manufacturer": "manufacturer",
+            "Model": "model",
+            "CatalogCode": "catalog_code",
+            "FamilyDescription": "description",
+        }
+        for obj in candidates:
+            for prop, key in prop_map.items():
+                if not hasattr(obj, prop):
+                    continue
+                try:
+                    value = getattr(obj, prop)
+                    if hasattr(value, "Value"):
+                        value = value.Value
+                    if key == "modules" and isinstance(value, int):
+                        value = f"{value} Modulos" if value > 1 else "1 Modulo"
+                    if value not in [None, ""]:
+                        meta[key] = value
+                except Exception:
+                    pass
+        return meta
+    finally:
+        try:
+            App.closeDocument(tmp_doc.Name)
+        finally:
+            if previous_doc_name:
+                try:
+                    App.setActiveDocument(previous_doc_name)
+                except Exception:
+                    pass
+
 def normalize_socket_shape(shape):
     if not shape:
         return None
@@ -126,18 +241,10 @@ def normalize_socket_shape(shape):
     except Exception:
         pass
     
-    try:
-        bbox = shape.BoundBox
-        center = bbox.Center
-        # Centraliza exatamente na origem para tirar do "longe"
-        shape.translate(App.Vector(-center.x, -center.y, -center.z))
-        
-        # Gira 180 para alinhar com a frente do 2D
-        shape.rotate(App.Vector(0,0,0), App.Vector(0,0,1), _SOCKET_3D_ARROW_ALIGNMENT_DEG)
-    except Exception as e:
-        App.Console.PrintError(f"Erro em normalize_socket_shape: {e}\n")
-        
+    # Os arquivos 3D (.FCStd) já foram corrigidos de fábrica para estarem 
+    # centralizados na origem e rotacionados corretamente.
     return shape
+
 
 class ProfessionalBIMSocket:
     """Motor Geométrico para Tomadas (Versão Final Estabilizada)"""
@@ -227,31 +334,46 @@ class ProfessionalBIMSocket:
                 fname = "Tomada_Dupla_20A.FCStd" if is_20 else "Tomada_Dupla_10A_10A.FCStd"
             else:
                 fname = "Tomada_Simples_20A.FCStd" if is_20 else "Tomada_Simples_10A.FCStd"
+            fname = _existing_socket_source(fname, fp.Modules, fp.Amperage)
             
             final_shape = None
-            
+
+            # Verifica mtime do arquivo físico no disco para invalidação do cache
+            full_path_fcstd = _resolve_family_path(fname)
+            current_mtime = 0.0
+            if os.path.exists(full_path_fcstd):
+                try:
+                    current_mtime = os.path.getmtime(full_path_fcstd)
+                except Exception:
+                    pass
+
             # Verifica Cache (Usa serialização BREP String para evitar problemas de perda de documento e maximizar performance)
             cache_key = f"{fname}|{_SHAPE_CACHE_ALIGNMENT}"
 
             if cache_key in _SHAPE_CACHE:
-                final_shape = Part.Shape()
-                final_shape.importBrepFromString(_SHAPE_CACHE[cache_key])
-                # Valida que o cache esta realmente centrado na origem
-                # Se nao estiver (cache antigo corrompido), descarta e recarrega
-                try:
-                    center = final_shape.BoundBox.Center
-                    if abs(center.x) > 1.0 or abs(center.y) > 1.0:
-                        App.Console.PrintWarning(f"[BIM] Cache deslocado ({center.x:.1f}, {center.y:.1f}) - recalculando...\n")
-                        del _SHAPE_CACHE[cache_key]
-                        final_shape = None
-                except Exception:
-                    pass
+                cached_brep, cached_mtime = _SHAPE_CACHE[cache_key]
+                if abs(cached_mtime - current_mtime) < 0.001:
+                    final_shape = Part.Shape()
+                    final_shape.importBrepFromString(cached_brep)
+                    # Valida que o cache esta realmente centrado na origem
+                    # Se nao estiver (cache antigo corrompido), descarta e recarrega
+                    try:
+                        center = final_shape.BoundBox.Center
+                        if abs(center.x) > 1.0 or abs(center.y) > 1.0:
+                            App.Console.PrintWarning(f"[BIM] Cache deslocado ({center.x:.1f}, {center.y:.1f}) - recalculando...\n")
+                            del _SHAPE_CACHE[cache_key]
+                            final_shape = None
+                    except Exception:
+                        pass
+                else:
+                    App.Console.PrintMessage(f"[BIM] Arquivo '{fname}' modificado no disco. Atualizando cache...\n")
+                    del _SHAPE_CACHE[cache_key]
             
             if not final_shape:
                 best_s = normalize_socket_shape(load_socket_family_shape(fname))
                 if best_s:
                     brep_data = best_s.exportBrepToString()
-                    _SHAPE_CACHE[cache_key] = brep_data
+                    _SHAPE_CACHE[cache_key] = (brep_data, current_mtime)
                     final_shape = Part.Shape()
                     final_shape.importBrepFromString(brep_data)
                 # 1. REMOVIDO: O suporte a .brep foi removido pois perdia a matriz de Placement 
@@ -259,7 +381,6 @@ class ProfessionalBIMSocket:
                 
                 # 2. SE NÃO ENCONTROU O .brep, TENTA A VERSÃO CLÁSSICA .FCStd
                 if not final_shape:
-                    full_path_fcstd = _resolve_family_path(fname)
                     if os.path.exists(full_path_fcstd):
                         tmp_doc = App.openDocument(full_path_fcstd, True, True)
                         try:
@@ -272,7 +393,7 @@ class ProfessionalBIMSocket:
                                         temp_s = o.Shape.copy()
                                         if hasattr(o, "Placement") and o.Placement:
                                             temp_s.transformShape(o.Placement.toMatrix())
-                                elif hasattr(o, "Tip") and o.Tip and not o.Tip.Shape.isNull():
+                                elif hasattr(o, "Tip") and o.Tip and o.Tip.Shape and not o.Tip.Shape.isNull():
                                     temp_s = o.Tip.Shape.copy()
                                     if hasattr(o, "Placement") and o.Placement:
                                         temp_s.transformShape(o.Placement.toMatrix())
@@ -284,15 +405,19 @@ class ProfessionalBIMSocket:
                                 best_s = normalize_socket_shape(best_s)
                                 if best_s:
                                     brep_data = best_s.exportBrepToString()
-                                    _SHAPE_CACHE[cache_key] = brep_data
+                                    _SHAPE_CACHE[cache_key] = (brep_data, current_mtime)
                                     final_shape = Part.Shape()
                                     final_shape.importBrepFromString(brep_data)
                         finally:
                             App.closeDocument(tmp_doc.Name)
                     else:
-                        import FreeCADGui as Gui
                         App.Console.PrintWarning(f"[Eletrica BIM] Arquivo 3D nao localizado: '{fname}' em '{_resolve_family_path('')}'\n")
-                        Gui.statusMessage(f"AVISO: Arquivo 3D nao localizado: {fname}")
+                        try:
+                            import FreeCADGui as Gui
+                            if hasattr(Gui, "getMainWindow") and Gui.getMainWindow():
+                                Gui.getMainWindow().statusBar().showMessage(f"AVISO: Arquivo 3D nao localizado: {fname}", 5000)
+                        except Exception:
+                            pass
 
             # FALLBACK: cria bloco 4x2 no mesmo ponto funcional das familias:
             # X centralizado, Y ancorado na parede/cursor com pequeno encaixe, Z centralizado.

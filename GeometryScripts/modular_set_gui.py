@@ -42,6 +42,39 @@ MODULAR_COMPOSITIONS = {
     }
 }
 
+def _infer_modular_composition_from_file(fname):
+    base = os.path.splitext(os.path.basename(fname))[0]
+    text = base.lower()
+    import re
+    match = re.search(r"t(\d+)\s*[-_]\s*s(\d+)", text)
+    if not match:
+        return None
+    socket_count = int(match.group(1))
+    switch_count = int(match.group(2))
+    modules = (["Tomada 10A"] * socket_count) + (["Interruptor Simples"] * switch_count)
+    composition = f"T{socket_count}-S{switch_count}"
+    return {
+        "modules": modules,
+        "3d_file": f"Conjuntos_Modulares/{fname}",
+        "label": composition,
+        "composition": composition,
+        "socket_count": socket_count,
+        "switch_count": switch_count,
+    }
+
+def _available_modular_compositions():
+    base_path = os.path.dirname(os.path.dirname(__file__))
+    lib_path = os.path.join(base_path, "Library", "3D", "Conjuntos_Modulares")
+    result = {}
+    if os.path.isdir(lib_path):
+        for fname in sorted(os.listdir(lib_path)):
+            if not fname.lower().endswith(".fcstd"):
+                continue
+            data = _infer_modular_composition_from_file(fname)
+            if data:
+                result[f"Conjunto Modular {data['composition']}"] = data
+    return result or MODULAR_COMPOSITIONS
+
 class ModularSetTaskPanel:
     """Interface para Conjuntos Modulares (Placas Combinadas)"""
     def __init__(self, command_obj):
@@ -61,7 +94,8 @@ class ModularSetTaskPanel:
         # --- SELEÇÃO DE COMPOSIÇÃO ---
         self.scroll_layout.addWidget(QtGui.QLabel("<b>Composição do Conjunto:</b>"))
         self.comp_list = QtGui.QListWidget()
-        for name in sorted(MODULAR_COMPOSITIONS.keys()):
+        self.compositions = _available_modular_compositions()
+        for name in sorted(self.compositions.keys()):
             item = QtGui.QListWidgetItem(name)
             self.comp_list.addItem(item)
         self.comp_list.currentItemChanged.connect(self.on_comp_selected)
@@ -97,13 +131,16 @@ class ModularSetTaskPanel:
     def on_comp_selected(self, current):
         if not current: return
         name = current.text()
-        data = MODULAR_COMPOSITIONS.get(name)
+        data = self.compositions.get(name)
         if not data: return
         
         self.command.composition_name = name
         self.command.modules = data["modules"]
         self.command.family_file = data["3d_file"]
         self.command.tag_label = data["label"]
+        self.command.socket_count = int(data.get("socket_count", 0) or 0)
+        self.command.switch_count = int(data.get("switch_count", 0) or 0)
+        self.command.composition_code = data.get("composition", data["label"])
         
         self.refresh_ghost()
 
@@ -136,6 +173,9 @@ class ModularSetCommand:
         self.rotation = 0
         self.family_file = "Placa_Padrao.FCStd"
         self.tag_label = "CONJ"
+        self.composition_code = ""
+        self.socket_count = 0
+        self.switch_count = 0
         self.engine = None
 
     def GetResources(self):
@@ -147,7 +187,7 @@ class ModularSetCommand:
             'Checkable': True
         }
 
-    def Activated(self):
+    def Activated(self, *args, **kwargs):
         self.engine = BIMPlacementEngine(self, ModularSetTaskPanel, self.place_modular_set)
         self.engine.start()
 
@@ -198,6 +238,12 @@ class ModularSetCommand:
                 ProfessionalBIMModularSet(matriz)
                 matriz.SourceFile = self.family_file
                 matriz.Modules = self.modules
+                if hasattr(matriz, "Composition"):
+                    matriz.Composition = self.composition_code
+                if hasattr(matriz, "SocketCount"):
+                    matriz.SocketCount = self.socket_count
+                if hasattr(matriz, "SwitchCount"):
+                    matriz.SwitchCount = self.switch_count
                 doc.recompute([matriz])
 
             obj = doc.addObject("App::Link", f"Conjunto_{self.tag_label}")
@@ -207,7 +253,13 @@ class ModularSetCommand:
                 if not hasattr(obj, name): obj.addProperty(ptype, name, group)
                 setattr(obj, name, value)
 
-            _add_prop("Composition", self.composition_name)
+            _add_prop("Composition", self.composition_code or self.composition_name)
+            _add_prop("FamilyCategory", "Conjunto Modular", group="BIM_Familia")
+            _add_prop("IFC_Class", "IfcDistributionElement", group="BIM_Classificacao")
+            _add_prop("TipoBIM", "ModularAssembly", group="BIM_Classificacao")
+            _add_prop("SocketCount", self.socket_count, ptype="App::PropertyInteger")
+            _add_prop("SwitchCount", self.switch_count, ptype="App::PropertyInteger")
+            _add_prop("LoadClassification", "Misto", group="BIM_Engenharia")
             _add_prop("Tag", f"CONJ-{self.tag_label}", group="BIM_Classificacao")
             _add_prop("MountingHeight", self.z_level, group="BIM_Posicionamento", ptype="App::PropertyLength")
 

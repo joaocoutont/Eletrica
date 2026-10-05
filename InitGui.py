@@ -33,6 +33,8 @@ try:
             break
 except:
     pass
+_ELETRICA_OBSERVER = None
+
 
 
 class EletricaWorkbench (FreeCADGui.Workbench):
@@ -46,15 +48,25 @@ class EletricaWorkbench (FreeCADGui.Workbench):
 
         def Activated(self):
             import FreeCADGui
+            import FreeCAD
+            try:
+                # Carregar o módulo antes de tentar chamar
+                if "Arch" in self.cmd_name:
+                    import Arch
+                if "BIM" in self.cmd_name:
+                    import BIM
+            except Exception:
+                pass
+
             try:
                 FreeCADGui.runCommand(self.cmd_name)
-            except:
+            except Exception as e:
                 try:
                     FreeCADGui.activateWorkbench("BIMWorkbench")
                     FreeCADGui.activateWorkbench("EletricaWorkbench")
                     FreeCADGui.runCommand(self.cmd_name)
-                except:
-                    FreeCAD.Console.PrintError("Falha ao abrir ferramenta: " + self.cmd_name + "\n")
+                except Exception as e2:
+                    FreeCAD.Console.PrintError(f"Falha ao abrir {self.cmd_name}: {e2}\n")
 
         def IsActive(self):
             import FreeCAD
@@ -71,10 +83,25 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             # Nome oficial do ícone no FreeCAD 1.1 para o Explorador IFC
             if icon == "BIM_IfcExplorer":
                 icon = "IFC"
+            elif icon == "Arch_Level":
+                icon = "Arch_BuildingPart"
+            elif icon == "BIM_Setup":
+                icon = "preferences-system"
+            elif icon == "BIM_Views":
+                icon = "view-isometric"
+            elif icon == "BIM_ProjectManager":
+                icon = "document-properties"
 
-            return {'MenuText': tr(self.cmd_name.replace("Arch_", "").replace("BIM_", "").replace("Draft_", "")), 
+            menu_text = self.cmd_name.replace("Arch_", "").replace("BIM_", "").replace("Draft_", "")
+            
+            if menu_text == "Level": menu_text = "Nível (Floor)"
+            elif menu_text == "Space": menu_text = "Espaço (Space)"
+            elif menu_text == "Site": menu_text = "Terreno (Site)"
+            elif menu_text == "Building": menu_text = "Edificação (Building)"
+
+            return {'MenuText': tr(menu_text), 
                     'Pixmap': icon,
-                    'ToolTip': tr("Ferramenta Externa: ") + self.cmd_name}
+                    'ToolTip': tr("Ferramenta Externa: ") + tr(menu_text)}
 
     DIR = os.path.normpath(os.path.join(FreeCAD.getUserAppDataDir(), "Mod", "Eletrica"))
     
@@ -88,6 +115,15 @@ class EletricaWorkbench (FreeCADGui.Workbench):
 
     def Initialize(self):
         "Este método organiza a interface conforme o fluxo de confecção do projeto"
+        global _ELETRICA_OBSERVER
+        if _ELETRICA_OBSERVER is None:
+            try:
+                from GeometryScripts.socket_gui import EletricaDocumentObserver
+                _ELETRICA_OBSERVER = EletricaDocumentObserver()
+                FreeCAD.addDocumentObserver(_ELETRICA_OBSERVER)
+            except Exception as e:
+                FreeCAD.Console.PrintError(f"Erro ao registrar EletricaDocumentObserver: {e}\n")
+
         import EletricaGui
         import EletricaPanel
         import GeometryScripts.junction_box_gui # Carrega o comando de Caixas
@@ -103,13 +139,19 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         draft_cmds = ["Draft_Line", "Draft_Wire", "Draft_Circle", "Draft_Arc", 
                       "Draft_Move", "Draft_Rotate", "Draft_Mirror", "Draft_Offset", 
                       "Draft_Trimex", "Draft_Stretch", "Draft_Upgrade", "Draft_Downgrade"]
-        snap_cmds = ["Draft_Snap_Lock", "Draft_Snap_Endpoint", "Draft_Snap_Midpoint", 
+        snap_cmds = ["Draft_Snap_Lock", "Draft_Snap_Near", "Draft_Snap_Endpoint", "Draft_Snap_Midpoint", 
                      "Draft_Snap_Center", "Draft_Snap_Angle", "Draft_Snap_Intersection", 
                      "Draft_Snap_Perpendicular", "Draft_Snap_Extension", "Draft_Snap_Parallel", 
-                     "Draft_Snap_Grid", "Draft_Snap_WorkingPlane"]
-        bim_cmds = ["Arch_Site", "Arch_Building", "Arch_BuildingPart", "Arch_Reference", "BIM_IfcExplorer"]
+                     "Draft_Snap_Grid", "Draft_Snap_WorkingPlane", "Draft_Snap_Ortho",
+                     "Draft_Snap_Special", "Draft_Snap_Dimensions"]
+        bim_cmds = ["Arch_Site", "Arch_Building", "Arch_Level", "Arch_Space", "Arch_Reference", "BIM_IfcExplorer", "BIM_Setup", "BIM_Views", "BIM_ProjectManager"]
 
-        for cmd in draft_cmds + snap_cmds + bim_cmds:
+        try:
+            import DraftTools
+        except Exception:
+            pass
+
+        for cmd in bim_cmds:
             FreeCADGui.addCommand("Eletrica_Tool_" + cmd, self.ExternalToolProxy(cmd))
 
         # Registrar o comando do Dashboard importado dinamicamente para evitar conflitos de escopo global no FreeCAD
@@ -136,6 +178,8 @@ class EletricaWorkbench (FreeCADGui.Workbench):
             "Eletrica_PrepareFromCAD",
             "Eletrica_PrepareFromIFC",
             "Eletrica_PrepareFromFreeCAD",
+            "Eletrica_ToggleReferenceLock",
+            "Eletrica_ReloadReference",
             "Eletrica_ManageFamilies",
             "Eletrica_EditProjectTemplates",
             "Eletrica_ProjectMetadata",
@@ -291,8 +335,8 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         ]
         
         # Auxiliares
-        toolbar_draft = ["Eletrica_Tool_" + c for c in draft_cmds]
-        toolbar_snaps = ["Eletrica_Tool_" + c for c in snap_cmds]
+        toolbar_draft = draft_cmds
+        toolbar_snaps = snap_cmds
         toolbar_bim   = ["Eletrica_Tool_" + c for c in bim_cmds]
         
         # --- FUNÇÃO DE DEDUPLICAÇÃO ---
@@ -356,8 +400,9 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         self.appendToolbar(tr("Fase IV: Auditoria & Lifecycle"), toolbar_phase_4)
         self.appendToolbar(tr("Fase V: Documentação & Entrega"), toolbar_phase_5)
         
-        # Auxiliares (Draft/Snaps)
+        # Auxiliares (Draft/Snaps/BIM)
         self.appendToolbar(tr("Auxiliares (Draft/Snaps)"), deduplicate(toolbar_draft + toolbar_snaps))
+        self.appendToolbar(tr("Ferramentas BIM (Nativas)"), deduplicate(toolbar_bim))
         
         # Menu Suspenso Organizado por Submenus (Hierárquico)
         self.appendMenu([tr("Eletrica"), tr("Fase I: Concepção & BIM")], toolbar_phase_1)
@@ -390,6 +435,11 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         
         # O painel lateral (Dashboard) agora inicia desabilitado/ocultado por padrão conforme solicitação do usuário.
         # Ele pode ser ativado a qualquer momento clicando no botão "Exibir Dashboard Eletrica" na barra de ferramentas SETUP ou no menu.
+        try:
+            if hasattr(FreeCADGui, "Snapper"):
+                FreeCADGui.Snapper.show()
+        except Exception:
+            pass
         pass
 
     def Deactivated(self):
@@ -400,5 +450,12 @@ class EletricaWorkbench (FreeCADGui.Workbench):
         except Exception as e:
             import FreeCAD
             FreeCAD.Console.PrintError(f"Erro ao desativar bancada Eletrica: {str(e)}\n")
+            
+        try:
+            import FreeCADGui
+            if hasattr(FreeCADGui, "Snapper"):
+                FreeCADGui.Snapper.hide()
+        except Exception:
+            pass
 
 FreeCADGui.addWorkbench(EletricaWorkbench())
